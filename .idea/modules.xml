@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/DSTeamProject.iml" filepath="$PROJECT_DIR$/DSTeamProject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DS_TeamProject.iml" filepath="$PROJECT_DIR$/DS_TeamProject.iml" />
     </modules>
   </component>
 </project>

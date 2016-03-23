@@ -145,7 +145,9 @@ func Send(msg Message) {
 	}else{
 		// Not contain
 		// Try connecting to the peer
-		conn, _ := net.Dial("tcp", dns.GetAddr(dest) + ":" + localPort)
+		addr := dns.GetAddr(dest)
+		fmt.Println("Selecting first entry in the list. Address is "+ addr[0])
+		conn, _ := net.Dial("tcp", addr[0] + ":" + localPort)
 		client := NewClient(conn)
 		client.name = dest
 		connections.clients[dest] = client

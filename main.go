@@ -21,7 +21,7 @@ func main() {
 	for {
 		text, _ := reader.ReadString('\n')     // send to socket
 		// Send the message, trim the last \n from input
-		go mp.Send(mp.NewMessage("alice", text[:len(text)-1]))
+		go mp.Send(mp.NewMessage("p2plive", text[:len(text)-1]))
 		fmt.Println("Send Message " + text)
 	}
 }
