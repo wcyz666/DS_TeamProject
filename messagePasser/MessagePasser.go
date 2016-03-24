@@ -144,6 +144,9 @@ func Send(msg Message) {
 		client.outgoing <- msg
 	}else{
 		// Not contain
+		/* TODO: Remove code. Temporary code to demonstrate adding supernodes to DNS */
+		dns.RegisterSuperNode(dest)
+
 		// Try connecting to the peer
 		addr := dns.GetAddr(dest)
 		fmt.Println("Selecting first entry in the list. Address is "+ addr[0])
