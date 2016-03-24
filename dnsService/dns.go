@@ -33,6 +33,9 @@ type DNSResponseMessage struct {
 	records[]  map[string]DNSRecordEntry
 }
 
+/*
+ http://stackoverflow.com/questions/23558425/how-do-i-get-the-local-ip-address-in-go
+*/
 func externalIP() (string, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
@@ -67,7 +70,7 @@ func externalIP() (string, error) {
 			return ip.String(), nil
 		}
 	}
-	return "", errors.New("are you connected to the network?")
+	return "", errors.New("Unable to get a valid IP address")
 }
 
 func isIpAlreadyRegistered(ipList []string, curIP string) bool {
