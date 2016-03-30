@@ -9,6 +9,7 @@ import (
 type Message struct {
 	dest string
 	src string
+	kind string
 	data string
 }
 

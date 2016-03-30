@@ -38,6 +38,15 @@ func (client *Client) Read() {
 		}
 		msg := new(Message)
 		msg.Deserialize(line)
+		
+		_, exists := connections.clients[msg.GetSrc()]
+		if(exists != nil){
+			// This is first message received from this src
+			// Store this connection
+			client.name = msg.GetSrc()
+			connections.clients[msg.GetSrc()] = client
+		}
+
 		Incoming <- *msg  // Since there is only one socket, directly put all the received
 				  // msgs into the global receiving channel (message queue)
 	}
