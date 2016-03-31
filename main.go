@@ -9,10 +9,9 @@ import (
 	node "./node"
 	supernode "./superNode"
 	//"fmt"
-    "flag"
-    //"os"
+	"flag"
+	//"os"
 )
-
 
 func main() {
 
@@ -22,23 +21,23 @@ func main() {
 	// Start listening
 	//go mp.Listen("bob")
 	/*
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		text, _ := reader.ReadString('\n')     // send to socket
-		// Send the message, trim the last \n from input
-		go mp.Send(messagePasser.NewMessage("p2plive", "hello", text[:len(text)-1]))
-		fmt.Println("Send Message " + text)
-	}
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			text, _ := reader.ReadString('\n')     // send to socket
+			// Send the message, trim the last \n from input
+			go mp.Send(messagePasser.NewMessage("p2plive", "hello", text[:len(text)-1]))
+			fmt.Println("Send Message " + text)
+		}
 
 	*/
-    me := flag.String("class", "node", "the identity of the current node")
+	me := flag.String("class", "node", "the identity of the current node")
 
-    flag.Parse()
+	flag.Parse()
 
-	if (*me == "node") {
-        node.Start()
+	if *me == "node" {
+		node.Start()
 	} else {
-        supernode.Start()
+		supernode.Start()
 	}
 
 	//

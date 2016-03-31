@@ -1,21 +1,21 @@
 package mylib
 
 import (
-	"encoding/gob"
 	"bytes"
+	"encoding/gob"
 	"fmt"
 )
 
 type Message struct {
-	Dest string
-	Src string
+	Dest    string
+	Src     string
 	SrcName string
-	Kind string
-	Data string
+	Kind    string
+	Data    string
 }
 
 func NewMessage(dest string, kind string, data string) Message {
-	msg := Message{Dest:dest, Kind:kind, Data:data}
+	msg := Message{Dest: dest, Kind: kind, Data: data}
 	return msg
 }
 
@@ -24,23 +24,23 @@ func (d *Message) GobEncode() ([]byte, error) {
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
 	err := encoder.Encode(d.Dest)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	err = encoder.Encode(d.Src)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	err = encoder.Encode(d.SrcName)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	err = encoder.Encode(d.Kind)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	err = encoder.Encode(d.Data)
-	if err!=nil {
+	if err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
@@ -51,19 +51,19 @@ func (d *Message) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
 	err := decoder.Decode(&d.Dest)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	err = decoder.Decode(&d.Src)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	err = decoder.Decode(&d.SrcName)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	err = decoder.Decode(&d.Kind)
-	if err!=nil {
+	if err != nil {
 		return err
 	}
 	return decoder.Decode(&d.Data)
@@ -77,19 +77,17 @@ func (d *Message) Serialize() ([]byte, error) {
 	return append(buffer.Bytes(), 254), err
 }
 
-
-func (d *Message) Deserialize(buffer []byte) (error) {
+func (d *Message) Deserialize(buffer []byte) error {
 	buf := bytes.NewBuffer(buffer)
 	dec := gob.NewDecoder(buf)
 	err := dec.Decode(d)
 	return err
 }
 
-
 func main() {
 
 	// An example on how to use the serialize/deserialize feature
-	msg := Message{Dest:"bob", Src:"alice", Data:"hi!"}
+	msg := Message{Dest: "bob", Src: "alice", Data: "hi!"}
 	// Serialize msg into bytes.Buffer
 	buffer, _ := msg.Serialize()
 	fmt.Println(buffer)

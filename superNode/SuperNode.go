@@ -3,9 +3,9 @@ package node
 import (
 	"fmt"
 
-	messagePasser "../messagePasser"
 	dns "../dnsService"
 	joinElection "../joinElection"
+	messagePasser "../messagePasser"
 )
 
 const (
@@ -14,45 +14,34 @@ const (
 
 var mp *messagePasser.MessagePasser
 
-func Start(){
+func Start() {
 	// First register on the dnsService
 	// In test stage, it's actually "ec2-54-175-192-219.compute-1.amazonaws.com"
 	dns.RegisterSuperNode(localname)
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
-	mp = messagePasser.NewMessagePasser(localname);
+	mp = messagePasser.NewMessagePasser(localname)
 	fmt.Println("Message Passer Initialized!")
 
 	// Define all the channel names and the binded functions
-	channelNames := map[string]func(*messagePasser.Message, *messagePasser.MessagePasser) {
-		"join": joinElection.Start,
+	channelNames := map[string]func(*messagePasser.Message, *messagePasser.MessagePasser){
+		"join":          joinElection.Start,
 		"election_join": joinElection.Receive,
 		// "dht": dhtHandler
 	}
-	for channelName, handler := range channelNames{
+	for channelName, handler := range channelNames {
 		// Init all the channels listening on
 		mp.Messages[channelName] = make(chan *messagePasser.Message)
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
-	_ <- nil
 }
 
-
-func listenOnChannel(channelName string, handler func(*messagePasser.Message, *messagePasser.MessagePasser)){
+func listenOnChannel(channelName string, handler func(*messagePasser.Message, *messagePasser.MessagePasser)) {
 	for {
 		//
-		msg := <- mp.Messages[channelName]
+		msg := <-mp.Messages[channelName]
 		go handler(msg, mp)
 	}
 }
-
-
-
-
-
-
-
-
-

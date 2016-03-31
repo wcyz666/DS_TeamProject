@@ -1,11 +1,12 @@
 package mylib
 
 import (
-	"bufio"
-	"net"
-	"fmt"
 	dns "../dnsService"
+	"bufio"
+	"fmt"
+	"net"
 )
+
 const (
 	localPort = "6666"
 )
@@ -13,18 +14,16 @@ const (
 /*
 This is a simple message passing object.
 Refer to the sample here: https://gist.github.com/drewolson/3950226
- */
+*/
 
-
-type MessagePasser struct{
+type MessagePasser struct {
 	Incoming    chan *Message
 	connections *Connections
-	Messages    map[string] chan *Message
-
+	Messages    map[string]chan *Message
 }
 
 type Client struct {
-	name string
+	name     string
 	incoming chan *Message
 	outgoing chan *Message // Act as a sending message queue
 	reader   *bufio.Reader
@@ -32,12 +31,12 @@ type Client struct {
 }
 
 /**
-	Define the interfaces for all the connections alive in the current system
- */
+Define the interfaces for all the connections alive in the current system
+*/
 type Connections struct {
 	localname string
-	clients map[string]*Client
-	joins chan net.Conn
+	clients   map[string]*Client
+	joins     chan net.Conn
 }
 
 //The go routine here, keep waiting messages from connected client Blocking.
@@ -52,15 +51,15 @@ func (client *Client) Read(mp *MessagePasser) {
 		msg.Deserialize(line)
 
 		_, exists := mp.connections.clients[msg.Src]
-		if(exists != false){
+		if exists != false {
 			// This is first message received from this src
 			// Store this connection
 			client.name = msg.Src
 			mp.connections.clients[msg.Src] = client
 		}
 
-		mp.Incoming <- msg  // Since there is only one socket, directly put all the received
-				  // msgs into the global receiving channel (message queue)
+		mp.Incoming <- msg // Since there is only one socket, directly put all the received
+		// msgs into the global receiving channel (message queue)
 	}
 }
 
@@ -87,21 +86,20 @@ func NewClient(connection net.Conn, mp *MessagePasser) *Client {
 	client := &Client{
 		incoming: make(chan *Message),
 		outgoing: make(chan *Message),
-		reader: reader,
-		writer: writer,
+		reader:   reader,
+		writer:   writer,
 	}
 
 	client.Listen(mp)
 	return client
 }
 
-
 // Constructor
 func newConnections(localname string, mp *MessagePasser) *Connections {
 	connections := &Connections{
-		localname : localname,
-		clients: make(map[string]*Client),
-		joins: make(chan net.Conn),
+		localname: localname,
+		clients:   make(map[string]*Client),
+		joins:     make(chan net.Conn),
 	}
 
 	go connections.Listen(mp)
@@ -109,7 +107,7 @@ func newConnections(localname string, mp *MessagePasser) *Connections {
 }
 
 // Listening for new connected clients
-func (connect *Connections) Listen(mp *MessagePasser){
+func (connect *Connections) Listen(mp *MessagePasser) {
 	for {
 		conn := <-connect.joins
 		NewClient(conn, mp)
@@ -131,10 +129,10 @@ func NewMessagePasser(localname string) *MessagePasser {
 }
 
 // The global listening go routine
-func (mp *MessagePasser)listen(localname string) {
+func (mp *MessagePasser) listen(localname string) {
 	mp.connections = newConnections(localname, mp)
 	fmt.Println("Listening on " + localPort)
-	listener, _ := net.Listen("tcp", ":" + localPort)
+	listener, _ := net.Listen("tcp", ":"+localPort)
 
 	for {
 		conn, _ := listener.Accept()
@@ -146,14 +144,14 @@ func (mp *MessagePasser)listen(localname string) {
 /*
 Organize the received messages into different channels in the map [kind][channel *Message]
 Store in the Message map and To be used by the upper layer handlers
- */
+*/
 func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 		fmt.Println("Receive in MP: ")
 		fmt.Println(msg)
 		_, exists := mp.Messages[msg.Kind]
-		if (exists == false){
+		if exists == false {
 			fmt.Println("Initialized the channel")
 			mp.Messages[msg.Kind] = make(chan *Message, 100)
 		}
@@ -166,7 +164,7 @@ func (mp *MessagePasser) receiveMapping() {
 
 /*
 Send a message
- */
+*/
 func (mp *MessagePasser) Send(msg Message) {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
@@ -174,15 +172,15 @@ func (mp *MessagePasser) Send(msg Message) {
 	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
 		client.outgoing <- &msg
-	}else{
+	} else {
 		// Try connecting to the peer
 
 		addr := dest
-		conn, _ := net.Dial("tcp", addr + ":" + localPort)
+		conn, _ := net.Dial("tcp", addr+":"+localPort)
 		client := NewClient(conn, mp)
 		client.name = dest
 		mp.connections.clients[dest] = client
 		client.outgoing <- &msg
 	}
-	
+
 }

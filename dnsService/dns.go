@@ -1,20 +1,21 @@
 package dnsService
 
 import (
-	"fmt"
-	"net/http"
-	"io/ioutil"
-	"encoding/json"
 	"bytes"
-	"net"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"crypto/tls"
 )
 
 /* decode only relevant portions which are important to us */
-type DNSRecordEntry struct{
+type DNSRecordEntry struct {
 	record_type string
-	name string
-	content string
+	name        string
+	content     string
 }
 
 func (recordEntry *DNSRecordEntry) UnmarshalJSON(b []byte) (err error) {
@@ -30,7 +31,7 @@ func (recordEntry *DNSRecordEntry) UnmarshalJSON(b []byte) (err error) {
 }
 
 type DNSResponseMessage struct {
-	records[]  map[string]DNSRecordEntry
+	records []map[string]DNSRecordEntry
 }
 
 /*
@@ -74,8 +75,8 @@ func ExternalIP() (string, error) {
 }
 
 func isIpAlreadyRegistered(ipList []string, curIP string) bool {
-	for _,ipAddr := range ipList{
-		if ipAddr == curIP{
+	for _, ipAddr := range ipList {
+		if ipAddr == curIP {
 			return true
 		}
 	}
@@ -84,16 +85,16 @@ func isIpAlreadyRegistered(ipList []string, curIP string) bool {
 
 /* Name of the domain which is used to track super nodes.  Currently, we are using
    p2plive.phani.me as the name */
-func RegisterSuperNode(name string){
+func RegisterSuperNode(name string) {
 	curAddrList := GetAddr(name)
-	extIP,_ := ExternalIP()
+	extIP, _ := ExternalIP()
 
-	if (isIpAlreadyRegistered(curAddrList, extIP)) {
+	if isIpAlreadyRegistered(curAddrList, extIP) {
 		fmt.Println("Node already registered as Super Node")
 		return
 	}
 
-	fmt.Println("externalIP is "+ extIP)
+	fmt.Println("externalIP is " + extIP)
 	AddAddr(name, extIP)
 }
 
@@ -102,21 +103,19 @@ NOTE: We receive a failure response with Bad Request as code when we attempt to 
 address already present as an A record in the DNS server. Hence, before we call AddAddr, call GetAddr to check
 if IP to be added is already present in one of the A records in the DNS system
 */
-func AddAddr(name string, ipAddr string) (error) {
+func AddAddr(name string, ipAddr string) error {
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
 	fmt.Println("URL:>", url)
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 	var reqBody string = `{ "record": { "name": "` + name + `", "record_type": "A", "ttl": 3600, "prio": 10, "content": "` + ipAddr + `"}}`
-	fmt.Println("reqBody is "+ reqBody)
+	fmt.Println("reqBody is " + reqBody)
 	var jsonStr = []byte(reqBody)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-DNSimple-Token", "phanishankarpr@gmail.com:oWxhZCENnNaLFq3WHyDEzpgYETguMyTC")
-	req.Header.Set("Content-Type","application/json")
-
-
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -129,27 +128,30 @@ func AddAddr(name string, ipAddr string) (error) {
 	fmt.Println("response Headers:", resp.Header)
 
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("Request to add A record failed with code %d",resp.StatusCode)
+		return fmt.Errorf("Request to add A record failed with code %d", resp.StatusCode)
 	}
 	return nil
 }
 
-func GetAddr(name string) ([] string){
+func GetAddr(name string) []string {
 
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
 
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-DNSimple-Token", "phanishankarpr@gmail.com:oWxhZCENnNaLFq3WHyDEzpgYETguMyTC")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
 
-	if (resp.StatusCode != 200){
+	if resp.StatusCode != 200 {
 		fmt.Println("response Status:", resp.Status)
 		panic("Response code not OK")
 	}
@@ -163,15 +165,14 @@ func GetAddr(name string) ([] string){
 
 	var entry DNSRecordEntry
 	var addrList []string
-	for i :=0; i < len(decData.records);i++ {
+	for i := 0; i < len(decData.records); i++ {
 		entry = decData.records[i]["record"]
-		if ((entry.record_type =="A") && (entry.name == name)){
-			fmt.Println("record type is "+entry.record_type + " name is "+ entry.name + " content is "+
-			entry.content)
-			addrList = append(addrList,entry.content)
+		if (entry.record_type == "A") && (entry.name == name) {
+			fmt.Println("record type is " + entry.record_type + " name is " + entry.name + " content is " +
+				entry.content)
+			addrList = append(addrList, entry.content)
 		}
 
 	}
 	return addrList
 }
-
