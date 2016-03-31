@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"fmt"
+	dns "../dnsService"
 )
 const (
 	localPort = "6666"
@@ -18,7 +19,7 @@ Refer to the sample here: https://gist.github.com/drewolson/3950226
 type MessagePasser struct{
     incoming chan *Message
     connections *Connections
-    Messages map[string]chan *Message
+    Messages map[string] chan *Message
 
 }
 
@@ -51,11 +52,11 @@ func (client *Client) Read(mp *MessagePasser) {
 		msg.Deserialize(line)
 
 		_, exists := mp.connections.clients[msg.Src]
-		if(exists != nil){
+		if(exists != false){
 			// This is first message received from this src
 			// Store this connection
-			client.name = msg.Src()
-			mp.connections.clients[msg.Src()] = client
+			client.name = msg.Src
+			mp.connections.clients[msg.Src] = client
 		}
 
 		mp.incoming <- msg  // Since there is only one socket, directly put all the received
@@ -150,7 +151,7 @@ func (mp *MessagePasser) receiveMapping() {
 		msg := <-mp.incoming
 
 		_, exists := mp.Messages[msg.Kind]
-		if (exists == nil){
+		if (exists == false){
 			mp.Messages[msg.Kind] = make(chan *Message)
 		}
 		mp.Messages[msg.Kind] <- msg
@@ -162,20 +163,20 @@ Send a message
  */
 func (mp *MessagePasser) Send(msg Message) {
 	msg.SrcName = mp.connections.localname
-	msg.Src = dns.ExternalIP()
+	msg.Src, _ = dns.ExternalIP()
 	dest := msg.Dest
 	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
-		client.outgoing <- msg
+		client.outgoing <- &msg
 	}else{
 		// Try connecting to the peer
 
 		addr := dest
-		conn, _ := net.Dial("tcp", addr[0] + ":" + localPort)
+		conn, _ := net.Dial("tcp", addr + ":" + localPort)
 		client := NewClient(conn, mp)
 		client.name = dest
 		mp.connections.clients[dest] = client
-		client.outgoing <- msg
+		client.outgoing <- &msg
 	}
 	
 }

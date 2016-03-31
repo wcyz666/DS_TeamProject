@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"os"
 	messagePasser "./messagePasser"
-	node "./node"
+	//node "./node"
+	supernode "./superNode"
 )
 
 
@@ -27,6 +28,6 @@ func main() {
 	}
 
 
-	node.NodeStart()
+	supernode.Start()
 
 }
