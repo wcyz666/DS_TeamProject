@@ -45,12 +45,12 @@ func (client *Client) Read(mp *MessagePasser) {
 		msg := new(Message)
 		msg.Deserialize(line)
 
-		_, exists := mp.connections.clients[msg.GetSrc()]
+		_, exists := mp.connections.clients[msg.Src]
 		if(exists != nil){
 			// This is first message received from this src
 			// Store this connection
-			client.name = msg.GetSrc()
-			mp.connections.clients[msg.GetSrc()] = client
+			client.name = msg.Src()
+			mp.connections.clients[msg.Src()] = client
 		}
 
 		mp.incoming <- msg  // Since there is only one socket, directly put all the received
@@ -152,11 +152,11 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.incoming
 
-		_, exists := mp.Messages[msg.kind]
+		_, exists := mp.Messages[msg.Kind]
 		if (exists == nil){
-			mp.Messages[msg.kind] = make(chan *Message)
+			mp.Messages[msg.Kind] = make(chan *Message)
 		}
-		mp.Messages[msg.kind] <- msg
+		mp.Messages[msg.Kind] <- msg
 	}
 }
 
@@ -164,19 +164,15 @@ func (mp *MessagePasser) receiveMapping() {
 Send a message
  */
 func (mp *MessagePasser) Send(msg Message) {
-	msg.SetSrc(mp.connections.localname)
-	dest := msg.GetDest()
+	msg.SrcName = mp.connections.localname
+	msg.Src = dns.ExternalIP()
+	dest := msg.Dest
 	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
 		client.outgoing <- msg
 	}else{
-		// Not contain
-		/* TODO: Remove code. Temporary code to demonstrate adding supernodes to DNS */
-		// dns.RegisterSuperNode(dest)
-
 		// Try connecting to the peer
-		addr := dns.GetAddr(dest)
-		fmt.Println("Selecting first entry in the list. Address is "+ addr[0])
+		addr := dest
 		conn, _ := net.Dial("tcp", addr[0] + ":" + localPort)
 		client := NewClient(conn, mp)
 		client.name = dest
