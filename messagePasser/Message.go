@@ -13,8 +13,8 @@ type Message struct {
 	data string
 }
 
-func NewMessage(dest string, data string) Message {
-	msg := Message{dest:dest, data:data}
+func NewMessage(dest string, kind string, data string) Message {
+	msg := Message{dest:dest, kind:kind, data:data}
 	return msg
 }
 
