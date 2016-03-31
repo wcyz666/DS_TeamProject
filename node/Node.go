@@ -17,7 +17,8 @@ var parentIP string
 func NodeJoin(IP string) {
     helloMsg := MP.NewMessage(IP, "join", "hello, my name is Bay Max, you personal healthcare companion")
     mp.Send(helloMsg)
-
+    echoMsg := <- mp.Messages["ack"]
+    fmt.Println(echoMsg)
 }
 
 func setLocalName(name string) {
@@ -27,7 +28,7 @@ func setLocalName(name string) {
 func NodeStart()  {
     setLocalName("bob")
 
-    messagePasser := MP.NewMessagePasser(localName);
+    mp = MP.NewMessagePasser(localName);
     helloIP := dns.GetAddr(bootstrap_dns)[0]
 
     NodeJoin(helloIP)

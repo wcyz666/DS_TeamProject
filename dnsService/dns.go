@@ -36,7 +36,7 @@ type DNSResponseMessage struct {
 /*
  http://stackoverflow.com/questions/23558425/how-do-i-get-the-local-ip-address-in-go
 */
-func externalIP() (string, error) {
+func ExternalIP() (string, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return "", err
@@ -86,7 +86,7 @@ func isIpAlreadyRegistered(ipList []string, curIP string) bool {
    p2plive.phani.me as the name */
 func RegisterSuperNode(name string){
 	curAddrList := GetAddr(name)
-	extIP,_ := externalIP()
+	extIP,_ := ExternalIP()
 
 	if (isIpAlreadyRegistered(curAddrList, extIP)) {
 		fmt.Println("Node already registered as Super Node")

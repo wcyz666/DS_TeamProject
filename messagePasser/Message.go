@@ -7,14 +7,15 @@ import (
 )
 
 type Message struct {
-	dest string
-	src string
-	kind string
-	data string
+	Dest string
+	Src string
+	SrcName string
+	Kind string
+	Data string
 }
 
 func NewMessage(dest string, kind string, data string) Message {
-	msg := Message{dest:dest, kind:kind, data:data}
+	msg := Message{Dest:dest, Kind:kind, Data:data}
 	return msg
 }
 
@@ -22,19 +23,23 @@ func NewMessage(dest string, kind string, data string) Message {
 func (d *Message) GobEncode() ([]byte, error) {
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
-	err := encoder.Encode(d.dest)
+	err := encoder.Encode(d.Dest)
 	if err!=nil {
 		return nil, err
 	}
-	err = encoder.Encode(d.src)
+	err = encoder.Encode(d.Src)
 	if err!=nil {
 		return nil, err
 	}
-	err = encoder.Encode(d.kind)
+	err = encoder.Encode(d.SrcName)
 	if err!=nil {
 		return nil, err
 	}
-	err = encoder.Encode(d.data)
+	err = encoder.Encode(d.Kind)
+	if err!=nil {
+		return nil, err
+	}
+	err = encoder.Encode(d.Data)
 	if err!=nil {
 		return nil, err
 	}
@@ -45,19 +50,23 @@ func (d *Message) GobEncode() ([]byte, error) {
 func (d *Message) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
-	err := decoder.Decode(&d.dest)
+	err := decoder.Decode(&d.Dest)
 	if err!=nil {
 		return err
 	}
-	err = decoder.Decode(&d.src)
+	err = decoder.Decode(&d.Src)
 	if err!=nil {
 		return err
 	}
-	err = decoder.Decode(&d.kind)
+	err = decoder.Decode(&d.SrcName)
 	if err!=nil {
 		return err
 	}
-	return decoder.Decode(&d.data)
+	err = decoder.Decode(&d.Kind)
+	if err!=nil {
+		return err
+	}
+	return decoder.Decode(&d.Data)
 }
 
 func (d *Message) Serialize() ([]byte, error) {
@@ -76,39 +85,11 @@ func (d *Message) Deserialize(buffer []byte) (error) {
 	return err
 }
 
-/*
-Setters and getters
- */
-func (d *Message) GetDest() (string) {
-	return d.dest
-}
-
-func (d *Message) GetSrc() (string) {
-	return d.src
-}
-
-func (d *Message) GetData() (string) {
-	return d.data
-}
-
-func (d *Message) SetDest(dest string) {
-	d.dest = dest
-}
-
-func (d *Message) SetSrc(src string) {
-	d.src = src
-}
-
-func (d *Message) SetData(data string) {
-	d.data = data
-}
-
-
 
 func main() {
 
 	// An example on how to use the serialize/deserialize feature
-	msg := Message{dest:"bob", src:"alice", data:"hi!"}
+	msg := Message{Dest:"bob", Src:"alice", Data:"hi!"}
 	// Serialize msg into bytes.Buffer
 	buffer, _ := msg.Serialize()
 	fmt.Println(buffer)

@@ -27,6 +27,6 @@ func main() {
 	}
 
 
-	node.Start()
+	node.NodeStart()
 
 }
