@@ -94,7 +94,7 @@ func RegisterSuperNode(name string){
 	}
 
 	fmt.Println("externalIP is "+ extIP)
-	AddAddr(extIP)
+	AddAddr(name, extIP)
 }
 
 /*
@@ -102,12 +102,12 @@ NOTE: We receive a failure response with Bad Request as code when we attempt to 
 address already present as an A record in the DNS server. Hence, before we call AddAddr, call GetAddr to check
 if IP to be added is already present in one of the A records in the DNS system
 */
-func AddAddr(ipAddr string) (error) {
+func AddAddr(name string, ipAddr string) (error) {
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
 	fmt.Println("URL:>", url)
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
-	var reqBody string = `{ "record": { "name": "p2plive", "record_type": "A", "ttl": 3600, "prio": 10, "content": "` + ipAddr + `"}}`
+	var reqBody string = `{ "record": { "name": "` + name + `", "record_type": "A", "ttl": 3600, "prio": 10, "content": "` + ipAddr + `"}}`
 	fmt.Println("reqBody is "+ reqBody)
 	var jsonStr = []byte(reqBody)
 
