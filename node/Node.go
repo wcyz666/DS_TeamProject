@@ -8,6 +8,7 @@ import (
 
 const (
     bootstrap_dns = "DS.supernodes.com"
+    HeartBeatPort = 8888
 )
 
 var mp *MP.MessagePasser
@@ -19,13 +20,18 @@ func NodeJoin(IP string) {
     mp.Send(helloMsg)
     echoMsg := <- mp.Messages["ack"]
     fmt.Println(echoMsg)
+    go heartBeat()
+}
+
+func heartBeat() {
+
 }
 
 func setLocalName(name string) {
     localName = name
 }
 
-func NodeStart()  {
+func Start()  {
     setLocalName("bob")
 
     mp = MP.NewMessagePasser(localName);

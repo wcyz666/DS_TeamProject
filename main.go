@@ -6,8 +6,11 @@ import (
 	//"fmt"
 	//"os"
 	//messagePasser "./messagePasser"
-	//node "./node"
+	node "./node"
 	supernode "./superNode"
+	//"fmt"
+    "flag"
+    //"os"
 )
 
 
@@ -26,7 +29,17 @@ func main() {
 		go mp.Send(messagePasser.NewMessage("p2plive", "hello", text[:len(text)-1]))
 		fmt.Println("Send Message " + text)
 	}
-	*/
 
-	supernode.Start()
+	*/
+    me := flag.String("class", "node", "the identity of the current node")
+
+    flag.Parse()
+
+	if (*me == "node") {
+        node.Start()
+	} else {
+        supernode.Start()
+	}
+
+	//
 }
