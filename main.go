@@ -2,10 +2,10 @@ package main
 
 import (
 
-	"bufio"
-	"fmt"
-	"os"
-	messagePasser "./messagePasser"
+	//"bufio"
+	//"fmt"
+	//"os"
+	//messagePasser "./messagePasser"
 	//node "./node"
 	supernode "./superNode"
 )
@@ -14,11 +14,11 @@ import (
 func main() {
 
 	// Start reading from the receive message queue
-	mp := messagePasser.NewMessagePasser("bob");
+	//mp := messagePasser.NewMessagePasser("cheng");
 	//go mp.Receive()
 	// Start listening
 	//go mp.Listen("bob")
-
+	/*
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadString('\n')     // send to socket
@@ -26,8 +26,7 @@ func main() {
 		go mp.Send(messagePasser.NewMessage("p2plive", "hello", text[:len(text)-1]))
 		fmt.Println("Send Message " + text)
 	}
-
+	*/
 
 	supernode.Start()
-
 }

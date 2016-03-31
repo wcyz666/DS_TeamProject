@@ -17,9 +17,9 @@ Refer to the sample here: https://gist.github.com/drewolson/3950226
 
 
 type MessagePasser struct{
-    incoming chan *Message
-    connections *Connections
-    Messages map[string] chan *Message
+	Incoming    chan *Message
+	connections *Connections
+	Messages    map[string] chan *Message
 
 }
 
@@ -59,7 +59,7 @@ func (client *Client) Read(mp *MessagePasser) {
 			mp.connections.clients[msg.Src] = client
 		}
 
-		mp.incoming <- msg  // Since there is only one socket, directly put all the received
+		mp.Incoming <- msg  // Since there is only one socket, directly put all the received
 				  // msgs into the global receiving channel (message queue)
 	}
 }
@@ -123,9 +123,10 @@ func (connect *Connections) Listen(mp *MessagePasser){
 
 func NewMessagePasser(localname string) *MessagePasser {
 	mp := &MessagePasser{}
-	mp.incoming = make(chan *Message)
-	mp.receiveMapping()
-	mp.listen(localname)
+	mp.Incoming = make(chan *Message)
+	mp.Messages = make(map[string]chan *Message)
+	go mp.receiveMapping()
+	go mp.listen(localname)
 	return mp
 }
 
@@ -148,13 +149,18 @@ Store in the Message map and To be used by the upper layer handlers
  */
 func (mp *MessagePasser) receiveMapping() {
 	for {
-		msg := <-mp.incoming
-
+		msg := <-mp.Incoming
+		fmt.Println("Receive in MP: ")
+		fmt.Println(msg)
 		_, exists := mp.Messages[msg.Kind]
 		if (exists == false){
-			mp.Messages[msg.Kind] = make(chan *Message)
+			fmt.Println("Initialized the channel")
+			mp.Messages[msg.Kind] = make(chan *Message, 100)
 		}
+		fmt.Println(msg.Kind)
+		fmt.Println(mp.Messages[msg.Kind])
 		mp.Messages[msg.Kind] <- msg
+		fmt.Println(mp)
 	}
 }
 
