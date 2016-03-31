@@ -1,7 +1,7 @@
 package joinElection
 
 import (
-	"fmt"
+	//"fmt"
 
 	messagePasser "../messagePasser"
 	//dns "../dnsService"
@@ -9,23 +9,12 @@ import (
 
 var mp *messagePasser.MessagePasser
 
-func Start(_mp *messagePasser.MessagePasser, msg *messagePasser.Message){
+func Start(msg *messagePasser.Message, _mp *messagePasser.MessagePasser){
 	mp = _mp
-	go receive(msg.SrcName)
-	
+	// Start the election process below
 }
 
 
-/**
-srcName: The name identifier for the client
- */
-func receive(srcName string){
-	identifier := "join_" + srcName
-	channel, ok := mp.Messages[identifier]
-	if(ok == false){
-		mp.Messages[identifier] = make(chan *messagePasser.Message)
-		channel = mp.Messages[identifier]
-	}
-	msg := <- channel
-	fmt.Println(msg)
+func Receive(msg *messagePasser.Message, _mp *messagePasser.MessagePasser){
+	// Deal with the received messages
 }
