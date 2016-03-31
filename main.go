@@ -1,17 +1,17 @@
 package main
 
 import (
+
 	"bufio"
 	"fmt"
 	"os"
 	messagePasser "./messagePasser"
+	node "./node"
 )
 
-/**
-This is a file to test the message passer
- */
 
 func main() {
+
 	// Start reading from the receive message queue
 	mp := messagePasser.NewMessagePasser("bob");
 	//go mp.Receive()
@@ -25,4 +25,8 @@ func main() {
 		go mp.Send(messagePasser.NewMessage("p2plive", text[:len(text)-1]))
 		fmt.Println("Send Message " + text)
 	}
+
+
+	//node.Start()
+
 }

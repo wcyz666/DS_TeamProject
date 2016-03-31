@@ -25,6 +25,14 @@ type Client struct {
 	writer   *bufio.Writer
 }
 
+/**
+	Define the interfaces for all the connections alive in the current system
+ */
+type Connections struct {
+	localname string
+	clients map[string]*Client
+	joins chan net.Conn
+}
 
 //The go routine here, keep waiting messages from connected client Blocking.
 func (client *Client) Read(mp *MessagePasser) {
@@ -81,14 +89,6 @@ func NewClient(connection net.Conn, mp *MessagePasser) *Client {
 	return client
 }
 
-/**
-	Define the interfaces for all the connections alive in the current system
- */
-type Connections struct {
-	localname string
-	clients map[string]*Client
-	joins chan net.Conn
-}
 
 // Constructor
 func newConnections(localname string, mp *MessagePasser) *Connections {
