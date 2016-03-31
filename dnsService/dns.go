@@ -94,7 +94,7 @@ func AddAddr(name string, ipAddr string) error {
 	req.Header.Set("X-DNSimple-Token", "phanishankarpr@gmail.com:oWxhZCENnNaLFq3WHyDEzpgYETguMyTC")
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := getHttpClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
@@ -117,10 +117,7 @@ func GetAddr(name string) []string {
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-DNSimple-Token", "phanishankarpr@gmail.com:oWxhZCENnNaLFq3WHyDEzpgYETguMyTC")
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
+	client := getHttpClient()
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -152,4 +149,13 @@ func GetAddr(name string) []string {
 
 	}
 	return addrList
+}
+
+func getHttpClient() *http.Client{
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	return client
 }
