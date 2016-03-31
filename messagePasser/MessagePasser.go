@@ -16,20 +16,18 @@ Refer to the sample here: https://gist.github.com/drewolson/3950226
  */
 
 
-var Incoming = make(chan Message)
-var connections *Connections
 
 type Client struct {
 	name string
-	incoming chan Message
-	outgoing chan Message // Act as a sending message queue
+	incoming chan *Message
+	outgoing chan *Message // Act as a sending message queue
 	reader   *bufio.Reader
 	writer   *bufio.Writer
 }
 
 
 //The go routine here, keep waiting messages from connected client Blocking.
-func (client *Client) Read() {
+func (client *Client) Read(mp *MessagePasser) {
 	for {
 		line, err := client.reader.ReadBytes('\xfe')
 		if err != nil {
@@ -38,16 +36,16 @@ func (client *Client) Read() {
 		}
 		msg := new(Message)
 		msg.Deserialize(line)
-		
-		_, exists := connections.clients[msg.GetSrc()]
+
+		_, exists := mp.connections.clients[msg.GetSrc()]
 		if(exists != nil){
 			// This is first message received from this src
 			// Store this connection
 			client.name = msg.GetSrc()
-			connections.clients[msg.GetSrc()] = client
+			mp.connections.clients[msg.GetSrc()] = client
 		}
 
-		Incoming <- *msg  // Since there is only one socket, directly put all the received
+		mp.incoming <- msg  // Since there is only one socket, directly put all the received
 				  // msgs into the global receiving channel (message queue)
 	}
 }
@@ -62,24 +60,24 @@ func (client *Client) Write() {
 	}
 }
 
-func (client *Client) Listen() {
-	go client.Read()
+func (client *Client) Listen(mp *MessagePasser) {
+	go client.Read(mp)
 	go client.Write()
 }
 
 // Constructor
-func NewClient(connection net.Conn) *Client {
+func NewClient(connection net.Conn, mp *MessagePasser) *Client {
 	writer := bufio.NewWriter(connection)
 	reader := bufio.NewReader(connection)
 
 	client := &Client{
-		incoming: make(chan Message),
-		outgoing: make(chan Message),
+		incoming: make(chan *Message),
+		outgoing: make(chan *Message),
 		reader: reader,
 		writer: writer,
 	}
 
-	client.Listen()
+	client.Listen(mp)
 	return client
 }
 
@@ -93,22 +91,22 @@ type Connections struct {
 }
 
 // Constructor
-func NewConnections(localname string) *Connections {
+func newConnections(localname string, mp *MessagePasser) *Connections {
 	connections := &Connections{
 		localname : localname,
 		clients: make(map[string]*Client),
 		joins: make(chan net.Conn),
 	}
 
-	go connections.Listen()
+	go connections.Listen(mp)
 	return connections
 }
 
 // Listening for new connected clients
-func (connect *Connections) Listen(){
+func (connect *Connections) Listen(mp *MessagePasser){
 	for {
 		conn := <-connect.joins
-		NewClient(conn)
+		NewClient(conn, mp)
 		//clientName, _ := bufio.NewReader(conn).ReadString('\n')
 		//fmt.Println("Client : " + clientName + " connected!")
 		//client.name = clientName
@@ -117,52 +115,72 @@ func (connect *Connections) Listen(){
 	}
 }
 
+
+type MessagePasser struct{
+	incoming chan *Message
+	connections *Connections
+	Messages map[string]chan *Message
+
+}
+
+func NewMessagePasser(localname string) *MessagePasser {
+	mp := &MessagePasser{}
+	mp.incoming = make(chan *Message)
+	mp.receiveMapping()
+	mp.listen(localname)
+	return mp
+}
+
 // The global listening go routine
-func Listen(localname string) {
-	connections = NewConnections(localname)
+func (mp *MessagePasser)listen(localname string) {
+	mp.connections = newConnections(localname, mp)
 	fmt.Println("Listening on " + localPort)
 	listener, _ := net.Listen("tcp", ":" + localPort)
 
 	for {
 		conn, _ := listener.Accept()
 		fmt.Println("New clients joined!")
-		connections.joins <- conn
+		mp.connections.joins <- conn
 	}
 }
 
 /*
-A blocking version of receive function
-Can be changed in future
+Organize the received messages into different channels in the map [kind][channel *Message]
+Store in the Message map and To be used by the upper layer handlers
  */
-func Receive() {
+func (mp *MessagePasser) receiveMapping() {
 	for {
-		data := <-Incoming
-		fmt.Println("Received data: ")
-		fmt.Println(data)
+		msg := <-mp.incoming
+
+		_, exists := mp.Messages[msg.kind]
+		if (exists == nil){
+			mp.Messages[msg.kind] = make(chan *Message)
+		}
+		mp.Messages[msg.kind] <- msg
 	}
 }
 
 /*
 Send a message
  */
-func Send(msg Message) {
-	msg.SetSrc(connections.localname)
+func (mp *MessagePasser) Send(msg Message) {
+	msg.SetSrc(mp.connections.localname)
 	dest := msg.GetDest()
-	if client, ok := connections.clients[dest]; ok {
+	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
 		client.outgoing <- msg
 	}else{
 		// Not contain
 		/* TODO: Remove code. Temporary code to demonstrate adding supernodes to DNS */
-		dns.RegisterSuperNode(dest)
+		// dns.RegisterSuperNode(dest)
 
 		// Try connecting to the peer
 		addr := dns.GetAddr(dest)
 		fmt.Println("Selecting first entry in the list. Address is "+ addr[0])
 		conn, _ := net.Dial("tcp", addr[0] + ":" + localPort)
-		client := NewClient(conn)
+		client := NewClient(conn, mp)
 		client.name = dest
-		connections.clients[dest] = client
+		mp.connections.clients[dest] = client
 		client.outgoing <- msg
 	}
 	
