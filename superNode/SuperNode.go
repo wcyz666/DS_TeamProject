@@ -5,6 +5,7 @@ import (
 
 	messagePasser "../messagePasser"
 	dns "../dnsService"
+	joinElection "../joinElection"
 )
 
 const (
@@ -24,23 +25,28 @@ func Start(){
 	_ <- nil
 }
 
+
 /**
 A sample handler: To react to all join messages (a node requests to join the network)
  */
 func Join(){
-	//fmt.Println(mp.Messages["join"])
-	channel, ok := mp.Messages["join"]
-	if (ok == false){
-		make (chan *messagePasser.Message)
+	for {
+		//fmt.Println(mp.Messages["join"])
+		channel, ok := mp.Messages["join"]
+		if (ok == false) {
+			mp.Messages["join"] = make(chan *messagePasser.Message)
+			channel = mp.Messages["join"]
+		}
+		msg := <-channel
+		//msg := <- mp.Incoming;
+		fmt.Println(msg)
+		fmt.Println("New message received! " + msg.Src + " Joined!")
+
+		go joinElection.Start(mp, msg)
+
+		// TODO: Remove
+		// Test Code
+		replyMsg := messagePasser.NewMessage(msg.Src, "ack", msg.Data)
+		mp.Send(replyMsg)
 	}
-	msg := <- channel
-	//msg := <- mp.Incoming;
-	fmt.Println(msg)
-	fmt.Println("New message received! " + msg.Src + " Joined!")
-
-	// TODO: Remove
-	// Test Code
-	replyMsg := messagePasser.NewMessage(msg.Src, "ack", msg.Data)
-	mp.Send(replyMsg)
 }
-
