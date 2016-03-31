@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"net"
 	"fmt"
-	dns "../dnsService"
 )
 const (
 	localPort = "6666"
@@ -16,6 +15,12 @@ Refer to the sample here: https://gist.github.com/drewolson/3950226
  */
 
 
+type MessagePasser struct{
+    incoming chan *Message
+    connections *Connections
+    Messages map[string]chan *Message
+
+}
 
 type Client struct {
 	name string
@@ -115,14 +120,6 @@ func (connect *Connections) Listen(mp *MessagePasser){
 	}
 }
 
-
-type MessagePasser struct{
-	incoming chan *Message
-	connections *Connections
-	Messages map[string]chan *Message
-
-}
-
 func NewMessagePasser(localname string) *MessagePasser {
 	mp := &MessagePasser{}
 	mp.incoming = make(chan *Message)
@@ -175,8 +172,8 @@ func (mp *MessagePasser) Send(msg Message) {
 		// dns.RegisterSuperNode(dest)
 
 		// Try connecting to the peer
-		addr := dns.GetAddr(dest)
-		fmt.Println("Selecting first entry in the list. Address is "+ addr[0])
+		//addr := dns.GetAddr(dest)
+		addr := dest
 		conn, _ := net.Dial("tcp", addr[0] + ":" + localPort)
 		client := NewClient(conn, mp)
 		client.name = dest
