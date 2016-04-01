@@ -12,7 +12,7 @@ import (
 	dns "./dnsService"
 	"flag"
 	//"os"
-	"fmt"
+//	"fmt"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 )
 
 func start() {
-	me := flag.String("class", "node", "the identity of the current node")
+	me := flag.String("class", "supernode", "the identity of the current node")
 
 	flag.Parse()
 

@@ -5,7 +5,7 @@ import (
 
 	dht "../dht"
 	dns "../dnsService"
-	messagePasser "../messagePasser"
+	MP "../messagePasser"
 
 	joinElection "../supernodeLib/joinElection"
 	streaming "../supernodeLib/streaming"
@@ -15,7 +15,7 @@ const (
 	localname = "DS.supernodes.com"
 )
 
-var mp *messagePasser.MessagePasser
+var mp *MP.MessagePasser
 var dHashtable *dht.DHT
 var streamHandler *streaming.StreamingHandler
 var jElection *joinElection.JoinElection
@@ -29,7 +29,7 @@ func Start() {
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
-	mp = messagePasser.NewMessagePasser(localname)
+	mp = MP.NewMessagePasser(localname)
 	fmt.Println("Message Passer Initialized!")
 
 	// Initialize all the package structs
@@ -43,7 +43,7 @@ func Start() {
 	// The map goes as  map[channelName][eventHandler]
 	// All the messages with type channelName will be put in this channel by messagePasser
 	// Then the binded handler of this channel will be called with the argument (*Message)
-	channelNames := map[string]func(*messagePasser.Message){
+	channelNames := map[string]func(*MP.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
 		"stream_start":    streamHandler.StreamStart,
@@ -59,13 +59,13 @@ func Start() {
 	// Init and listen
 	for channelName, handler := range channelNames {
 		// Init all the channels listening on
-		mp.Messages[channelName] = make(chan *messagePasser.Message)
+		mp.Messages[channelName] = make(chan *MP.Message)
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
 }
 
-func listenOnChannel(channelName string, handler func(*messagePasser.Message)) {
+func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	for {
 		//
 		msg := <-mp.Messages[channelName]

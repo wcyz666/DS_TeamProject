@@ -43,9 +43,10 @@ Here goes all the internal event handlers
 */
 
 func joinAssign(msg *MP.Message) {
-	data := msg.Data
-	// TODO: Parse the data and set the parentIP
-	fmt.Println(data)
+	// Store the parentIP
+	parentIP = msg.Src
+	// Test
+	fmt.Println("Be assigned to parent! " + parentIP)
 }
 
 func streamAssign(msg *MP.Message) {
