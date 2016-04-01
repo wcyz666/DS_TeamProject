@@ -11,12 +11,12 @@ const HASH_SIZE = 128
 type DHT struct {
 	prefixForwardingTable map[int8][]string
 	hashTable             map[string][]MemberShipInfo
-	mp 		      *messagePasser.MessagePasser
+	mp                    *messagePasser.MessagePasser
 }
 
 /* Constructor */
-func NewDHT(mp *messagePasser.MessagePasser) struct *DHT{
-	return DHT{mp: mp}
+func NewDHT(mp *messagePasser.MessagePasser) *DHT {
+	return &DHT{mp: mp}
 }
 
 /* TODO: Need to revisit data structures. Temporarily adding superNodeIp*/

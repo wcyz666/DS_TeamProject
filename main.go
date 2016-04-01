@@ -6,18 +6,32 @@ import (
 	//"fmt"
 	//"os"
 	//messagePasser "./messagePasser"
-	node "./node"
-	supernode "./superNode"
+	"./node"
+	superNode "./superNode"
 	//"fmt"
 	dns "./dnsService"
 	"flag"
 	//"os"
-
+	"fmt"
 )
 
 const (
 	bootstrap_dns = "DS.supernodes.com"
 )
+
+func start() {
+	me := flag.String("class", "node", "the identity of the current node")
+
+	flag.Parse()
+
+	if *me == "node" {
+		helloIP := dns.GetAddr(bootstrap_dns)[0]
+		node.Start()
+		node.NodeJoin(helloIP)
+	} else {
+		superNode.Start()
+	}
+}
 
 func main() {
 
@@ -36,17 +50,6 @@ func main() {
 		}
 
 	*/
-	me := flag.String("class", "node", "the identity of the current node")
 
-	flag.Parse()
-
-	if *me == "node" {
-		helloIP := dns.GetAddr(bootstrap_dns)[0]
-		node.Start()
-		node.NodeJoin(helloIP)
-	} else {
-		supernode.Start()
-	}
-
-	//
+	start()
 }

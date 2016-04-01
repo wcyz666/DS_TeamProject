@@ -9,16 +9,16 @@ import (
 
 /**
 The package takes care of all the conditions a new node join the network
- */
+*/
 
 type JoinElection struct {
 	mp *messagePasser.MessagePasser
 }
 
 /* Constructor */
-func NewJoinElection(mp *messagePasser.MessagePasser) *JoinElection{
-	j := JoinElection{mp:mp}
-	return j
+func NewJoinElection(mp *messagePasser.MessagePasser) *JoinElection {
+	j := JoinElection{mp: mp}
+	return &j
 }
 
 func (j *JoinElection) Start(msg *messagePasser.Message) {

@@ -2,11 +2,11 @@ package dnsService
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"crypto/tls"
 	"os"
 	"strings"
 )
@@ -151,7 +151,7 @@ func GetAddr(name string) []string {
 	return addrList
 }
 
-func getHttpClient() *http.Client{
+func getHttpClient() *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}

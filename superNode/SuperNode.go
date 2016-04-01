@@ -3,30 +3,26 @@ package node
 import (
 	"fmt"
 
-	dns 		"../dnsService"
-	dht 		"../dht"
-	messagePasser 	"../messagePasser"
+	dht "../dht"
+	dns "../dnsService"
+	messagePasser "../messagePasser"
 
-	joinElection 	"../supernodeLib/joinElection"
-	streamElection  "../streamElection"
-	streaming	"../supernodeLib/streaming"
-
+	joinElection "../supernodeLib/joinElection"
+	streaming "../supernodeLib/streaming"
 )
-
 
 const (
 	localname = "DS.supernodes.com"
 )
 
+var mp *messagePasser.MessagePasser
+var dHashtable *dht.DHT
+var streamHandler *streaming.StreamingHandler
+var jElection *joinElection.JoinElection
 
-var mp 	*messagePasser.MessagePasser
-var dHashtable 	*dht.DHT
-var streamHandler 	*streaming.StreamingHandler
-var jElection 	*joinElection.JoinElection
 //var sElection	*streamElection.StreamElection
 
-
-func Start(){
+func Start() {
 	// First register on the dnsService
 	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
 	dns.RegisterSuperNode(localname)
@@ -42,7 +38,6 @@ func Start(){
 	jElection = joinElection.NewJoinElection(mp)
 	//sElection = streamElection.NewStreamElection(mp)
 
-
 	// Define all the channel names and the binded functions
 	// TODO: Register your channel name and binded eventhandlers here
 	// The map goes as  map[channelName][eventHandler]
@@ -51,9 +46,9 @@ func Start(){
 	channelNames := map[string]func(*messagePasser.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
-		"stream_start":	streamHandler.StreamStart,
-		"stream_get_list"	: streamHandler.StreamGetList,
-		"stream_join":	streamHandler.StreamJoin,
+		"stream_start":    streamHandler.StreamStart,
+		"stream_get_list": streamHandler.StreamGetList,
+		"stream_join":     streamHandler.StreamJoin,
 
 		"join":          jElection.Start,
 		"join_election": jElection.Receive,
@@ -74,6 +69,6 @@ func listenOnChannel(channelName string, handler func(*messagePasser.Message)) {
 	for {
 		//
 		msg := <-mp.Messages[channelName]
-		go handler(msg, mp)
+		go handler(msg)
 	}
 }
