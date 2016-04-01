@@ -2,9 +2,10 @@ package node
 
 import (
 	//dns "../dnsService"
+	nameService "../localNameService"
 	MP "../messagePasser/"
-	"fmt"
 	streamElection "../streamElection"
+	"fmt"
 )
 
 const (
@@ -19,7 +20,7 @@ var sElection *streamElection.StreamElection
 
 /**
 All internal helper functions
- */
+*/
 func heartBeat() {
 
 }
@@ -33,36 +34,35 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	for {
 		//
 		msg := <-mp.Messages[channelName]
-		go handler(msg, mp)
+		go handler(msg)
 	}
 }
 
 /**
 Here goes all the internal event handlers
- */
+*/
 
-func joinAssign(msg *MP.Message){
+func joinAssign(msg *MP.Message) {
 	data := msg.Data
 	// TODO: Parse the data and set the parentIP
 	fmt.Println(data)
 }
 
-func streamAssign(msg *MP.Message){
+func streamAssign(msg *MP.Message) {
 
 }
 
-func programListParser(msg *MP.Message){
+func programListParser(msg *MP.Message) {
 
 }
-
-
 
 /**
 Here goes all the apis to be called by the application
- */
+*/
 
 func Start() {
-	setLocalName("bob")
+
+	setLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(localName)
 	go heartBeat()
 
@@ -75,9 +75,9 @@ func Start() {
 	// All the messages with type channelName will be put in this channel by messagePasser
 	// Then the binded handler of this channel will be called with the argument (*Message)
 	channelNames := map[string]func(*MP.Message){
-		"join_assign":	joinAssign,
-		"stream_assign": streamAssign,
-		"program_list": programListParser,
+		"join_assign":     joinAssign,
+		"stream_assign":   streamAssign,
+		"program_list":    programListParser,
 		"election_stream": sElection.Receive,
 	}
 
@@ -100,7 +100,7 @@ func NodeJoin(IP string) {
 }
 
 /* Start Streaming */
-func StreamStart(){
+func StreamStart() {
 
 }
 
@@ -115,7 +115,7 @@ func StreamJoin(programId string) {
 }
 
 /* Stream Quit */
-func StreamQuit(){
+func StreamQuit() {
 
 }
 
