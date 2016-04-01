@@ -23,7 +23,7 @@ var mp 	*messagePasser.MessagePasser
 var dHashtable 	*dht.DHT
 var streamHandler 	*streaming.StreamingHandler
 var jElection 	*joinElection.JoinElection
-var sElection	*streamElection.StreamElection
+//var sElection	*streamElection.StreamElection
 
 
 func Start(){
@@ -40,7 +40,7 @@ func Start(){
 	dHashtable = dht.NewDHT(mp)
 	streamHandler = streaming.NewStreamingHandler(dHashtable, mp)
 	jElection = joinElection.NewJoinElection(mp)
-	sElection = streamElection.NewStreamElection(mp)
+	//sElection = streamElection.NewStreamElection(mp)
 
 
 	// Define all the channel names and the binded functions
@@ -53,12 +53,12 @@ func Start(){
 
 		"stream_start":	streamHandler.StreamStart,
 		"stream_get_list"	: streamHandler.StreamGetList,
-		"stream_join":	streamHandler.StreamJoint,
+		"stream_join":	streamHandler.StreamJoin,
 
 		"join":          jElection.Start,
 		"join_election": jElection.Receive,
-		
-		"stream_election":	sElection.Receive,
+
+		//"stream_election":	sElection.Receive,
 	}
 
 	// Init and listen

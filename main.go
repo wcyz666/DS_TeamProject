@@ -9,10 +9,14 @@ import (
 	node "./node"
 	supernode "./superNode"
 	//"fmt"
-
+	dns "./dnsService"
 	"flag"
 	//"os"
 
+)
+
+const (
+	bootstrap_dns = "DS.supernodes.com"
 )
 
 func main() {
@@ -37,7 +41,9 @@ func main() {
 	flag.Parse()
 
 	if *me == "node" {
+		helloIP := dns.GetAddr(bootstrap_dns)[0]
 		node.Start()
+		node.NodeJoin(helloIP)
 	} else {
 		supernode.Start()
 	}

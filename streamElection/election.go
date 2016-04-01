@@ -21,6 +21,12 @@ func NewStreamElection(mp *messagePasser.MessagePasser) *StreamElection{
 	return j
 }
 
+/* Receive a message asking to start the election */
+func (*StreamElection) ElectionStart(mp *messagePasser.Message) {
+
+}
+
+
 /* Deal with the election messages of streaming */
 func (*StreamElection) Receive(mp *messagePasser.Message) {
 

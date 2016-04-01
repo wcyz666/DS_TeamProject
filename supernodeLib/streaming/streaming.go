@@ -30,8 +30,8 @@ func (sHandler *StreamingHandler) StreamGetList(msg *messagePasser.Message){
 }
 
 
-/* A node asks to join a certain streaming group */
-func (sHandler *StreamingHandler) StreamJoint(msg *messagePasser.Message){
+/* A child node asks to join a certain streaming group */
+func (sHandler *StreamingHandler) StreamJoin(msg *messagePasser.Message){
 
 }
 
