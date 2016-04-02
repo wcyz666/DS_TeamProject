@@ -5,6 +5,7 @@ import (
 
 	messagePasser "../messagePasser"
 	//dns "../dnsService"
+	Node "../node"
 )
 
 /**
@@ -27,6 +28,6 @@ func (*StreamElection) ElectionStart(mp *messagePasser.Message) {
 }
 
 /* Deal with the election messages of streaming */
-func (*StreamElection) Receive(mp *messagePasser.Message) {
+func (*StreamElection) Receive(mp *messagePasser.Message, nodeContext *Node.NodeContext) {
 
 }

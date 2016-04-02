@@ -13,10 +13,15 @@ const (
 	HeartBeatPort = 8888
 )
 
-var mp *MP.MessagePasser
-var localName string
-var parentIP string
-var sElection *streamElection.StreamElection
+
+type NodeContext struct {
+	mp *MP.MessagePasser
+	localName string
+	parentIP string
+	sElection *streamElection.StreamElection
+}
+
+var nodeContext *NodeContext
 
 /**
 All internal helper functions
@@ -25,15 +30,15 @@ func heartBeat() {
 
 }
 
-func setLocalName(name string) {
-	localName = name
+func (nodeContext *NodeContext) setLocalName(name string) {
+	nodeContext.localName = name
 }
 
 /* Event handler distributer*/
-func listenOnChannel(channelName string, handler func(*MP.Message)) {
+func listenOnChannel(channelName string, handler func(*MP.Message, nodeContext *NodeContext)) {
 	for {
 		//
-		msg := <-mp.Messages[channelName]
+		msg := <- nodeContext.mp.Messages[channelName]
 		go handler(msg)
 	}
 }
@@ -42,18 +47,18 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 Here goes all the internal event handlers
 */
 
-func joinAssign(msg *MP.Message) {
+func joinAssign(msg *MP.Message, nodeContext *NodeContext) {
 	// Store the parentIP
-	parentIP = msg.Src
+	nodeContext.parentIP = msg.Src
 	// Test
-	fmt.Println("Be assigned to parent! " + parentIP)
+	fmt.Println("Be assigned to parent! " + nodeContext.parentIP)
 }
 
-func streamAssign(msg *MP.Message) {
+func streamAssign(msg *MP.Message, nodeContext *NodeContext) {
 
 }
 
-func programListParser(msg *MP.Message) {
+func programListParser(msg *MP.Message, nodeContext *NodeContext) {
 
 }
 
@@ -62,30 +67,30 @@ Here goes all the apis to be called by the application
 */
 
 func Start() {
-
-	setLocalName(nameService.GetLocalName())
-	mp = MP.NewMessagePasser(localName)
+	nodeContext = new(NodeContext)
+	nodeContext.setLocalName(nameService.GetLocalName())
+	nodeContext.mp = MP.NewMessagePasser(nodeContext.localName)
 	go heartBeat()
 
 	// Initialize all the package structs
-	sElection = streamElection.NewStreamElection(mp)
+	nodeContext.sElection = streamElection.NewStreamElection(nodeContext.mp)
 
 	// Define all the channel names and the binded functions
 	// TODO: Register your channel name and binded eventhandlers here
 	// The map goes as  map[channelName][eventHandler]
 	// All the messages with type channelName will be put in this channel by messagePasser
 	// Then the binded handler of this channel will be called with the argument (*Message)
-	channelNames := map[string]func(*MP.Message){
+	channelNames := map[string]func(*MP.Message, *NodeContext){
 		"join_assign":     joinAssign,
 		"stream_assign":   streamAssign,
 		"program_list":    programListParser,
-		"election_stream": sElection.Receive,
+		"election_stream": nodeContext.sElection.Receive,
 	}
 
 	// Init and listen
 	for channelName, handler := range channelNames {
 		// Init all the channels listening on
-		mp.Messages[channelName] = make(chan *MP.Message)
+		nodeContext.mp.Messages[channelName] = make(chan *MP.Message)
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
@@ -95,8 +100,8 @@ func Start() {
 /* Join the network */
 func NodeJoin(IP string) {
 	helloMsg := MP.NewMessage(IP, "join", "hello, my name is Bay Max, you personal healthcare companion")
-	mp.Send(helloMsg)
-	echoMsg := <-mp.Messages["ack"]
+	nodeContext.mp.Send(helloMsg)
+	echoMsg := <- nodeContext.mp.Messages["ack"]
 	fmt.Println(echoMsg)
 }
 
