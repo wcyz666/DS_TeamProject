@@ -35,11 +35,11 @@ func (nodeContext *NodeContext) setLocalName(name string) {
 }
 
 /* Event handler distributer*/
-func listenOnChannel(channelName string, handler func(*MP.Message, nodeContext *NodeContext)) {
+func listenOnChannel(channelName string, handler func(*MP.Message, *NodeContext)) {
 	for {
 		//
 		msg := <- nodeContext.mp.Messages[channelName]
-		go handler(msg)
+		go handler(msg, nodeContext)
 	}
 }
 
@@ -59,6 +59,10 @@ func streamAssign(msg *MP.Message, nodeContext *NodeContext) {
 }
 
 func programListParser(msg *MP.Message, nodeContext *NodeContext) {
+
+}
+
+func receiveReceive(msg *MP.Message, nodeContext *NodeContext) {
 
 }
 
@@ -84,7 +88,7 @@ func Start() {
 		"join_assign":     joinAssign,
 		"stream_assign":   streamAssign,
 		"program_list":    programListParser,
-		"election_stream": nodeContext.sElection.Receive,
+		"election_stream": receiveReceive,
 	}
 
 	// Init and listen

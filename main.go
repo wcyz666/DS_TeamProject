@@ -7,7 +7,7 @@ import (
 	//"os"
 	//messagePasser "./messagePasser"
 	"./node"
-	superNode "./superNode"
+	SuperNode "./superNode"
 	//"fmt"
 	dns "./dnsService"
 	"flag"
@@ -29,7 +29,7 @@ func start() {
 		node.Start()
 		node.NodeJoin(helloIP)
 	} else {
-		superNode.Start()
+		SuperNode.Start()
 	}
 }
 
