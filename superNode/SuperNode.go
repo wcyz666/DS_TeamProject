@@ -3,12 +3,13 @@ package node
 import (
 	"fmt"
 
-	dht "../dht"
+	Dht "../dht"
 	dns "../dnsService"
 	MP "../messagePasser"
-
-	joinElection "../supernodeLib/joinElection"
-	streaming "../supernodeLib/streaming"
+	SNC "./superNodeContext/"
+	JoinElection "../supernodeLib/joinElection"
+	Streaming "../supernodeLib/streaming"
+	"time"
 )
 
 const (
@@ -16,9 +17,10 @@ const (
 )
 
 var mp *MP.MessagePasser
-var dHashtable *dht.DHT
-var streamHandler *streaming.StreamingHandler
-var jElection *joinElection.JoinElection
+var dHashtable *Dht.DHT
+var streamHandler *Streaming.StreamingHandler
+var jElection *JoinElection.JoinElection
+var superNodeContext *SNC.SuperNodeContext
 
 //var sElection	*streamElection.StreamElection
 
@@ -32,10 +34,14 @@ func Start() {
 	mp = MP.NewMessagePasser(localname)
 	fmt.Println("Message Passer Initialized!")
 
+	// Initialize SuperNodeContext
+	// Currently SuperNodeContext contains all info of the assigned child nodes
+	superNodeContext = SNC.NewSuperNodeContext()
+
 	// Initialize all the package structs
-	dHashtable = dht.NewDHT(mp)
-	streamHandler = streaming.NewStreamingHandler(dHashtable, mp)
-	jElection = joinElection.NewJoinElection(mp)
+	dHashtable = Dht.NewDHT(mp)
+	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
+	jElection = JoinElection.NewJoinElection(mp)
 	//sElection = streamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
@@ -49,10 +55,11 @@ func Start() {
 		"stream_start":    streamHandler.StreamStart,
 		"stream_get_list": streamHandler.StreamGetList,
 		"stream_join":     streamHandler.StreamJoin,
-
-		"join":          jElection.Start,
+		"heartbeat": heartBeatHandler,
+		"hello":          jElection.Start,
+		"join": 			newChild,
 		"join_election": jElection.Receive,
-
+		"error": errorHandler,
 		//"stream_election":	sElection.Receive,
 	}
 
@@ -71,4 +78,21 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 		msg := <-mp.Messages[channelName]
 		go handler(msg)
 	}
+}
+
+func errorHandler(*MP.Message)  {
+
+}
+
+func heartBeatHandler(*MP.Message)  {
+	time.Sleep(10 * time.Second)
+	hasDead, deadNodes := superNodeContext.CheckDead()
+	if hasDead {
+		superNodeContext.RemoveNodes(deadNodes)
+	}
+	superNodeContext.ResetState()
+}
+
+func newChild(msg *MP.Message)  {
+	superNodeContext.AddNode(msg.SrcName)
 }
