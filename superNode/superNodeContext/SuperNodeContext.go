@@ -10,6 +10,10 @@ type SuperNodeContext struct {
     nodes map[string]*nodeInfo
 }
 
+func (sc *SuperNodeContext) GetNodeCount(nodeName string) int {
+    return len(sc.nodes)
+}
+
 func NewSuperNodeContext() (* SuperNodeContext) {
     nodes := make(map[string]*nodeInfo)
     return &SuperNodeContext{nodes : nodes, LocalName: LNS.GetLocalName()}

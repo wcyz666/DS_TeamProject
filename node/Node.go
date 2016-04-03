@@ -92,7 +92,7 @@ func Start(IPs []string) {
 	// processed in error handler.
 	// init_fail: used in hello phase
 	// exit: used when all supernode cannot be connected.
-	mp.AddMappings([]string{"exit", "init_fail"})
+	mp.AddMappings([]string{"exit", "init_fail", "ack"})
 
 	// Initialize all the package structs
 	sElection = StreamElection.NewStreamElection(mp)
@@ -142,7 +142,7 @@ func nodeJoin(IPs []string) {
 			helloMsg := MP.NewMessage(IPs[i], "", "join", "hello, my name is Bay Max, you personal healthcare companion")
 			mp.Send(helloMsg)
 		case msg := <- mp.Messages["ack"]:
-			fmt.Println(msg)
+			fmt.Printf("Node: receiving ACK message [%s]\n", msg)
 			nodeContext.ParentIP = msg.Src
 			nodeContext.ParentName = msg.SrcName
 			go heartBeat()
