@@ -24,7 +24,7 @@ var exitChannal chan int
 All internal helper functions
 */
 func heartBeat() {
-
+	mp.Send(MP.NewMessage(nodeContext.ParentIP, "heartbeat", "Hello, this is a heartbeat message."))
 }
 
 
@@ -87,7 +87,6 @@ func Start(IPs []string) {
 	// init_fail: used in hello phase
 	// exit: used when all supernode cannot be connected.
 	mp.AddMappings([]string{"exit", "init_fail"})
-	go heartBeat()
 
 	// Initialize all the package structs
 	sElection = StreamElection.NewStreamElection(mp)
@@ -138,6 +137,8 @@ func nodeJoin(IPs []string) {
 			mp.Send(helloMsg)
 		case msg := <- mp.Messages["ack"]:
 			fmt.Println(msg)
+			nodeContext.ParentIP = msg.Src
+			go heartBeat()
 		}
 	}
 

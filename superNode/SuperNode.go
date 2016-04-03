@@ -99,5 +99,6 @@ func heartBeatHandler(*MP.Message)  {
 }
 
 func newChild(msg *MP.Message)  {
+	mp.Send(MP.NewMessage(msg.Src, "ack", "this is an ACK message"))
 	superNodeContext.AddNode(msg.SrcName)
 }
