@@ -55,14 +55,20 @@ func Start() {
 		"join_election": jElection.Receive,
 
 		/* DHT call backs */
-		"join_dht":            		dHashtable.Join,
+		"join_dht_req":            	dHashtable.HandleJoinReq,
+		"join_dht_res":             dHashtable.HandleJoinRes,
+		"join_dht_complete":        dHashtable.HandleJoinComplete,  // To indicate successor about completion of join
+		"join_dht_notify":          dHashtable.HandleJoinNotify,    // To indicate predecessor about completion of join
 		"leave_dht":                dHashtable.Leave,
-		"create_LS_group":          dHashtable.CreateLSGroup,
+		"create_LS_group_req":      dHashtable.HandleCreateLSGroupReq,
+		"create_LS_group_res":      dHashtable.HandleCreateLSGroupRes,
 		"add_streamer":             dHashtable.AddStreamer,
 		"remove_streamer":          dHashtable.RemoveStreamer,
 		"delete_LS_group":          dHashtable.DeleteLSGroup,
+		/* TODO probably we can merge this functionality to handle Join Request/Response */
         "successor_info_req":       dHashtable.HandleSuccessorInfoReq,
 		"successor_info_res":       dHashtable.HandleSuccessorInfoRes,
+
 		//"stream_election":	sElection.Receive,
 	}
 

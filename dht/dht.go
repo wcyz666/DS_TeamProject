@@ -10,7 +10,7 @@ import (
 /* Planning to use MD5 to generate the Hash. Hence 128 bit */
 const HASH_KEY_SIZE = 128
 
-type NodeEntry struct {
+type Node struct {
 	nodeKey string /*TODO we may need it for optimizing the node to be stored in this slot */
 	IpAddress string
 	port int
@@ -19,9 +19,10 @@ type NodeEntry struct {
 /* Initial DHT version contains details of next and previous nodes */
 type DHT struct {
 	/* We interpret Hash value as a hexadecimal stream so each digit is 4 bit long */
-	prefixForwardingTable [HASH_KEY_SIZE/4][HASH_KEY_SIZE/4]NodeEntry
+	prefixForwardingTable [HASH_KEY_SIZE/4][HASH_KEY_SIZE/4]Node
 	hashTable             map[string][]MemberShipInfo
 	mp                    *MP.MessagePasser
+	nodeKey               string
 }
 
 
@@ -85,7 +86,7 @@ func (dht *DHT) removeData(key string, data MemberShipInfo) {
 }
 
 /* Given a key, function will check whether key is within node's key space */
-func (dht *DHT) isKeyPresentInKeySpace() bool {
+func (dht *DHT) isKeyPresentInKeySpace(key string) bool {
 	return true
 }
 
@@ -95,6 +96,8 @@ func (dht *DHT) isKeyPresentInKeySpace() bool {
 func NewDHT(mp *MP.MessagePasser) *DHT {
 	var dht = DHT{mp: mp}
 	dht.hashTable = make(map[string][]MemberShipInfo)
+	/* Use hash of mac address of the super node as the key for partitioning key space */
+	dht.nodeKey = lns.GetLocalName()
 	dht.createOrJoinRing()
 	return &dht
 }
@@ -113,7 +116,7 @@ func getFirstNonSelfIpAddr() (string){
 	return ""
 }
 
-func (dht *DHT) findSuccessor(key string) (*NodeEntry){
+func (dht *DHT) findSuccessor(key string) (*Node){
 	return nil
 }
 
@@ -124,27 +127,67 @@ func (dht *DHT) createOrJoinRing(){
 		 * Apocalypse, the first mutant. Create a DHT*/
 
 	} else {
-		/* Use hash of mac address of the super node as the key for partitioning key space */
-		key := lns.GetLocalName()
-
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		kind := "successor_info_req"
-		dht.mp.Send(MP.NewMessage(ipAddr, kind, MP.EncodeData(key)))
+		dht.mp.Send(MP.NewMessage(ipAddr, "successor_info_req", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
 	}
 }
 
-func (dht *DHT) Join(msg *MP.Message) {
+func (dht *DHT) HandleJoinReq(msg *MP.Message) {
+	var joinReq JoinRequest
+	MP.DecodeData(&joinReq,msg.Data)
 
-	/* give */
+	if (false == dht.isKeyPresentInKeySpace(joinReq.key)){
+		/* Find successor node and send it in the response */
+	}
+
+	/* 1. Retrieve entries which are less than key and create a map out of it.*/
+
+	/* 2. Send the map as the response to caller */
+
+	/* 3. Send failure status or redirect status if key is no longer managed by you */
+
+}
+
+func (dht *DHT) HandleJoinRes(msg *MP.Message) {
+	var joinRes JoinResponse
+	MP.DecodeData(&joinRes,msg.Data)
+
+	if (joinRes.status == FAILURE){
+		/* Probably initial node did not contain up-to-date data and gave us wrong
+		 * successor. Use the one provided by this node */
+	}
+	/* 1. Add received map to local DHT table */
+
+	/* 2. Send Join complete to successor */
+	dht.mp.Send(MP.NewMessage(msg.Src, "join_dht_complete", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
+
+	/* 3. Send join notification to predecessor */
+	dht.mp.Send(MP.NewMessage(joinRes.predecessor.IpAddress, "join_dht_notify", MP.EncodeData(JoinNotify{dht.nodeKey})))
+}
+
+func (dht *DHT) HandleJoinComplete(msg *MP.Message) {
+
+	/* 1. Remove the transferred key space from local hash table */
+
+	/* 2. Update leaf table */
+}
+
+func (dht *DHT) HandleJoinNotify(msg *MP.Message) {
+
+	/* Update leaf table */
 }
 
 func (dht *DHT) Leave(msg *MP.Message) {
 
 }
 
-func (dht *DHT) CreateLSGroup(msg *MP.Message) {
+func (dht *DHT) HandleCreateLSGroupReq(msg *MP.Message) {
+
+}
+
+func (dht *DHT) HandleCreateLSGroupRes(msg *MP.Message) {
 
 }
 
@@ -161,26 +204,34 @@ func (dht *DHT) DeleteLSGroup(msg *MP.Message){
 }
 
 func (dht *DHT) HandleSuccessorInfoReq(msg *MP.Message){
-	var key string
-	MP.DecodeData(&key,msg.Data)
+	var sucInfoReq SuccessorInfoReq
+	MP.DecodeData(&sucInfoReq,msg.Data)
 	/* TODO Do we need to trigger findSuccessor in a separate thread ? */
-	successor := dht.findSuccessor(key)
+	successor := dht.findSuccessor(sucInfoReq.key)
+
+	var successorInfoRes = SuccessorInfoRes{SUCCESS,*successor}
 
 	if (nil == successor){
-		panic("Successor cannot be null")
+		successorInfoRes.status = FAILURE
 	}
 
-	kind := "successor_info_req"
-	dht.mp.Send(MP.NewMessage(msg.Src, kind, MP.EncodeData(key)))
-
+	dht.mp.Send(MP.NewMessage(msg.Src, "successor_info_res", MP.EncodeData(successorInfoRes)))
 }
 
 func (dht *DHT) HandleSuccessorInfoRes(msg *MP.Message){
+	var successorInfoRes SuccessorInfoRes
+	MP.DecodeData(&successorInfoRes,msg.Data)
 
+	if (successorInfoRes.status == FAILURE){
+		panic("Successor Information Request Failed")
+	}
+
+	/* Send join request to successor */
+	dht.mp.Send(MP.NewMessage(successorInfoRes.node.IpAddress, "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
 }
 
 func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, bool) {
-	if dht.isKeyPresentInKeySpace() {
+	if dht.isKeyPresentInKeySpace(streamingGroupID) {
 		return dht.getData(streamingGroupID)
 	} else {
 		/* TODO fetch data from other node */
@@ -189,7 +240,7 @@ func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, bool) {
 }
 
 func (dht *DHT) Append(streamingGroupID string, data MemberShipInfo) {
-	if dht.isKeyPresentInKeySpace() {
+	if dht.isKeyPresentInKeySpace(streamingGroupID) {
 		dht.appendData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
@@ -197,7 +248,7 @@ func (dht *DHT) Append(streamingGroupID string, data MemberShipInfo) {
 }
 
 func (dht *DHT) Put(streamingGroupID string, data []MemberShipInfo) {
-	if dht.isKeyPresentInKeySpace() {
+	if dht.isKeyPresentInKeySpace(streamingGroupID) {
 		dht.putData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
@@ -205,7 +256,7 @@ func (dht *DHT) Put(streamingGroupID string, data []MemberShipInfo) {
 }
 
 func (dht *DHT) Delete(streamingGroupID string) {
-	if dht.isKeyPresentInKeySpace() {
+	if dht.isKeyPresentInKeySpace(streamingGroupID) {
 		dht.deleteEntry(streamingGroupID)
 	} else {
 		/* TODO send update to other node */
@@ -213,7 +264,7 @@ func (dht *DHT) Delete(streamingGroupID string) {
 }
 
 func (dht *DHT) Remove(streamingGroupID string, data MemberShipInfo) {
-	if dht.isKeyPresentInKeySpace() {
+	if dht.isKeyPresentInKeySpace(streamingGroupID) {
 		dht.removeData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
