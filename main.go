@@ -25,9 +25,8 @@ func start() {
 	flag.Parse()
 
 	if *me == "node" {
-		helloIP := dns.GetAddr(bootstrap_dns)[0]
-		node.Start()
-		node.NodeJoin(helloIP)
+		helloIPs := dns.GetAddr(bootstrap_dns)
+		node.Start(helloIPs)
 	} else {
 		SuperNode.Start()
 	}
