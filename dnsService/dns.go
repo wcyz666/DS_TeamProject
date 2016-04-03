@@ -51,7 +51,7 @@ func ExternalIP() (string, error) {
 	return strings.TrimSpace(string(IP[:n])), err
 }
 
-func isIpAlreadyRegistered(ipList []string, curIP string) bool {
+func IsIpAlreadyRegistered(ipList []string, curIP string) bool {
 	for _, ipAddr := range ipList {
 		if ipAddr == curIP {
 			return true
@@ -60,13 +60,20 @@ func isIpAlreadyRegistered(ipList []string, curIP string) bool {
 	return false
 }
 
+/* Just like Apocolyse who is believed to be the first mutant, you are the first node
+ * in the network. So, you need to create the DHT. */
+func AmIApocolypse(name string)(bool){
+	curAddrList := GetAddr(name)
+	extIP, _ := ExternalIP()
+	return ((len(curAddrList) == 1) && IsIpAlreadyRegistered(curAddrList,extIP))
+}
 /* Name of the domain which is used to track super nodes.  Currently, we are using
    p2plive.phani.me as the name */
 func RegisterSuperNode(name string) {
 	curAddrList := GetAddr(name)
 	extIP, _ := ExternalIP()
 
-	if isIpAlreadyRegistered(curAddrList, extIP) {
+	if IsIpAlreadyRegistered(curAddrList, extIP) {
 		fmt.Println("Node already registered as Super Node")
 		return
 	}

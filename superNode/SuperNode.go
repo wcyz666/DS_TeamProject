@@ -6,6 +6,7 @@ import (
 	dht "../dht"
 	dns "../dnsService"
 	MP "../messagePasser"
+	config "../config"
 
 	joinElection "../supernodeLib/joinElection"
 	streaming "../supernodeLib/streaming"
@@ -25,7 +26,7 @@ var jElection *joinElection.JoinElection
 func Start() {
 	// First register on the dnsService
 	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
-	dns.RegisterSuperNode(localname)
+	dns.RegisterSuperNode(config.BootstrapDomainName)
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
@@ -53,6 +54,15 @@ func Start() {
 		"join":          jElection.Start,
 		"join_election": jElection.Receive,
 
+		/* DHT call backs */
+		"join_dht":            		dHashtable.Join,
+		"leave_dht":                dHashtable.Leave,
+		"create_LS_group":          dHashtable.CreateLSGroup,
+		"add_streamer":             dHashtable.AddStreamer,
+		"remove_streamer":          dHashtable.RemoveStreamer,
+		"delete_LS_group":          dHashtable.DeleteLSGroup,
+        "successor_info_req":       dHashtable.HandleSuccessorInfoReq,
+		"successor_info_res":       dHashtable.HandleSuccessorInfoRes,
 		//"stream_election":	sElection.Receive,
 	}
 

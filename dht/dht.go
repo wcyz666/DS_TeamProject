@@ -1,23 +1,30 @@
 package dht
 
 import (
-	messagePasser "../messagePasser"
+	MP "../messagePasser"
+	dns "../dnsService"
+	config "../config"
+	lns "../localNameService"
 )
 
 /* Planning to use MD5 to generate the Hash. Hence 128 bit */
-const HASH_SIZE = 128
+const HASH_KEY_SIZE = 128
+
+type NodeEntry struct {
+	nodeKey string /*TODO we may need it for optimizing the node to be stored in this slot */
+	IpAddress string
+	port int
+}
 
 /* Initial DHT version contains details of next and previous nodes */
 type DHT struct {
-	prefixForwardingTable map[int8][]string
+	/* We interpret Hash value as a hexadecimal stream so each digit is 4 bit long */
+	prefixForwardingTable [HASH_KEY_SIZE/4][HASH_KEY_SIZE/4]NodeEntry
 	hashTable             map[string][]MemberShipInfo
-	mp                    *messagePasser.MessagePasser
+	mp                    *MP.MessagePasser
 }
 
-/* Constructor */
-func NewDHT(mp *messagePasser.MessagePasser) *DHT {
-	return &DHT{mp: mp}
-}
+
 
 /* TODO: Need to revisit data structures. Temporarily adding superNodeIp*/
 type MemberShipInfo struct {
@@ -84,15 +91,90 @@ func (dht *DHT) isKeyPresentInKeySpace() bool {
 
 /* Public Methods */
 
-func (dht *DHT) Initialize() {
+/* Constructor */
+func NewDHT(mp *MP.MessagePasser) *DHT {
+	var dht = DHT{mp: mp}
 	dht.hashTable = make(map[string][]MemberShipInfo)
+	dht.createOrJoinRing()
+	return &dht
 }
 
-func (dht *DHT) Join() {
+func getFirstNonSelfIpAddr() (string){
+	curAddrList := dns.GetAddr(config.BootstrapDomainName)
+	extIP, _ := dns.ExternalIP()
+
+	for _, ipAddr := range curAddrList {
+		if ipAddr == extIP {
+			continue
+		} else{
+			return ipAddr
+		}
+	}
+	return nil
+}
+
+func (dht *DHT) findSuccessor(key string) (*NodeEntry){
+	return nil
+}
+
+func (dht *DHT) createOrJoinRing(){
+	ipAddr := getFirstNonSelfIpAddr()
+	if (nil == ipAddr){
+		/* No entries exist or your are the only one. This means you are like
+		 * Apocalypse, the first mutant. Create a DHT*/
+
+	} else {
+		/* Use hash of mac address of the super node as the key for partitioning key space */
+		key := lns.GetLocalName()
+
+		/* Send a message to one of the super nodes requesting to provide successor node's information
+		 * based on key provided
+		 */
+		kind := "successor_info_req"
+		dht.mp.Send(MP.NewMessage(ipAddr, kind, key))
+	}
+}
+
+func (dht *DHT) Join(msg *MP.Message) {
+
+	/* give */
+}
+
+func (dht *DHT) Leave(msg *MP.Message) {
 
 }
 
-func (dht *DHT) Leave() {
+func (dht *DHT) CreateLSGroup(msg *MP.Message) {
+
+}
+
+func (dht *DHT) AddStreamer(msg *MP.Message){
+
+}
+
+func (dht *DHT) RemoveStreamer(msg *MP.Message){
+
+}
+
+func (dht *DHT) DeleteLSGroup(msg *MP.Message){
+
+}
+
+func (dht *DHT) HandleSuccessorInfoReq(msg *MP.Message){
+	key := msg.Data
+	/* TODO Do we need to trigger findSuccessor in a separate thread ? */
+	successor := dht.findSuccessor(key)
+
+	if (nil == successor){
+		panic("Successor cannot be null")
+	}
+
+	kind := "successor_info_req"
+	dht.mp.Send(MP.NewMessage(msg.Src, kind, key))
+
+}
+
+func (dht *DHT) HandleSuccessorInfoRes(msg *MP.Message){
 
 }
 
