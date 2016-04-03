@@ -11,10 +11,10 @@ type Message struct {
 	Src     string
 	SrcName string
 	Kind    string
-	Data    string
+	Data    [] byte
 }
 
-func NewMessage(dest string, kind string, data string) Message {
+func NewMessage(dest string, kind string, data [] byte) Message {
 	msg := Message{Dest: dest, Kind: kind, Data: data}
 	return msg
 }
@@ -84,10 +84,27 @@ func (d *Message) Deserialize(buffer []byte) error {
 	return err
 }
 
+func EncodeData(data interface {})([]byte){
+	var buffer = new(bytes.Buffer)
+	enc := gob.NewEncoder(buffer)
+	err := enc.Encode(data)
+	if (err != nil){
+		panic(err)
+	}
+	return buffer.Bytes()
+}
+
+func DecodeData(decData interface {}, encData[] byte)(error){
+	buf := bytes.NewBuffer(encData)
+	dec := gob.NewDecoder(buf)
+	err := dec.Decode(decData)
+	return err
+}
+
 func main() {
 
 	// An example on how to use the serialize/deserialize feature
-	msg := Message{Dest: "bob", Src: "alice", Data: "hi!"}
+	msg := Message{Dest: "bob", Src: "alice", Data: EncodeData("hi!")}
 	// Serialize msg into bytes.Buffer
 	buffer, _ := msg.Serialize()
 	fmt.Println(buffer)
@@ -97,4 +114,7 @@ func main() {
 	fmt.Println(msg2)
 	msg2.Deserialize(buffer)
 	fmt.Println(msg2)
+
+	var strData string
+	DecodeData(&strData,msg2.Data)
 }

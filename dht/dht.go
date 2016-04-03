@@ -131,7 +131,7 @@ func (dht *DHT) createOrJoinRing(){
 		 * based on key provided
 		 */
 		kind := "successor_info_req"
-		dht.mp.Send(MP.NewMessage(ipAddr, kind, key))
+		dht.mp.Send(MP.NewMessage(ipAddr, kind, MP.EncodeData(key)))
 	}
 }
 
@@ -161,7 +161,8 @@ func (dht *DHT) DeleteLSGroup(msg *MP.Message){
 }
 
 func (dht *DHT) HandleSuccessorInfoReq(msg *MP.Message){
-	key := msg.Data
+	var key string
+	MP.DecodeData(&key,msg.Data)
 	/* TODO Do we need to trigger findSuccessor in a separate thread ? */
 	successor := dht.findSuccessor(key)
 
@@ -170,7 +171,7 @@ func (dht *DHT) HandleSuccessorInfoReq(msg *MP.Message){
 	}
 
 	kind := "successor_info_req"
-	dht.mp.Send(MP.NewMessage(msg.Src, kind, key))
+	dht.mp.Send(MP.NewMessage(msg.Src, kind, MP.EncodeData(key)))
 
 }
 

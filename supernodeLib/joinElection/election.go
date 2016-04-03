@@ -30,7 +30,7 @@ func (j *JoinElection) Start(msg *MP.Message) {
 	// Send assign message
 	childNodeAddr := msg.Src
 	kind := "join_assign"
-	j.mp.Send(MP.NewMessage(childNodeAddr, kind, "hehehe"))
+	j.mp.Send(MP.NewMessage(childNodeAddr, kind, MP.EncodeData("hehehe")))
 }
 
 func (j *JoinElection) Receive(msg *MP.Message) {

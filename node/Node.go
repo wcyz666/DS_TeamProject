@@ -121,20 +121,22 @@ func Start(IPs []string) {
 func nodeJoin(IPs []string) {
 	//Send hello messages until find out a working supernode
 	i := 0
-	helloMsg := MP.NewMessage(IPs[i], "join", "hello, my name is Bay Max, you personal healthcare companion")
+	helloMsg := MP.NewMessage(IPs[i], "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(helloMsg)
 	for {
 		select {
 		case err := <-mp.Messages["init_fail"]:
 			// wait and retry the next
-			fmt.Printf("Connetion to spernode failed: %s\n", err.Data)
+			var errStr string;
+			MP.DecodeData(&errStr,err.Data)
+			fmt.Printf("Connetion to spernode failed: %s\n", errStr)
 			i += 1
 			if (i == len(IPs)) {
-				exitMsg := MP.NewMessage("self", "exit", "All supernodes are down, exit")
+				exitMsg := MP.NewMessage("self", "exit", MP.EncodeData("All supernodes are down, exit"))
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "join", "hello, my name is Bay Max, you personal healthcare companion")
+			helloMsg := MP.NewMessage(IPs[i], "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
 		case msg := <- mp.Messages["ack"]:
 			fmt.Println(msg)

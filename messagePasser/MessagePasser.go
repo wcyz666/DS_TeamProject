@@ -71,7 +71,7 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
-			errorMsg := NewMessage("self", "conn_error", err.Error())
+			errorMsg := NewMessage("self", "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
 		}
 		client.writer.Flush()
@@ -199,7 +199,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 		addr := dest
 		conn, err := net.Dial("tcp", addr+":"+localPort)
 		if (err != nil) {
-			errMsg := NewMessage("self", "error", err.Error())
+			errMsg := NewMessage("self", "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
 			return
 		}
