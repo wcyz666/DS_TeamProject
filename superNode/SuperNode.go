@@ -25,20 +25,20 @@ var superNodeContext *SNC.SuperNodeContext
 //var sElection	*streamElection.StreamElection
 
 func Start() {
+	// Initialize SuperNodeContext
+	// Currently SuperNodeContext contains all info of the assigned child nodes
+	superNodeContext = SNC.NewSuperNodeContext()
 	// First register on the dnsService
 	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
 	dns.RegisterSuperNode(localname)
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
-	mp = MP.NewMessagePasser(localname)
+	mp = MP.NewMessagePasser(superNodeContext.LocalName)
 	fmt.Println("Message Passer Initialized!")
 
 	// Block supernode until receive exit msg
 	mp.AddMappings([]string{"exit"})
-	// Initialize SuperNodeContext
-	// Currently SuperNodeContext contains all info of the assigned child nodes
-	superNodeContext = SNC.NewSuperNodeContext()
 
 	// Initialize all the package structs
 	dHashtable = Dht.NewDHT(mp)
@@ -104,6 +104,6 @@ func nodeStateWatcher() {
 
 func newChild(msg *MP.Message)  {
 	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
-	mp.Send(MP.NewMessage(msg.Src, "ack", "this is an ACK message"))
+	mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "ack", "this is an ACK message"))
 	superNodeContext.AddNode(msg.SrcName)
 }

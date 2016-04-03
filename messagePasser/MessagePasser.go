@@ -50,12 +50,12 @@ func (client *Client) Read(mp *MessagePasser) {
 		msg := new(Message)
 		msg.Deserialize(line)
 
-		_, exists := mp.connections.clients[msg.Src]
-		if exists != false {
+		_, exists := mp.connections.clients[msg.SrcName]
+		if exists == false {
 			// This is first message received from this src
 			// Store this connection
-			client.name = msg.Src
-			mp.connections.clients[msg.Src] = client
+			client.name = msg.SrcName
+			mp.connections.clients[msg.SrcName] = client
 		}
 
 		mp.Incoming <- msg // Since there is only one socket, directly put all the received
@@ -71,7 +71,7 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
-			errorMsg := NewMessage("self", "conn_error", err.Error())
+			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", err.Error())
 			mp.Messages["error"] <- &errorMsg
 		}
 		client.writer.Flush()
@@ -116,8 +116,7 @@ func (connect *Connections) Listen(mp *MessagePasser) {
 	for {
 		conn := <-connect.joins
 		NewClient(conn, mp)
-		//clientName, _ := bufio.NewReader(conn).ReadString('\n')
-		//fmt.Println("Client : " + clientName + " connected!")
+
 		//client.name = clientName
 		//connect.clients[clientName] = client
 
@@ -186,17 +185,24 @@ Send a message
 func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
-	dest := msg.Dest
+
+	dest := msg.DestName
+
+	if _, ok := mp.connections.clients[dest]; ok == false {
+		dest = msg.Dest
+	}
 	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
+		fmt.Print("Address exist: send back")
+		fmt.Println(msg)
 		client.outgoing <- &msg
 	} else {
 		// Try connecting to the peer
 
 		addr := dest
-		conn, err := net.Dial("tcp", addr+":"+localPort)
+		conn, err := net.Dial("tcp", addr + ":" + localPort)
 		if (err != nil) {
-			errMsg := NewMessage("self", "error", err.Error())
+			errMsg := NewMessage("self", mp.connections.localname, "error", err.Error())
 			mp.Messages["error"] <- &errMsg
 			return
 		}

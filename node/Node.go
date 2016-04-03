@@ -28,7 +28,7 @@ func heartBeat() {
 	for {
 		time.Sleep(time.Second * 5)
 		fmt.Println("Node: send out heart beat message")
-		mp.Send(MP.NewMessage(nodeContext.ParentIP, "heartbeat", "Hello, this is a heartbeat message."))
+		mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", "Hello, this is a heartbeat message."))
 	}
 }
 
@@ -49,8 +49,9 @@ Here goes all the internal event handlers
 func joinAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
 	// Store the parentIP
 	nodeContext.ParentIP = msg.Src
+	nodeContext.ParentName = msg.SrcName
 	// Test
-	fmt.Println("Be assigned to parent! " + nodeContext.ParentIP)
+	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n" + nodeContext.ParentIP, nodeContext.ParentName)
 }
 
 func streamAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
@@ -125,7 +126,7 @@ func Start(IPs []string) {
 func nodeJoin(IPs []string) {
 	//Send hello messages until find out a working supernode
 	i := 0
-	helloMsg := MP.NewMessage(IPs[i], "join", "hello, my name is Bay Max, you personal healthcare companion")
+	helloMsg := MP.NewMessage(IPs[i], "", "join", "hello, my name is Bay Max, you personal healthcare companion")
 	mp.Send(helloMsg)
 	for {
 		select {
@@ -134,15 +135,16 @@ func nodeJoin(IPs []string) {
 			fmt.Printf("Connetion to spernode failed: %s\n", err.Data)
 			i += 1
 			if (i == len(IPs)) {
-				exitMsg := MP.NewMessage("self", "exit", "All supernodes are down, exit")
+				exitMsg := MP.NewMessage("self", nodeContext.LocalName, "exit", "All supernodes are down, exit")
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "join", "hello, my name is Bay Max, you personal healthcare companion")
+			helloMsg := MP.NewMessage(IPs[i], "", "join", "hello, my name is Bay Max, you personal healthcare companion")
 			mp.Send(helloMsg)
 		case msg := <- mp.Messages["ack"]:
 			fmt.Println(msg)
 			nodeContext.ParentIP = msg.Src
+			nodeContext.ParentName = msg.SrcName
 			go heartBeat()
 		}
 	}

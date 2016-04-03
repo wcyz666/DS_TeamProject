@@ -6,13 +6,13 @@ import (
 )
 
 type SuperNodeContext struct {
-    LocalNode string
+    LocalName string
     nodes map[string]*nodeInfo
 }
 
 func NewSuperNodeContext() (* SuperNodeContext) {
     nodes := make(map[string]*nodeInfo)
-    return &SuperNodeContext{nodes : nodes, LocalNode: LNS.GetLocalName()}
+    return &SuperNodeContext{nodes : nodes, LocalName: LNS.GetLocalName()}
 }
 
 func (sc *SuperNodeContext) AddNode(nodeName string)  {
