@@ -1,14 +1,18 @@
 package superNodeContext
 
-import "fmt"
+import (
+    "fmt"
+    LNS "../../localNameService"
+)
 
 type SuperNodeContext struct {
+    LocalNode string
     nodes map[string]*nodeInfo
 }
 
 func NewSuperNodeContext() (* SuperNodeContext) {
     nodes := make(map[string]*nodeInfo)
-    return &SuperNodeContext{nodes : nodes}
+    return &SuperNodeContext{nodes : nodes, LocalNode: LNS.GetLocalName()}
 }
 
 func (sc *SuperNodeContext) AddNode(nodeName string)  {

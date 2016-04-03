@@ -34,6 +34,8 @@ func Start() {
 	mp = MP.NewMessagePasser(localname)
 	fmt.Println("Message Passer Initialized!")
 
+	// Block supernode until receive exit msg
+	mp.AddMappings([]string{"exit"})
 	// Initialize SuperNodeContext
 	// Currently SuperNodeContext contains all info of the assigned child nodes
 	superNodeContext = SNC.NewSuperNodeContext()
@@ -70,6 +72,9 @@ func Start() {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
+
+	exitMsg := <- mp.Messages["exit"]
+	fmt.Println(exitMsg)
 }
 
 func listenOnChannel(channelName string, handler func(*MP.Message)) {
