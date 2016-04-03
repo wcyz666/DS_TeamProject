@@ -7,6 +7,7 @@ import (
 	StreamElection "../streamElection"
 	"fmt"
 	nc "./nodeContext"
+	"time"
 )
 
 const (
@@ -24,7 +25,11 @@ var exitChannal chan int
 All internal helper functions
 */
 func heartBeat() {
-	mp.Send(MP.NewMessage(nodeContext.ParentIP, "heartbeat", "Hello, this is a heartbeat message."))
+	for {
+		time.Sleep(time.Second * 5)
+		fmt.Println("Node: send out heart beat message")
+		mp.Send(MP.NewMessage(nodeContext.ParentIP, "heartbeat", "Hello, this is a heartbeat message."))
+	}
 }
 
 

@@ -89,7 +89,11 @@ func errorHandler(*MP.Message)  {
 
 }
 
-func heartBeatHandler(*MP.Message)  {
+func heartBeatHandler(msg *MP.Message)  {
+	superNodeContext.SetAlive(msg.SrcName)
+}
+
+func nodeStateWatcher() {
 	time.Sleep(10 * time.Second)
 	hasDead, deadNodes := superNodeContext.CheckDead()
 	if hasDead {
@@ -99,6 +103,7 @@ func heartBeatHandler(*MP.Message)  {
 }
 
 func newChild(msg *MP.Message)  {
+	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
 	mp.Send(MP.NewMessage(msg.Src, "ack", "this is an ACK message"))
 	superNodeContext.AddNode(msg.SrcName)
 }

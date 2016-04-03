@@ -175,8 +175,7 @@ func (mp *MessagePasser) receiveMapping() {
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
-		fmt.Print(msg.Kind)
-		fmt.Println(mp.Messages[msg.Kind])
+		fmt.Println(msg)
 		mp.Messages[msg.Kind] <- msg
 	}
 }
