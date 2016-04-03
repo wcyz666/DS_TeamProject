@@ -110,7 +110,7 @@ func getFirstNonSelfIpAddr() (string){
 			return ipAddr
 		}
 	}
-	return nil
+	return ""
 }
 
 func (dht *DHT) findSuccessor(key string) (*NodeEntry){
@@ -119,7 +119,7 @@ func (dht *DHT) findSuccessor(key string) (*NodeEntry){
 
 func (dht *DHT) createOrJoinRing(){
 	ipAddr := getFirstNonSelfIpAddr()
-	if (nil == ipAddr){
+	if ("" == ipAddr){
 		/* No entries exist or your are the only one. This means you are like
 		 * Apocalypse, the first mutant. Create a DHT*/
 

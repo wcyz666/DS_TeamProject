@@ -11,7 +11,7 @@ type Message struct {
 	Src     string
 	SrcName string
 	Kind    string
-	Data    interface {}
+	Data    string
 }
 
 func NewMessage(dest string, kind string, data string) Message {
