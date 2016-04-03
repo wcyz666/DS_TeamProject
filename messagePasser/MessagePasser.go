@@ -170,16 +170,14 @@ Store in the Message map and To be used by the upper layer handlers
 func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
-		fmt.Println("Receive in MP: ")
-		fmt.Println(msg)
+
 		_, exists := mp.Messages[msg.Kind]
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
-		fmt.Println(msg.Kind)
+		fmt.Print(msg.Kind)
 		fmt.Println(mp.Messages[msg.Kind])
 		mp.Messages[msg.Kind] <- msg
-		fmt.Println(mp)
 	}
 }
 
