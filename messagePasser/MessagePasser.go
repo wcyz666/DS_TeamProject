@@ -64,18 +64,23 @@ func (client *Client) Read(mp *MessagePasser) {
 }
 
 //go routine: Keep writing
-func (client *Client) Write() {
+func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
 		seri, _ := msg.Serialize()
-		client.writer.Write(seri)
+
+		_, err := client.writer.Write(seri)
+		if err != nil {
+			errorMsg := NewMessage("self", "conn_error", err.Error())
+			mp.Messages["error"] <- &errorMsg
+		}
 		client.writer.Flush()
 	}
 }
 
 func (client *Client) Listen(mp *MessagePasser) {
 	go client.Read(mp)
-	go client.Write()
+	go client.Write(mp)
 }
 
 // Constructor
@@ -123,14 +128,16 @@ func NewMessagePasser(localname string) *MessagePasser {
 	mp := &MessagePasser{}
 	mp.Incoming = make(chan *Message)
 	mp.Messages = make(map[string]chan *Message)
+	mp.connections = newConnections(localname, mp)
+
 	go mp.receiveMapping()
-	go mp.listen(localname)
+	go mp.listen()
+
 	return mp
 }
 
 // The global listening go routine
-func (mp *MessagePasser) listen(localname string) {
-	mp.connections = newConnections(localname, mp)
+func (mp *MessagePasser) listen() {
 	fmt.Println("Listening on " + localPort)
 	listener, _ := net.Listen("tcp", ":"+localPort)
 
@@ -138,6 +145,21 @@ func (mp *MessagePasser) listen(localname string) {
 		conn, _ := listener.Accept()
 		fmt.Println("New clients joined!")
 		mp.connections.joins <- conn
+	}
+}
+
+/*
+   Create new mapping & channel to the messagePasser
+ */
+func (mp *MessagePasser) AddMapping(kind string) {
+	fmt.Print("Initialized the channel: ")
+	fmt.Println(kind)
+	mp.Messages[kind] = make(chan *Message, 100)
+}
+
+func (mp *MessagePasser) AddMappings(kinds []string) {
+	for _, kind := range kinds {
+		mp.AddMapping(kind)
 	}
 }
 
@@ -152,8 +174,7 @@ func (mp *MessagePasser) receiveMapping() {
 		fmt.Println(msg)
 		_, exists := mp.Messages[msg.Kind]
 		if exists == false {
-			fmt.Println("Initialized the channel")
-			mp.Messages[msg.Kind] = make(chan *Message, 100)
+			mp.AddMapping(msg.Kind)
 		}
 		fmt.Println(msg.Kind)
 		fmt.Println(mp.Messages[msg.Kind])
@@ -165,7 +186,7 @@ func (mp *MessagePasser) receiveMapping() {
 /*
 Send a message
 */
-func (mp *MessagePasser) Send(msg Message) {
+func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 	dest := msg.Dest
@@ -176,7 +197,12 @@ func (mp *MessagePasser) Send(msg Message) {
 		// Try connecting to the peer
 
 		addr := dest
-		conn, _ := net.Dial("tcp", addr+":"+localPort)
+		conn, err := net.Dial("tcp", addr+":"+localPort)
+		if (err != nil) {
+			errMsg := NewMessage("self", "error", err.Error())
+			mp.Messages["error"] <- &errMsg
+			return
+		}
 		client := NewClient(conn, mp)
 		client.name = dest
 		mp.connections.clients[dest] = client

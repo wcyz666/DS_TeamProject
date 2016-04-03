@@ -7,7 +7,7 @@ import (
 	//"os"
 	//messagePasser "./messagePasser"
 	"./node"
-	superNode "./superNode"
+	SuperNode "./superNode"
 	//"fmt"
 	dns "./dnsService"
 	"flag"
@@ -25,11 +25,10 @@ func start() {
 	flag.Parse()
 
 	if *me == "node" {
-		helloIP := dns.GetAddr(bootstrap_dns)[0]
-		node.Start()
-		node.NodeJoin(helloIP)
+		helloIPs := dns.GetAddr(bootstrap_dns)
+		node.Start(helloIPs)
 	} else {
-		superNode.Start()
+		SuperNode.Start()
 	}
 }
 

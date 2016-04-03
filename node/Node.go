@@ -4,8 +4,9 @@ import (
 	//dns "../dnsService"
 	nameService "../localNameService"
 	MP "../messagePasser/"
-	streamElection "../streamElection"
+	StreamElection "../streamElection"
 	"fmt"
+	nc "./nodeContext"
 )
 
 const (
@@ -14,14 +15,10 @@ const (
 )
 
 
-type NodeContext struct {
-	mp *MP.MessagePasser
-	localName string
-	parentIP string
-	sElection *streamElection.StreamElection
-}
-
-var nodeContext *NodeContext
+var mp *MP.MessagePasser
+var sElection *StreamElection.StreamElection
+var nodeContext *nc.NodeContext
+var exitChannal chan int
 
 /**
 All internal helper functions
@@ -30,16 +27,13 @@ func heartBeat() {
 
 }
 
-func (nodeContext *NodeContext) setLocalName(name string) {
-	nodeContext.localName = name
-}
 
 /* Event handler distributer*/
-func listenOnChannel(channelName string, handler func(*MP.Message, nodeContext *NodeContext)) {
+func listenOnChannel(channelName string, handler func(*MP.Message, *nc.NodeContext)) {
 	for {
 		//
-		msg := <- nodeContext.mp.Messages[channelName]
-		go handler(msg)
+		msg := <- mp.Messages[channelName]
+		go handler(msg, nodeContext)
 	}
 }
 
@@ -47,62 +41,106 @@ func listenOnChannel(channelName string, handler func(*MP.Message, nodeContext *
 Here goes all the internal event handlers
 */
 
-func joinAssign(msg *MP.Message, nodeContext *NodeContext) {
+func joinAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
 	// Store the parentIP
-	nodeContext.parentIP = msg.Src
+	nodeContext.ParentIP = msg.Src
 	// Test
-	fmt.Println("Be assigned to parent! " + nodeContext.parentIP)
+	fmt.Println("Be assigned to parent! " + nodeContext.ParentIP)
 }
 
-func streamAssign(msg *MP.Message, nodeContext *NodeContext) {
+func streamAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
 
 }
 
-func programListParser(msg *MP.Message, nodeContext *NodeContext) {
+func programListParser(msg *MP.Message, nodeContext *nc.NodeContext) {
 
 }
+
+func receiveReceive(msg *MP.Message, nodeContext *nc.NodeContext) {
+
+}
+
+func errorHandler(msg *MP.Message, nodeContext *nc.NodeContext) {
+	switch nodeContext.State {
+	// Re-throw it to init_fail channel
+	case nc.NodeHello:
+		msg.Kind = "init_fail"
+	}
+
+	mp.Messages[msg.Kind] <- msg
+}
+
 
 /**
 Here goes all the apis to be called by the application
 */
 
-func Start() {
-	nodeContext = new(NodeContext)
-	nodeContext.setLocalName(nameService.GetLocalName())
-	nodeContext.mp = MP.NewMessagePasser(nodeContext.localName)
+func Start(IPs []string) {
+	nodeContext = nc.NewNodeContext()
+	nodeContext.SetLocalName(nameService.GetLocalName())
+	mp = MP.NewMessagePasser(nodeContext.LocalName)
+
+	// We use for loop to connect with all supernode one-by-one,
+	// if a connection to one supernode fails, an error message
+	// will be sent by messagePasser, and this message is further
+	// processed in error handler.
+	// init_fail: used in hello phase
+	// exit: used when all supernode cannot be connected.
+	mp.AddMappings([]string{"exit", "init_fail"})
 	go heartBeat()
 
 	// Initialize all the package structs
-	nodeContext.sElection = streamElection.NewStreamElection(nodeContext.mp)
+	sElection = StreamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
 	// TODO: Register your channel name and binded eventhandlers here
 	// The map goes as  map[channelName][eventHandler]
 	// All the messages with type channelName will be put in this channel by messagePasser
 	// Then the binded handler of this channel will be called with the argument (*Message)
-	channelNames := map[string]func(*MP.Message, *NodeContext){
+	channelNames := map[string]func(*MP.Message, *nc.NodeContext){
 		"join_assign":     joinAssign,
 		"stream_assign":   streamAssign,
 		"program_list":    programListParser,
-		"election_stream": nodeContext.sElection.Receive,
+		"election_stream": receiveReceive,
+		"error" : errorHandler,
 	}
 
 	// Init and listen
 	for channelName, handler := range channelNames {
 		// Init all the channels listening on
-		nodeContext.mp.Messages[channelName] = make(chan *MP.Message)
+		mp.Messages[channelName] = make(chan *MP.Message)
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
-
+	go nodeJoin(IPs)
+	exitMsg := <- mp.Messages["exit"]
+	fmt.Println(exitMsg)
 }
 
 /* Join the network */
-func NodeJoin(IP string) {
-	helloMsg := MP.NewMessage(IP, "join", "hello, my name is Bay Max, you personal healthcare companion")
-	nodeContext.mp.Send(helloMsg)
-	echoMsg := <- nodeContext.mp.Messages["ack"]
-	fmt.Println(echoMsg)
+func nodeJoin(IPs []string) {
+	//Send hello messages until find out a working supernode
+	i := 0
+	helloMsg := MP.NewMessage(IPs[i], "join", "hello, my name is Bay Max, you personal healthcare companion")
+	mp.Send(helloMsg)
+	for {
+		select {
+		case err := <-mp.Messages["init_fail"]:
+			// wait and retry the next
+			fmt.Printf("Connetion to spernode failed: %s\n", err.Data)
+			i += 1
+			if (i == len(IPs)) {
+				exitMsg := MP.NewMessage("self", "exit", "All supernodes are down, exit")
+				mp.Messages["exit"] <- &exitMsg
+				break;
+			}
+			helloMsg := MP.NewMessage(IPs[i], "join", "hello, my name is Bay Max, you personal healthcare companion")
+			mp.Send(helloMsg)
+		case msg := <- mp.Messages["ack"]:
+			fmt.Println(msg)
+		}
+	}
+
 }
 
 /* Start Streaming */
