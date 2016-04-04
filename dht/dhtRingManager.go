@@ -68,7 +68,8 @@ func (dht *DHT) createOrJoinRing(){
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		dht.mp.Send(MP.NewMessage(ipAddr, "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
+		dht.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
+
 	}
 }
 
@@ -88,7 +89,7 @@ func (dht *DHT) HandleJoinReq(msg *MP.Message) {
 			joinRes.Status = SUCCESSOR_REDIRECTION
 			joinRes.NewSuccessorNode = *successor
 		}
-		dht.mp.Send(MP.NewMessage(msg.Src, "join_dht_res", MP.EncodeData(joinRes)))
+		dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_res", MP.EncodeData(joinRes)))
 		return
 	}
 
@@ -114,7 +115,7 @@ func (dht *DHT) HandleJoinReq(msg *MP.Message) {
 	/* Send the map in the response to caller */
 	joinRes.Status = SUCCESS
 	joinRes.Predecessor = *(dht.getPredecessorFromLeafTable())
-	dht.mp.Send(MP.NewMessage(msg.Src, "join_dht_res", MP.EncodeData(joinRes)))
+	dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_res", MP.EncodeData(joinRes)))
 }
 
 func (dht *DHT) HandleJoinRes(msg *MP.Message) {
@@ -123,7 +124,7 @@ func (dht *DHT) HandleJoinRes(msg *MP.Message) {
 
 	if (joinRes.Status == SUCCESSOR_REDIRECTION){
 		/* Send join request to new successor node */
-		dht.mp.Send(MP.NewMessage(joinRes.NewSuccessorNode.IpAddress, "join_dht_req",
+		dht.mp.Send(MP.NewMessage(joinRes.NewSuccessorNode.IpAddress, "", "join_dht_req",
 			                             MP.EncodeData(JoinRequest{dht.nodeKey})))
 
 	} else if (joinRes.Status == FAILURE){
@@ -132,14 +133,15 @@ func (dht *DHT) HandleJoinRes(msg *MP.Message) {
 	} else {
 		/* SUCCESS case */
 
+
 		/* 1. Add received map to local DHT table */
 		dht.hashTable = joinRes.HashTable
 
 		/* 2. Send Join complete to successor */
-		dht.mp.Send(MP.NewMessage(msg.Src, "join_dht_complete", MP.EncodeData(JoinComplete{SUCCESS,dht.nodeKey})))
+		dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(JoinComplete{SUCCESS,dht.nodeKey})))
 
 		/* 3. Send join notification to predecessor */
-		dht.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, "join_dht_notify",
+		dht.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, "", "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dht.nodeKey})))
 	}
 }

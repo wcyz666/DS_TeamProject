@@ -5,6 +5,7 @@ import (
 
 	MP "../../messagePasser"
 	//dns "../dnsService"
+
 )
 
 /**
@@ -29,8 +30,9 @@ func (j *JoinElection) Start(msg *MP.Message) {
 	// Current directly take over the child node
 	// Send assign message
 	childNodeAddr := msg.Src
+	childName := msg.SrcName
 	kind := "join_assign"
-	j.mp.Send(MP.NewMessage(childNodeAddr, kind, MP.EncodeData("hehehe")))
+	j.mp.Send(MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData("hehehe")))
 }
 
 func (j *JoinElection) Receive(msg *MP.Message) {

@@ -3,13 +3,16 @@ package node
 import (
 	"fmt"
 
-	dht "../dht"
+	Dht "../dht"
 	dns "../dnsService"
 	MP "../messagePasser"
-	config "../config"
 
-	joinElection "../supernodeLib/joinElection"
-	streaming "../supernodeLib/streaming"
+	Config "../config"
+	SNC "./superNodeContext/"
+	JoinElection "../supernodeLib/joinElection"
+	Streaming "../supernodeLib/streaming"
+	"time"
+
 )
 
 const (
@@ -17,26 +20,33 @@ const (
 )
 
 var mp *MP.MessagePasser
-var dHashtable *dht.DHT
-var streamHandler *streaming.StreamingHandler
-var jElection *joinElection.JoinElection
+var dHashtable *Dht.DHT
+var streamHandler *Streaming.StreamingHandler
+var jElection *JoinElection.JoinElection
+var superNodeContext *SNC.SuperNodeContext
 
 //var sElection	*streamElection.StreamElection
 
 func Start() {
+	// Initialize SuperNodeContext
+	// Currently SuperNodeContext contains all info of the assigned child nodes
+	superNodeContext = SNC.NewSuperNodeContext()
 	// First register on the dnsService
 	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
-	dns.RegisterSuperNode(config.BootstrapDomainName)
+	dns.RegisterSuperNode(Config.BootstrapDomainName)
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
-	mp = MP.NewMessagePasser(localname)
+	mp = MP.NewMessagePasser(superNodeContext.LocalName)
 	fmt.Println("Message Passer Initialized!")
 
+	// Block supernode until receive exit msg
+	mp.AddMappings([]string{"exit"})
+
 	// Initialize all the package structs
-	dHashtable = dht.NewDHT(mp)
-	streamHandler = streaming.NewStreamingHandler(dHashtable, mp)
-	jElection = joinElection.NewJoinElection(mp)
+	dHashtable = Dht.NewDHT(mp)
+	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
+	jElection = JoinElection.NewJoinElection(mp)
 	//sElection = streamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
@@ -50,9 +60,11 @@ func Start() {
 		"stream_start":    streamHandler.StreamStart,
 		"stream_get_list": streamHandler.StreamGetList,
 		"stream_join":     streamHandler.StreamJoin,
-
-		"join":          jElection.Start,
+		"heartbeat": heartBeatHandler,
+		"hello":          jElection.Start,
+		"join": 			newChild,
 		"join_election": jElection.Receive,
+		"error": errorHandler,
 
 		/* DHT call backs */
 		"join_dht_req":            	dHashtable.HandleJoinReq,
@@ -86,6 +98,9 @@ func Start() {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
+
+	exitMsg := <- mp.Messages["exit"]
+	fmt.Println(exitMsg)
 }
 
 func listenOnChannel(channelName string, handler func(*MP.Message)) {
@@ -94,4 +109,30 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 		msg := <-mp.Messages[channelName]
 		go handler(msg)
 	}
+}
+
+func errorHandler(*MP.Message)  {
+
+}
+
+func heartBeatHandler(msg *MP.Message)  {
+	superNodeContext.SetAlive(msg.SrcName)
+}
+
+func nodeStateWatcher() {
+	for {
+		time.Sleep(10 * time.Second)
+		fmt.Println("SuperNode: check node state")
+		hasDead, deadNodes := superNodeContext.CheckDead()
+		if hasDead {
+			superNodeContext.RemoveNodes(deadNodes)
+		}
+		superNodeContext.ResetState()
+	}
+}
+
+func newChild(msg *MP.Message)  {
+	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
+	mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "ack", MP.EncodeData("this is an ACK message")))
+	superNodeContext.AddNode(msg.SrcName)
 }

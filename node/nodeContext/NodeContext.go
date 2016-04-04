@@ -7,9 +7,10 @@ const (
 )
 
 type NodeContext struct {
-    LocalName string
-    ParentIP string
-    State int
+    LocalName    string
+    ParentIP     string
+    ParentName   string
+    State        int
 }
 
 func NewNodeContext() *NodeContext {
