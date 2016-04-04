@@ -130,7 +130,7 @@ func (dht *DHT) createOrJoinRing(){
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		dht.mp.Send(MP.NewMessage(ipAddr, "successor_info_req", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
+		dht.mp.Send(MP.NewMessage(ipAddr, "", "successor_info_req", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
 	}
 }
 
@@ -161,10 +161,10 @@ func (dht *DHT) HandleJoinRes(msg *MP.Message) {
 	/* 1. Add received map to local DHT table */
 
 	/* 2. Send Join complete to successor */
-	dht.mp.Send(MP.NewMessage(msg.Src, "join_dht_complete", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
+	dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
 
 	/* 3. Send join notification to predecessor */
-	dht.mp.Send(MP.NewMessage(joinRes.predecessor.IpAddress, "join_dht_notify", MP.EncodeData(JoinNotify{dht.nodeKey})))
+	dht.mp.Send(MP.NewMessage(joinRes.predecessor.IpAddress, "", "join_dht_notify", MP.EncodeData(JoinNotify{dht.nodeKey})))
 }
 
 func (dht *DHT) HandleJoinComplete(msg *MP.Message) {
@@ -215,7 +215,7 @@ func (dht *DHT) HandleSuccessorInfoReq(msg *MP.Message){
 		successorInfoRes.status = FAILURE
 	}
 
-	dht.mp.Send(MP.NewMessage(msg.Src, "successor_info_res", MP.EncodeData(successorInfoRes)))
+	dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "successor_info_res", MP.EncodeData(successorInfoRes)))
 }
 
 func (dht *DHT) HandleSuccessorInfoRes(msg *MP.Message){
@@ -227,7 +227,7 @@ func (dht *DHT) HandleSuccessorInfoRes(msg *MP.Message){
 	}
 
 	/* Send join request to successor */
-	dht.mp.Send(MP.NewMessage(successorInfoRes.node.IpAddress, "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
+	dht.mp.Send(MP.NewMessage(successorInfoRes.node.IpAddress, "", "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
 }
 
 func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, bool) {

@@ -7,15 +7,18 @@ import (
 )
 
 type Message struct {
-	Dest    string
-	Src     string
-	SrcName string
-	Kind    string
-	Data    [] byte
+	Dest     string
+	Src      string
+	SrcName  string
+	DestName string
+	Kind     string
+	Data     [] byte
 }
 
-func NewMessage(dest string, kind string, data [] byte) Message {
-	msg := Message{Dest: dest, Kind: kind, Data: data}
+// If you don't know the destName, pass an empty string
+func NewMessage(dest string, destName string, kind string, data [] byte) Message {
+	msg := Message{Dest: dest, DestName: destName, Kind: kind, Data: data}
+
 	return msg
 }
 

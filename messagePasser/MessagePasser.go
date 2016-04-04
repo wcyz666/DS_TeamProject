@@ -50,11 +50,16 @@ func (client *Client) Read(mp *MessagePasser) {
 		msg := new(Message)
 		msg.Deserialize(line)
 
-		_, exists := mp.connections.clients[msg.Src]
-		if exists != false {
+		_, exists := mp.connections.clients[msg.SrcName]
+		if exists == false {
 			// This is first message received from this src
 			// Store this connection
-			client.name = msg.Src
+			client.name = msg.SrcName
+			mp.connections.clients[msg.SrcName] = client
+		}
+		//Also save the src into the connection map
+		_, exists = mp.connections.clients[msg.Src]
+		if exists == false {
 			mp.connections.clients[msg.Src] = client
 		}
 
@@ -71,7 +76,7 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
-			errorMsg := NewMessage("self", "conn_error", EncodeData(err.Error()))
+			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
 		}
 		client.writer.Flush()
@@ -116,8 +121,7 @@ func (connect *Connections) Listen(mp *MessagePasser) {
 	for {
 		conn := <-connect.joins
 		NewClient(conn, mp)
-		//clientName, _ := bufio.NewReader(conn).ReadString('\n')
-		//fmt.Println("Client : " + clientName + " connected!")
+
 		//client.name = clientName
 		//connect.clients[clientName] = client
 
@@ -170,16 +174,12 @@ Store in the Message map and To be used by the upper layer handlers
 func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
-		fmt.Println("Receive in MP: ")
-		fmt.Println(msg)
+
 		_, exists := mp.Messages[msg.Kind]
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
-		fmt.Println(msg.Kind)
-		fmt.Println(mp.Messages[msg.Kind])
 		mp.Messages[msg.Kind] <- msg
-		fmt.Println(mp)
 	}
 }
 
@@ -189,7 +189,12 @@ Send a message
 func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
-	dest := msg.Dest
+
+	dest := msg.DestName
+
+	if _, ok := mp.connections.clients[dest]; ok == false {
+		dest = msg.Dest
+	}
 	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
 		client.outgoing <- &msg
@@ -197,9 +202,9 @@ func (mp *MessagePasser) Send(msg Message)  {
 		// Try connecting to the peer
 
 		addr := dest
-		conn, err := net.Dial("tcp", addr+":"+localPort)
+		conn, err := net.Dial("tcp", addr + ":" + localPort)
 		if (err != nil) {
-			errMsg := NewMessage("self", "error", EncodeData(err.Error()))
+			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
 			return
 		}
