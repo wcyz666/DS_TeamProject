@@ -5,6 +5,7 @@ import (
 	dns "../dnsService"
 	config "../config"
 	lns "../localNameService"
+	"math/big"
 )
 
 /* Planning to use MD5 to generate the Hash. Hence 128 bit */
@@ -116,6 +117,17 @@ func getFirstNonSelfIpAddr() (string){
 	return ""
 }
 
+/*TODO Function responsible for updating leaf table and prefix table based on new information */
+func (dht *DHT)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress string){
+
+}
+
+/*TODO*/
+func (dht *DHT)getPredecessorFromLeafTable()(*Node)  {
+	return nil
+}
+
+/*TODO*/
 func (dht *DHT) findSuccessor(key string) (*Node){
 	return nil
 }
@@ -130,53 +142,115 @@ func (dht *DHT) createOrJoinRing(){
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		dht.mp.Send(MP.NewMessage(ipAddr, "", "successor_info_req", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
+		dht.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
+
 	}
 }
 
 func (dht *DHT) HandleJoinReq(msg *MP.Message) {
 	var joinReq JoinRequest
 	MP.DecodeData(&joinReq,msg.Data)
+	var joinRes JoinResponse
 
-	if (false == dht.isKeyPresentInKeySpace(joinReq.key)){
+	/* Send failure status or redirect status if key is not managed by you */
+	if (false == dht.isKeyPresentInKeySpace(joinReq.Key)){
 		/* Find successor node and send it in the response */
+		successor := dht.findSuccessor(joinReq.Key)
+		if (nil == successor){
+			joinRes.Status = FAILURE
+		} else {
+			/* indicate to the node about the actual successor */
+			joinRes.Status = SUCCESSOR_REDIRECTION
+			joinRes.NewSuccessorNode = *successor
+		}
+		dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_res", MP.EncodeData(joinRes)))
+		return
 	}
 
-	/* 1. Retrieve entries which are less than key and create a map out of it.*/
+	/* Retrieve entries which are less than new node's key and create a map out of it.*/
+	nodeKey := new(big.Int)
+	_,status := nodeKey.SetString(joinReq.Key, 16)
+	if (false == status){
+		panic("WARNING: Unable to convert key to a valid value")
+	}
+	entryKey := new(big.Int)
 
-	/* 2. Send the map as the response to caller */
+	for k,v := range dht.hashTable {
+		_,status = entryKey.SetString(k,16)
+		if (false == status){
+			panic("WARNING: Unable to convert key to a valid value")
+		}
+		/* If entry key is <= new node's key, transfer the data to new node */
+		if (entryKey.Cmp(nodeKey) <= 0){
+			joinRes.HashTable[k] = v
+		}
+	}
 
-	/* 3. Send failure status or redirect status if key is no longer managed by you */
-
+	/* Send the map in the response to caller */
+	joinRes.Status = SUCCESS
+	joinRes.Predecessor = *(dht.getPredecessorFromLeafTable())
+	dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_res", MP.EncodeData(joinRes)))
 }
 
 func (dht *DHT) HandleJoinRes(msg *MP.Message) {
 	var joinRes JoinResponse
 	MP.DecodeData(&joinRes,msg.Data)
 
-	if (joinRes.status == FAILURE){
-		/* Probably initial node did not contain up-to-date data and gave us wrong
-		 * successor. Use the one provided by this node */
+	if (joinRes.Status == SUCCESSOR_REDIRECTION){
+		/* Send join request to new successor node */
+		dht.mp.Send(MP.NewMessage(joinRes.NewSuccessorNode.IpAddress, "", "join_dht_req",
+			                             MP.EncodeData(JoinRequest{dht.nodeKey})))
+
+	} else if (joinRes.Status == FAILURE){
+		panic ("Join procedure for DHT failed")
+
+	} else {
+		/* SUCCESS case */
+
+
+		/* 1. Add received map to local DHT table */
+		dht.hashTable = joinRes.HashTable
+
+		/* 2. Send Join complete to successor */
+		dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(JoinComplete{SUCCESS,dht.nodeKey})))
+
+		/* 3. Send join notification to predecessor */
+		dht.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, "", "join_dht_notify",
+			                              MP.EncodeData(JoinNotify{dht.nodeKey})))
 	}
-	/* 1. Add received map to local DHT table */
-
-	/* 2. Send Join complete to successor */
-	dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(SuccessorInfoReq{dht.nodeKey})))
-
-	/* 3. Send join notification to predecessor */
-	dht.mp.Send(MP.NewMessage(joinRes.predecessor.IpAddress, "", "join_dht_notify", MP.EncodeData(JoinNotify{dht.nodeKey})))
 }
 
 func (dht *DHT) HandleJoinComplete(msg *MP.Message) {
+	var joinComplete JoinComplete
+	MP.DecodeData(&joinComplete,msg.Data)
 
-	/* 1. Remove the transferred key space from local hash table */
+	/* Update routing information to include this new node */
+	dht.updateLeafAndPrefixTablesWithNewNode(msg.Src)
 
-	/* 2. Update leaf table */
+	/* Delete entries transferred to new node */
+	/* TODO After replication, this needs to be done in farthest replica */
+	nodeKey := new(big.Int)
+	_,status := nodeKey.SetString(joinComplete.Key, 16)
+	if (false == status){
+		panic("WARNING: Unable to convert key to a valid value")
+	}
+	entryKey := new(big.Int)
+
+	for k,_ := range dht.hashTable {
+		_,status = entryKey.SetString(k,16)
+		if (false == status){
+			panic("WARNING: Unable to convert key to a valid value")
+		}
+		/* If entry key is <= new node's key, remove the entry as it is already transferred to new node */
+		if (entryKey.Cmp(nodeKey) <= 0){
+			delete(dht.hashTable,k)
+		}
+	}
 }
 
 func (dht *DHT) HandleJoinNotify(msg *MP.Message) {
-
-	/* Update leaf table */
+	/* Update routing information to include this new node */
+	dht.updateLeafAndPrefixTablesWithNewNode(msg.Src)
 }
 
 func (dht *DHT) Leave(msg *MP.Message) {
@@ -203,14 +277,8 @@ func (dht *DHT) DeleteLSGroup(msg *MP.Message){
 
 }
 
-func (dht *DHT) HandleSuccessorInfoReq(msg *MP.Message){
-	var sucInfoReq SuccessorInfoReq
-	MP.DecodeData(&sucInfoReq,msg.Data)
-	/* TODO Do we need to trigger findSuccessor in a separate thread ? */
-	successor := dht.findSuccessor(sucInfoReq.key)
 
-	var successorInfoRes = SuccessorInfoRes{SUCCESS,*successor}
-
+/*
 	if (nil == successor){
 		successorInfoRes.status = FAILURE
 	}
@@ -226,9 +294,9 @@ func (dht *DHT) HandleSuccessorInfoRes(msg *MP.Message){
 		panic("Successor Information Request Failed")
 	}
 
-	/* Send join request to successor */
 	dht.mp.Send(MP.NewMessage(successorInfoRes.node.IpAddress, "", "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
 }
+*/
 
 func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, bool) {
 	if dht.isKeyPresentInKeySpace(streamingGroupID) {

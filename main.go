@@ -10,6 +10,7 @@ import (
 	SuperNode "./superNode"
 	//"fmt"
 	dns "./dnsService"
+//	config "./config"
 	"flag"
 	//"os"
 //	"fmt"
@@ -49,6 +50,8 @@ func main() {
 		}
 
 	*/
+
+	// dns.ClearAddrRecords(config.BootstrapDomainName)
 
 	start()
 }

@@ -3,33 +3,25 @@ package dht
 const (
 	SUCCESS = iota
 	FAILURE
-	NEW_SUCCESSOR
+	SUCCESSOR_REDIRECTION
 )
 
 type JoinRequest struct {
-	key                  string
+	Key string
 }
 
 type JoinResponse struct {
-	status                int
-	hashTable             map[string][]MemberShipInfo
-	predecessor           Node
-	newSuccessorNode      Node // Used as re-direction mechanism when key is no longer managed by this node
+	Status           int
+	HashTable        map[string][]MemberShipInfo
+	Predecessor      Node
+	NewSuccessorNode Node // Used as re-direction mechanism when key is no longer managed by this node
 }
 
 type JoinComplete struct {
-	status                int
+	Status int
+	Key    string
 }
 
 type JoinNotify struct {
-	key                  string
-}
-
-type SuccessorInfoReq struct {
-	key                  string
-}
-
-type SuccessorInfoRes struct {
-	status               int
-	node                 Node
+	Key string
 }
