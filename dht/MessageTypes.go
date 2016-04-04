@@ -1,11 +1,5 @@
 package dht
 
-const (
-	SUCCESS = iota
-	FAILURE
-	SUCCESSOR_REDIRECTION
-)
-
 type JoinRequest struct {
 	Key string
 }
