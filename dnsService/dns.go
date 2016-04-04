@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"strconv"
 )
 
 /* decode only relevant portions which are important to us */
@@ -16,6 +17,7 @@ type DNSRecordEntry struct {
 	record_type string
 	name        string
 	content     string
+	id          float64
 }
 
 func (recordEntry *DNSRecordEntry) UnmarshalJSON(b []byte) (err error) {
@@ -27,6 +29,7 @@ func (recordEntry *DNSRecordEntry) UnmarshalJSON(b []byte) (err error) {
 	recordEntry.content = recordMap["content"].(string)
 	recordEntry.record_type = recordMap["record_type"].(string)
 	recordEntry.name = recordMap["name"].(string)
+	recordEntry.id = recordMap["id"].(float64)
 	return nil
 }
 
@@ -156,6 +159,67 @@ func GetAddr(name string) []string {
 
 	}
 	return addrList
+}
+
+func deleteAddrRecord(id float64) {
+	client := getHttpClient()
+	url := "https://api.dnsimple.com/v1/domains/phani.me/records/" + strconv.FormatFloat(id, 'f', -1, 64)
+	fmt.Println("URL:>", url)
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-DNSimple-Token", "phanishankarpr@gmail.com:oWxhZCENnNaLFq3WHyDEzpgYETguMyTC")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, respErr := client.Do(req)
+	if respErr != nil {
+		panic(respErr)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		fmt.Println("response Status:", resp.Status)
+		panic("Response code not OK")
+	}
+}
+
+func ClearAddrRecords(name string) {
+
+	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-DNSimple-Token", "phanishankarpr@gmail.com:oWxhZCENnNaLFq3WHyDEzpgYETguMyTC")
+	client := getHttpClient()
+
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		fmt.Println("response Status:", resp.Status)
+		panic("Response code not OK")
+	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	var decData DNSResponseMessage
+	err = json.Unmarshal(body, &(decData.records))
+	if err != nil {
+		panic(err)
+	}
+
+	var entry DNSRecordEntry
+	for i := 0; i < len(decData.records); i++ {
+		entry = decData.records[i]["record"]
+		if (entry.record_type == "A") && (entry.name == name) {
+			fmt.Println( "name is " + entry.name + " id is " + strconv.FormatFloat(entry.id, 'f', -1, 64))
+			deleteAddrRecord(entry.id)
+		}
+	}
 }
 
 func getHttpClient() *http.Client {
