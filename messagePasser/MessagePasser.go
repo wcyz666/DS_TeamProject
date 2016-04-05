@@ -79,6 +79,7 @@ func (client *Client) Write(mp *MessagePasser) {
 			fmt.Println("Error in sending messages out in Client[" + client.name + "]")
 			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
+			return
 		}
 		client.writer.Flush()
 	}

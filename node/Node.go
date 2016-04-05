@@ -26,7 +26,7 @@ All internal helper functions
 */
 func heartBeat() {
 	for {
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 2)
 		fmt.Println("Node: send out heart beat message")
 		mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 	}
@@ -50,6 +50,7 @@ func joinAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
 	// Store the parentIP
 	nodeContext.ParentIP = msg.Src
 	nodeContext.ParentName = msg.SrcName
+	go heartBeat()
 	// Test
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n" + nodeContext.ParentIP, nodeContext.ParentName)
 }
@@ -144,11 +145,6 @@ func nodeJoin(IPs []string) {
 			}
 			helloMsg := MP.NewMessage(IPs[i], "", "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
-		case msg := <- mp.Messages["ack"]:
-			fmt.Printf("Node: receiving ACK message [%s]\n", msg)
-			nodeContext.ParentIP = msg.Src
-			nodeContext.ParentName = msg.SrcName
-			go heartBeat()
 		}
 	}
 

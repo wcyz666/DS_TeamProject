@@ -10,7 +10,7 @@ type SuperNodeContext struct {
     nodes map[string]*nodeInfo
 }
 
-func (sc *SuperNodeContext) GetNodeCount(nodeName string) int {
+func (sc *SuperNodeContext) GetNodeCount() int {
     return len(sc.nodes)
 }
 

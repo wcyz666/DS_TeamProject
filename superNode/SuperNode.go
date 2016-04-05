@@ -122,16 +122,16 @@ func heartBeatHandler(msg *MP.Message)  {
 
 func nodeStateWatcher() {
 	for {
-		time.Sleep(10 * time.Second)
-		fmt.Println("SuperNode: check node state")
+		time.Sleep(5 * time.Second)
 		hasDead, deadNodes := superNodeContext.CheckDead()
 		if hasDead {
 			for _, nodeName := range deadNodes {
-				superNodeContext.RemoveNodes(nodeName)
-				mp.RemoveMapping(nodeName)
 				mp.RemoveMapping(superNodeContext.GetIPByName(nodeName))
+				mp.RemoveMapping(nodeName)
+				superNodeContext.RemoveNodes(nodeName)
 			}
 		}
+		fmt.Printf("SuperNode: check node state, Alive child count: [%d]\n", superNodeContext.GetNodeCount())
 		superNodeContext.ResetState()
 	}
 }
