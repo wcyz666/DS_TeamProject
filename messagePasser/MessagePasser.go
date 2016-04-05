@@ -183,7 +183,9 @@ func (mp *MessagePasser) receiveMapping() {
 		mp.Messages[msg.Kind] <- msg
 	}
 }
-
+func (mp *MessagePasser) RemoveMapping(key string) {
+	delete(mp.connections.clients, key)
+}
 /*
 Send a message
 */

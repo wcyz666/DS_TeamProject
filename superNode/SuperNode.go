@@ -126,7 +126,11 @@ func nodeStateWatcher() {
 		fmt.Println("SuperNode: check node state")
 		hasDead, deadNodes := superNodeContext.CheckDead()
 		if hasDead {
-			superNodeContext.RemoveNodes(deadNodes)
+			for _, nodeName := range deadNodes {
+				superNodeContext.RemoveNodes(nodeName)
+				mp.RemoveMapping(nodeName)
+				mp.RemoveMapping(superNodeContext.GetIPByName(nodeName))
+			}
 		}
 		superNodeContext.ResetState()
 	}
@@ -135,5 +139,5 @@ func nodeStateWatcher() {
 func newChild(msg *MP.Message)  {
 	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
 	mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "ack", MP.EncodeData("this is an ACK message")))
-	superNodeContext.AddNode(msg.SrcName)
+	superNodeContext.AddNode(msg.SrcName, msg.Src)
 }
