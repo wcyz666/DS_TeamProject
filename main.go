@@ -2,18 +2,11 @@ package main
 
 import (
 
-	//"bufio"
-	//"fmt"
-	//"os"
-	//messagePasser "./messagePasser"
 	"./node"
 	SuperNode "./superNode"
 	//"fmt"
-	dns "./dnsService"
-//	config "./config"
 	"flag"
-	//"os"
-//	"fmt"
+
 )
 
 const (
@@ -26,8 +19,7 @@ func start() {
 	flag.Parse()
 
 	if *me == "node" {
-		helloIPs := dns.GetAddr(bootstrap_dns)
-		node.Start(helloIPs)
+		node.Start()
 	} else {
 		SuperNode.Start()
 	}

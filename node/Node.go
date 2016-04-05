@@ -1,7 +1,7 @@
 package node
 
 import (
-	//dns "../dnsService"
+	DNS "../dnsService"
 	nameService "../localNameService"
 	MP "../messagePasser/"
 	StreamElection "../streamElection"
@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	bootstrap_dns = "DS.supernodes.com"
+	bootstrap_dns = "p2plive.supernodes.com"
 	HeartBeatPort = 8888
 )
 
@@ -81,7 +81,8 @@ func errorHandler(msg *MP.Message, nodeContext *nc.NodeContext) {
 Here goes all the apis to be called by the application
 */
 
-func Start(IPs []string) {
+func Start() {
+	IPs := DNS.GetAddr(bootstrap_dns)
 	nodeContext = nc.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
