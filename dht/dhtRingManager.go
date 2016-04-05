@@ -1,5 +1,7 @@
 package dht
 
+/* Implements functionality related to creation and management of underlying Ring structure for Pastry DHT */
+
 import (
 	MP "../messagePasser"
 	dns "../dnsService"
@@ -7,89 +9,6 @@ import (
 	lns "../localNameService"
 	"math/big"
 )
-
-/* Planning to use MD5 to generate the Hash. Hence 128 bit */
-const HASH_KEY_SIZE = 128
-
-type Node struct {
-	nodeKey string /*TODO we may need it for optimizing the node to be stored in this slot */
-	IpAddress string
-	port int
-}
-
-/* Initial DHT version contains details of next and previous nodes */
-type DHT struct {
-	/* We interpret Hash value as a hexadecimal stream so each digit is 4 bit long */
-	prefixForwardingTable [HASH_KEY_SIZE/4][HASH_KEY_SIZE/4]Node
-	hashTable             map[string][]MemberShipInfo
-	mp                    *MP.MessagePasser
-	nodeKey               string
-}
-
-
-
-/* TODO: Need to revisit data structures. Temporarily adding superNodeIp*/
-type MemberShipInfo struct {
-	SuperNodeIp string
-}
-
-/* Private Methods */
-
-/* Appends data to entry associated with key "key" in the hash map */
-func (dht *DHT) appendData(key string, data MemberShipInfo) {
-	entry, isPresent := dht.hashTable[key]
-	if false == isPresent {
-		newEntry := make([]MemberShipInfo, 0)
-		/* add a new entry to hash table */
-		newEntry = append(newEntry, data)
-		dht.hashTable[key] = newEntry
-	} else {
-		entry = append(entry, data)
-		dht.hashTable[key] = entry
-	}
-}
-
-/* Replaces entry associated with key "key" with given data */
-func (dht *DHT) putData(key string, data []MemberShipInfo) {
-	newEntry := make([]MemberShipInfo, len(data))
-	copy(newEntry, data)
-	dht.hashTable[key] = newEntry
-}
-
-/* Retrieves entry with given key */
-func (dht *DHT) getData(key string) ([]MemberShipInfo, bool) {
-	data, isPresent := dht.hashTable[key]
-	return data, isPresent
-}
-
-/* delete entry corresponding to given key */
-func (dht *DHT) deleteEntry(key string) {
-	delete(dht.hashTable, key)
-}
-
-/* remove given membership data from entry corresponding to given key */
-func (dht *DHT) removeData(key string, data MemberShipInfo) {
-	var isMemberShipDataPresent bool = false
-	/* Get the index of member info to be removed */
-	index := 0
-	var value MemberShipInfo
-
-	for index, value = range dht.hashTable[key] {
-		if data == value {
-			isMemberShipDataPresent = true
-			break
-		}
-	}
-	/* Delete entry present at index */
-	if isMemberShipDataPresent {
-		dht.hashTable[key] = append(dht.hashTable[key][:index], dht.hashTable[key][(index+1):]...)
-	}
-}
-
-/* Given a key, function will check whether key is within node's key space */
-func (dht *DHT) isKeyPresentInKeySpace(key string) bool {
-	return true
-}
 
 /* Public Methods */
 
@@ -115,6 +34,13 @@ func getFirstNonSelfIpAddr() (string){
 		}
 	}
 	return ""
+}
+
+/* Given a key, function will check whether key is within key space managed by this node
+ * KeyspaceRange is from (previous node's key + 1) to current node's key
+*/
+func (dht *DHT) isKeyPresentInMyKeyspaceRange(key string) bool {
+	return true
 }
 
 /*TODO Function responsible for updating leaf table and prefix table based on new information */
@@ -153,7 +79,7 @@ func (dht *DHT) HandleJoinReq(msg *MP.Message) {
 	var joinRes JoinResponse
 
 	/* Send failure status or redirect status if key is not managed by you */
-	if (false == dht.isKeyPresentInKeySpace(joinReq.Key)){
+	if (false == dht.isKeyPresentInMyKeyspaceRange(joinReq.Key)){
 		/* Find successor node and send it in the response */
 		successor := dht.findSuccessor(joinReq.Key)
 		if (nil == successor){
@@ -257,88 +183,6 @@ func (dht *DHT) Leave(msg *MP.Message) {
 
 }
 
-func (dht *DHT) HandleCreateLSGroupReq(msg *MP.Message) {
-
-}
-
-func (dht *DHT) HandleCreateLSGroupRes(msg *MP.Message) {
-
-}
-
-func (dht *DHT) AddStreamer(msg *MP.Message){
-
-}
-
-func (dht *DHT) RemoveStreamer(msg *MP.Message){
-
-}
-
-func (dht *DHT) DeleteLSGroup(msg *MP.Message){
-
-}
-
-
-/*
-	if (nil == successor){
-		successorInfoRes.status = FAILURE
-	}
-
-	dht.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "successor_info_res", MP.EncodeData(successorInfoRes)))
-}
-
-func (dht *DHT) HandleSuccessorInfoRes(msg *MP.Message){
-	var successorInfoRes SuccessorInfoRes
-	MP.DecodeData(&successorInfoRes,msg.Data)
-
-	if (successorInfoRes.status == FAILURE){
-		panic("Successor Information Request Failed")
-	}
-
-	dht.mp.Send(MP.NewMessage(successorInfoRes.node.IpAddress, "", "join_dht_req", MP.EncodeData(JoinRequest{dht.nodeKey})))
-}
-*/
-
-func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, bool) {
-	if dht.isKeyPresentInKeySpace(streamingGroupID) {
-		return dht.getData(streamingGroupID)
-	} else {
-		/* TODO fetch data from other node */
-		return make([]MemberShipInfo, 0), false
-	}
-}
-
-func (dht *DHT) Append(streamingGroupID string, data MemberShipInfo) {
-	if dht.isKeyPresentInKeySpace(streamingGroupID) {
-		dht.appendData(streamingGroupID, data)
-	} else {
-		/* TODO send update to other node */
-	}
-}
-
-func (dht *DHT) Put(streamingGroupID string, data []MemberShipInfo) {
-	if dht.isKeyPresentInKeySpace(streamingGroupID) {
-		dht.putData(streamingGroupID, data)
-	} else {
-		/* TODO send update to other node */
-	}
-}
-
-func (dht *DHT) Delete(streamingGroupID string) {
-	if dht.isKeyPresentInKeySpace(streamingGroupID) {
-		dht.deleteEntry(streamingGroupID)
-	} else {
-		/* TODO send update to other node */
-	}
-}
-
-func (dht *DHT) Remove(streamingGroupID string, data MemberShipInfo) {
-	if dht.isKeyPresentInKeySpace(streamingGroupID) {
-		dht.removeData(streamingGroupID, data)
-	} else {
-		/* TODO send update to other node */
-	}
-}
-
 func (dht *DHT) Refresh(StreamingGroupID string) {
 
 }
@@ -349,3 +193,5 @@ func (dht *DHT) Refresh(StreamingGroupID string) {
 func (dht *DHT) HandleRequest() {
 
 }
+
+

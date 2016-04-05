@@ -72,11 +72,22 @@ func Start() {
 		"join_dht_complete":        dHashtable.HandleJoinComplete,  // To indicate successor about completion of join
 		"join_dht_notify":          dHashtable.HandleJoinNotify,    // To indicate predecessor about completion of join
 		"leave_dht_req":            dHashtable.Leave,
-		"create_LS_group_req":      dHashtable.HandleCreateLSGroupReq,
-		"create_LS_group_res":      dHashtable.HandleCreateLSGroupRes,
-		"add_streamer":             dHashtable.AddStreamer,
-		"remove_streamer":          dHashtable.RemoveStreamer,
-		"delete_LS_group":          dHashtable.DeleteLSGroup,
+
+		/* Having separate channels will allow concurrent access to hash map.
+		 * Need to update hash table to be a concurrent map */
+		// Creates new (key,value) pair in DHT. Used when creating a new streaming group
+		"create_entry_req":         dHashtable.HandleCreateNewEntryReq,
+		"create_entry_res":         dHashtable.HandleCreateNewEntryRes,
+		// Update existing entry in DHT. Used when adding or removing a member to existing streaming group
+		"update_entry_req":         dHashtable.HandleUpdateEntryReq,
+		"update_entry_res":         dHashtable.HandleUpdateEntryRes,
+		// Delete existing entry in DHT. Used when dissolving a streaming group
+		"delete_entry_req":         dHashtable.HandleDeleteEntryReq,
+		"delete_entry_res":         dHashtable.HandleDeleteEntryRes,
+		// Query contents of existing entry using its key . Used to learn about members of an existing group
+		"get_data_req":            dHashtable.HandleGetDataReq,
+		"get_data_res":            dHashtable.HandleGetDataRes,
+
 		//"stream_election":	sElection.Receive,
 	}
 
