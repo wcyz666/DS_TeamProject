@@ -44,7 +44,7 @@ func Start() {
 	mp.AddMappings([]string{"exit"})
 
 	// Initialize all the package structs
-	dHashtable = Dht.NewDHT(mp)
+	//dHashtable = Dht.NewDHT(mp)
 	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
 	jElection = JoinElection.NewJoinElection(mp)
 	//sElection = streamElection.NewStreamElection(mp)
@@ -98,6 +98,7 @@ func Start() {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
+	go nodeStateWatcher()
 
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)

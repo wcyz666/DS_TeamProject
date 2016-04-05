@@ -76,6 +76,7 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
+			fmt.Println("Error in sending messages out in Client[" + client.name + "]")
 			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
 		}
