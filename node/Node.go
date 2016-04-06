@@ -53,9 +53,11 @@ func joinAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
 	MP.DecodeData(&result, msg.Data)
 	nodeContext.ParentIP = result.ParentIP
 	nodeContext.ParentName = result.ParentName
+	fmt.Println(result)
 	go heartBeat()
-	// Test
-	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n" + nodeContext.ParentIP, nodeContext.ParentName)
+	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n", result.ParentIP, result.ParentName)
+	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+	mp.Send(joinMsg)
 }
 
 func streamAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
@@ -133,6 +135,7 @@ func nodeJoin(IPs []string) {
 	i := 0
 	helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(helloMsg)
+	fmt.Printf("Node: send hello message to SuperNode [%s]\n", IPs[i])
 	for {
 		select {
 		case err := <-mp.Messages["init_fail"]:
