@@ -204,6 +204,8 @@ func (mp *MessagePasser) Send(msg Message)  {
 		addr := dest
 		conn, err := net.Dial("tcp", addr + ":" + localPort)
 		if (err != nil) {
+                        fmt.Println("Error while sending message to "+ mp.connections.localname)
+			fmt.Println("Error is "+err.Error())
 			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
 			return
