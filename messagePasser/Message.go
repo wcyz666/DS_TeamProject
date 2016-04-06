@@ -97,7 +97,7 @@ func EncodeData(data interface {})([]byte){
 	return buffer.Bytes()
 }
 
-func DecodeData(decData interface {}, encData[] byte)(error){
+func DecodeData(decData interface{}, encData[] byte)(error){
 	buf := bytes.NewBuffer(encData)
 	dec := gob.NewDecoder(buf)
 	err := dec.Decode(decData)

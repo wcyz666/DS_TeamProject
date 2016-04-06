@@ -6,7 +6,8 @@ import (
 	MP "../messagePasser/"
 	StreamElection "../streamElection"
 	"fmt"
-	nc "./nodeContext"
+	JE "../supernodeLib/joinElection"
+	NC "./nodeContext"
 	"time"
 )
 
@@ -18,7 +19,7 @@ const (
 
 var mp *MP.MessagePasser
 var sElection *StreamElection.StreamElection
-var nodeContext *nc.NodeContext
+var nodeContext *NC.NodeContext
 var exitChannal chan int
 
 /**
@@ -34,7 +35,7 @@ func heartBeat() {
 
 
 /* Event handler distributer*/
-func listenOnChannel(channelName string, handler func(*MP.Message, *nc.NodeContext)) {
+func listenOnChannel(channelName string, handler func(*MP.Message, *NC.NodeContext)) {
 	for {
 		//
 		msg := <- mp.Messages[channelName]
@@ -46,31 +47,33 @@ func listenOnChannel(channelName string, handler func(*MP.Message, *nc.NodeConte
 Here goes all the internal event handlers
 */
 
-func joinAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
+func joinAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
 	// Store the parentIP
-	nodeContext.ParentIP = msg.Src
-	nodeContext.ParentName = msg.SrcName
+	result := JE.ElectionResult{}
+	MP.DecodeData(&result, msg.Data)
+	nodeContext.ParentIP = result.ParentIP
+	nodeContext.ParentName = result.ParentName
 	go heartBeat()
 	// Test
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n" + nodeContext.ParentIP, nodeContext.ParentName)
 }
 
-func streamAssign(msg *MP.Message, nodeContext *nc.NodeContext) {
+func streamAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
 
 }
 
-func programListParser(msg *MP.Message, nodeContext *nc.NodeContext) {
+func programListParser(msg *MP.Message, nodeContext *NC.NodeContext) {
 
 }
 
-func receiveReceive(msg *MP.Message, nodeContext *nc.NodeContext) {
+func receiveReceive(msg *MP.Message, nodeContext *NC.NodeContext) {
 
 }
 
-func errorHandler(msg *MP.Message, nodeContext *nc.NodeContext) {
+func errorHandler(msg *MP.Message, nodeContext *NC.NodeContext) {
 	switch nodeContext.State {
 	// Re-throw it to init_fail channel
-	case nc.NodeHello:
+	case NC.NodeHello:
 		msg.Kind = "init_fail"
 	}
 
@@ -84,7 +87,7 @@ Here goes all the apis to be called by the application
 
 func Start() {
 	IPs := DNS.GetAddr(bootstrap_dns)
-	nodeContext = nc.NewNodeContext()
+	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
 
@@ -104,7 +107,7 @@ func Start() {
 	// The map goes as  map[channelName][eventHandler]
 	// All the messages with type channelName will be put in this channel by messagePasser
 	// Then the binded handler of this channel will be called with the argument (*Message)
-	channelNames := map[string]func(*MP.Message, *nc.NodeContext){
+	channelNames := map[string]func(*MP.Message, *NC.NodeContext){
 		"join_assign":     joinAssign,
 		"stream_assign":   streamAssign,
 		"program_list":    programListParser,
@@ -128,7 +131,7 @@ func Start() {
 func nodeJoin(IPs []string) {
 	//Send hello messages until find out a working supernode
 	i := 0
-	helloMsg := MP.NewMessage(IPs[i], "", "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+	helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(helloMsg)
 	for {
 		select {
@@ -143,7 +146,7 @@ func nodeJoin(IPs []string) {
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "", "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
 		}
 	}
