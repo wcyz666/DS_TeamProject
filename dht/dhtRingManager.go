@@ -17,15 +17,15 @@ const (
 )
 
 /* Constructor */
-func NewDHTNode(mp *MP.MessagePasser) *DHTNode {
+func NewDHTNode(mp *MP.MessagePasser) (*DHTNode,int) {
 	var dhtNode = DHTNode{mp: mp}
 	dhtNode.hashTable = make(map[string][]MemberShipInfo)
 	/* Use hash of mac address of the super node as the key for partitioning key space */
 	dhtNode.nodeKey = lns.GetLocalName()
 
 	dhtNode.curNodeNumericKey =  getBigIntFromString(dhtNode.nodeKey)
-	dhtNode.createOrJoinRing()
-	return &dhtNode
+	status := dhtNode.createOrJoinRing()
+	return &dhtNode,status
 }
 
 func getFirstNonSelfIpAddr() (string){
@@ -128,7 +128,7 @@ func (dhtNode *DHTNode) findSuccessor(key string) (*Node){
 	}
 }
 
-func (dhtNode *DHTNode) createOrJoinRing(){
+func (dhtNode *DHTNode) createOrJoinRing()int{
 	ipAddr := getFirstNonSelfIpAddr()
 	if ("" == ipAddr){
 		/* No entries exist or your are the only one. This means you are like
@@ -136,6 +136,7 @@ func (dhtNode *DHTNode) createOrJoinRing(){
 		fmt.Println("[DHT]	Creating New DHT")
 		dhtNode.leafTable.nextNode = nil
 		dhtNode.leafTable.prevNode = nil
+		return NEW_DHT_CREATED
 	} else {
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
@@ -143,7 +144,7 @@ func (dhtNode *DHTNode) createOrJoinRing(){
 		fmt.Println("[DHT]	Joining Existing DHT. Sending Request to " + ipAddr)
 		ip,name := dhtNode.mp.GetNodeIpAndName()
 		dhtNode.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.nodeKey,ip,name})))
-
+		return JOINING_EXISTING_DHT
 	}
 }
 
