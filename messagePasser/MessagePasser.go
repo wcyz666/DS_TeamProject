@@ -175,10 +175,6 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 
-                fmt.Println("msg.Kind is "+msg.Kind)
-                for k,_ := range mp.Messages{
-                        fmt.Println(k)
-                }
 		_, exists := mp.Messages[msg.Kind]
 		if exists == false {
 			mp.AddMapping(msg.Kind)
