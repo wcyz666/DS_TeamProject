@@ -9,6 +9,7 @@ import (
 	JE "../supernodeLib/joinElection"
 	NC "./nodeContext"
 	"time"
+	Streamer "../streamer"
 )
 
 const (
@@ -35,11 +36,11 @@ func heartBeat() {
 
 
 /* Event handler distributer*/
-func listenOnChannel(channelName string, handler func(*MP.Message, *NC.NodeContext)) {
+func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	for {
 		//
 		msg := <- mp.Messages[channelName]
-		go handler(msg, nodeContext)
+		go handler(msg)
 	}
 }
 
@@ -47,7 +48,9 @@ func listenOnChannel(channelName string, handler func(*MP.Message, *NC.NodeConte
 Here goes all the internal event handlers
 */
 
-func joinAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
+
+func joinAssign(msg *MP.Message) {
+
 	// Store the parentIP
 	result := JE.ElectionResult{}
 	MP.DecodeData(&result, msg.Data)
@@ -60,19 +63,20 @@ func joinAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
 	mp.Send(joinMsg)
 }
 
-func streamAssign(msg *MP.Message, nodeContext *NC.NodeContext) {
+
+func streamAssign(msg *MP.Message) {
 
 }
 
-func programListParser(msg *MP.Message, nodeContext *NC.NodeContext) {
+func programListParser(msg *MP.Message) {
 
 }
 
-func receiveReceive(msg *MP.Message, nodeContext *NC.NodeContext) {
+func receiveReceive(msg *MP.Message) {
 
 }
 
-func errorHandler(msg *MP.Message, nodeContext *NC.NodeContext) {
+func errorHandler(msg *MP.Message) {
 	switch nodeContext.State {
 	// Re-throw it to init_fail channel
 	case NC.NodeHello:
@@ -92,6 +96,7 @@ func Start() {
 	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
+	streamer := Streamer.NewStreamer(mp)
 
 	// We use for loop to connect with all supernode one-by-one,
 	// if a connection to one supernode fails, an error message
@@ -109,12 +114,20 @@ func Start() {
 	// The map goes as  map[channelName][eventHandler]
 	// All the messages with type channelName will be put in this channel by messagePasser
 	// Then the binded handler of this channel will be called with the argument (*Message)
-	channelNames := map[string]func(*MP.Message, *NC.NodeContext){
+
+	channelNames := map[string]func(*MP.Message){
 		"join_assign":     joinAssign,
 		"stream_assign":   streamAssign,
 		"program_list":    programListParser,
 		"election_stream": receiveReceive,
 		"error" : errorHandler,
+
+		// The streaming related handlers goes here
+		"stream_election": streamer.HandleElection,
+		"streamer_join": streamer.HandleJoin,
+		"streaming_data": streamer.HandleStreamerData,
+		"streaming_new_program": streamer.HandleNewProgram,
+		"streaming_stop_program": streamer.HandleStopProgram,
 	}
 
 	// Init and listen
