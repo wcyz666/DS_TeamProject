@@ -17,15 +17,14 @@ const (
 )
 
 /* Constructor */
-func NewDHTNode(mp *MP.MessagePasser) (*DHTNode,int) {
+func NewDHTNode(mp *MP.MessagePasser) (*DHTNode) {
 	var dhtNode = DHTNode{mp: mp}
 	dhtNode.hashTable = make(map[string][]MemberShipInfo)
 	/* Use hash of mac address of the super node as the key for partitioning key space */
 	dhtNode.nodeKey = lns.GetLocalName()
 
 	dhtNode.curNodeNumericKey =  getBigIntFromString(dhtNode.nodeKey)
-	status := dhtNode.createOrJoinRing()
-	return &dhtNode,status
+	return &dhtNode
 }
 
 func getFirstNonSelfIpAddr() (string){
@@ -130,7 +129,7 @@ func (dhtNode *DHTNode) findSuccessor(key string) (*Node){
 	}
 }
 
-func (dhtNode *DHTNode) createOrJoinRing()int{
+func (dhtNode *DHTNode) CreateOrJoinRing()int{
 	ipAddr := getFirstNonSelfIpAddr()
 	if ("" == ipAddr){
 		/* No entries exist or your are the only one. This means you are like
