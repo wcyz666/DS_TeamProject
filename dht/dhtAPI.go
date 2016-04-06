@@ -1,52 +1,62 @@
 package dht
 
+import (
+	MP "../messagePasser"
+)
+
 /*
  * DHT APIs Implementation.
-*/
+ */
 
-func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, int) {
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		return dht.getData(streamingGroupID)
+/* Constructor */
+func StartDHTService(mp *MP.MessagePasser) *DHTService {
+	var dhtService = DHTService{DhtNode:NewDHTNode(mp)}
+	return &dhtService
+}
+
+func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		return dht.DhtNode.getData(streamingGroupID)
 	} else {
 		/* TODO fetch data from other node */
 		return make([]MemberShipInfo, 0), SUCCESS
 	}
 }
 
-func (dht *DHT) Create(streamingGroupID string, data MemberShipInfo) (int){
+func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status = dht.createEntry(streamingGroupID, data)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status = dht.DhtNode.createEntry(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
 	}
 	return status
 }
 
-func (dht *DHT) Delete(streamingGroupID string) (int) {
+func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status = dht.deleteEntry(streamingGroupID)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status = dht.DhtNode.deleteEntry(streamingGroupID)
 	} else {
 		/* TODO send update to other node */
 	}
 	return status
 }
 
-func (dht *DHT) Append(streamingGroupID string, data MemberShipInfo) (int) {
+func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
 	status := SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status =  dht.appendData(streamingGroupID, data)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status =  dht.DhtNode.appendData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
 	}
 	return status
 }
 
-func (dht *DHT) Remove(streamingGroupID string, data MemberShipInfo) (int){
+func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
 	status := SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status = dht.removeData(streamingGroupID, data)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status = dht.DhtNode.removeData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
 	}

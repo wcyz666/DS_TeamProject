@@ -1,5 +1,7 @@
 package dht
 
+/* Structure of messages exchanged between DHT nodes */
+
 type JoinRequest struct {
 	Key string
 }

@@ -9,51 +9,51 @@ import (
 /* Private Methods */
 
 /* Creates a new (key,value) pair entry in DHT */
-func (dht *DHT) createEntry(key string, data MemberShipInfo) (int) {
+func (dhtNode *DHTNode) createEntry(key string, data MemberShipInfo) (int) {
 	var status int
-	_, isPresent := dht.hashTable[key]
+	_, isPresent := dhtNode.hashTable[key]
 
 	status = SUCCESS
 	if true == isPresent {
 		/* releases the entry for garbage collection */
-		dht.hashTable[key] = nil
+		dhtNode.hashTable[key] = nil
 		status = SUCCESS_ENTRY_OVERWRITTEN
 	}
 
 	newEntry := make([]MemberShipInfo, 0)
 	/* add a new entry to hash table */
 	newEntry = append(newEntry, data)
-	dht.hashTable[key] = newEntry
+	dhtNode.hashTable[key] = newEntry
 
 	return status
 }
 
 /* deletes entry corresponding to given key */
-func (dht *DHT) deleteEntry(key string) (int) {
-	delete(dht.hashTable, key)
+func (dhtNode *DHTNode) deleteEntry(key string) (int) {
+	delete(dhtNode.hashTable, key)
 	return SUCCESS
 }
 
 /* Appends membership data to existing entry associated with key "key" in the hash map */
-func (dht *DHT) appendData(key string, data MemberShipInfo) (int){
-	entry, isPresent := dht.hashTable[key]
+func (dhtNode *DHTNode) appendData(key string, data MemberShipInfo) (int){
+	entry, isPresent := dhtNode.hashTable[key]
 	if false == isPresent {
 		return KEY_NOT_PRESENT
 	} else {
 		entry = append(entry, data)
-		dht.hashTable[key] = entry
+		dhtNode.hashTable[key] = entry
 	}
 	return SUCCESS
 }
 
 /* remove given membership data from entry corresponding to given key */
-func (dht *DHT) removeData(key string, data MemberShipInfo) (int) {
+func (dhtName *DHTNode) removeData(key string, data MemberShipInfo) (int) {
 	var isMemberShipDataPresent bool = false
 	/* Get the index of member info to be removed */
 	index := 0
 	var value MemberShipInfo
 
-	entry, isPresent := dht.hashTable[key]
+	entry, isPresent := dhtName.hashTable[key]
 	if (false == isPresent){
 		return KEY_NOT_PRESENT
 	}
@@ -66,16 +66,16 @@ func (dht *DHT) removeData(key string, data MemberShipInfo) (int) {
 	}
 	/* Delete entry present at index */
 	if isMemberShipDataPresent {
-		dht.hashTable[key] = append(dht.hashTable[key][:index], dht.hashTable[key][(index+1):]...)
+		dhtName.hashTable[key] = append(dhtName.hashTable[key][:index], dhtName.hashTable[key][(index+1):]...)
 	}
 
 	return  SUCCESS
 }
 
 /* Retrieves entry with given key */
-func (dht *DHT) getData(key string) ([]MemberShipInfo, int) {
+func (dhtNode *DHTNode) getData(key string) ([]MemberShipInfo, int) {
 	status := SUCCESS
-	data, isPresent := dht.hashTable[key]
+	data, isPresent := dhtNode.hashTable[key]
 	if (false == isPresent){
 		status = KEY_NOT_PRESENT
 	}
@@ -83,35 +83,35 @@ func (dht *DHT) getData(key string) ([]MemberShipInfo, int) {
 }
 
 
-func (dht *DHT) HandleCreateNewEntryReq(msg *MP.Message) {
+func (dhtNode *DHTNode) HandleCreateNewEntryReq(msg *MP.Message) {
 
 }
 
-func (dht *DHT) HandleCreateNewEntryRes(msg *MP.Message) {
+func (dhtNode *DHTNode) HandleCreateNewEntryRes(msg *MP.Message) {
 
 }
 
-func (dht *DHT) HandleUpdateEntryReq(msg *MP.Message){
+func (dhtNode *DHTNode) HandleUpdateEntryReq(msg *MP.Message){
 
 }
 
-func (dht *DHT) HandleUpdateEntryRes(msg *MP.Message){
+func (dhtNode *DHTNode) HandleUpdateEntryRes(msg *MP.Message){
 
 }
 
-func (dht *DHT) HandleDeleteEntryReq(msg *MP.Message){
+func (dhtNode *DHTNode) HandleDeleteEntryReq(msg *MP.Message){
 
 }
 
-func (dht *DHT) HandleDeleteEntryRes(msg *MP.Message){
+func (dhtNode *DHTNode) HandleDeleteEntryRes(msg *MP.Message){
 
 }
 
-func (dht *DHT) HandleGetDataReq(msg *MP.Message){
+func (dhtNode *DHTNode) HandleGetDataReq(msg *MP.Message){
 
 }
 
-func (dht *DHT) HandleGetDataRes(msg *MP.Message){
+func (dhtNode *DHTNode) HandleGetDataRes(msg *MP.Message){
 
 }
 
