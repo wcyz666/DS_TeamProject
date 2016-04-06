@@ -89,7 +89,8 @@ func Start() {
 		"stream_start": streamHandler.StreamStart,
 		"stream_stop": streamHandler.StreamStop,
 		"stream_join":     streamHandler.StreamJoin,
-		"stream_new_program": streamHandler.StreamNewProgram,
+		"stream_new_program": streamHandler.StreamProgramStart,  // This is sent from other supernodes
+		"stream_new_program": streamHandler.StreamProgramStop,  // This is sent from other supernodes
 
 
 	}

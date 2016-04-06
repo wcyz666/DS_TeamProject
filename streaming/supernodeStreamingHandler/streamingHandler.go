@@ -4,6 +4,8 @@ import (
 	dht "../../dht"
 	MP "../../messagePasser"
 	SNC "../../superNode/superNodeContext"
+	SDataType "../"
+	"fmt"
 )
 
 /**
@@ -39,12 +41,25 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 
 }
 
-/* A node asks the up-to-date stream list */
-func (sHandler *StreamingHandler) StreamNewProgram(msg *MP.Message) {
+/* Update broadcasted from other supernodes */
+func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
+	//TODO: Notify the children the new program
+}
+
+/* Update broadcasted from other supernodes */
+func (sHandler *StreamingHandler) StreamProgramStop(msg *MP.Message) {
 	//TODO: Notify the children the new program
 }
 
 /* A child node asks to join a certain streaming group */
 func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
-	//TODO: Notify one of the streamer in the DHT
+	// Notify one of the streamers in the DHT
+	var controlData SDataType.StreamControlMsg
+	MP.DecodeData(&controlData, msg.Data)
+
+	root := controlData.RootStreamer
+	fmt.Println(root)
+
+	// TODO: find the streaming group with root in the DHT and update it
+	// TODO: Send "streaming_join" to one of the streamers
 }

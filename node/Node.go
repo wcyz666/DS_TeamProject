@@ -94,7 +94,7 @@ func Start() {
 	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
-	streamer := Streamer.NewStreamer(mp)
+	streamer := Streamer.NewStreamer(mp, nodeContext)
 
 	// We use for loop to connect with all supernode one-by-one,
 	// if a connection to one supernode fails, an error message
@@ -123,6 +123,8 @@ func Start() {
 		"streaming_election": streamer.HandleElection,
 		"streaming_join": streamer.HandleJoin,
 		"streaming_data": streamer.HandleStreamerData,
+		"streaming_stop": streamer.HandleStop,
+		"streaming_assign": streamer.HandleAssign,
 		"streaming_new_program": streamer.HandleNewProgram,
 		"streaming_stop_program": streamer.HandleStopProgram,
 	}
