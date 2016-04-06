@@ -6,7 +6,8 @@ import (
 	SuperNode "./superNode"
 	//"fmt"
 	"flag"
-
+//        dns "./dnsService"
+//        config "./config"
 )
 
 const (
@@ -43,7 +44,7 @@ func main() {
 
 	*/
 
-	// dns.ClearAddrRecords(config.BootstrapDomainName)
+//	 dns.ClearAddrRecords(config.BootstrapDomainName)
 
 	start()
 }
