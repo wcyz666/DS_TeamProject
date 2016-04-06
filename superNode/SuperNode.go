@@ -43,10 +43,15 @@ func Start() {
 	// Block supernode until receive exit msg
 	mp.AddMappings([]string{"exit"})
 
+        fmt.Println("Debug 1")
 	// Initialize all the package structs
 	dHashtable = Dht.StartDHTService(mp)
+        fmt.Println("Debug 2")
 	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
+        fmt.Println("Debug 3") 
 	jElection = JoinElection.NewJoinElection(mp)
+	fmt.Println("Debug 4")
+
 
 	dhtNode := dHashtable.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
@@ -92,10 +97,12 @@ func Start() {
 		//"stream_election":	sElection.Receive,
 	}
 
+        fmt.Println("Coming till here")	
 	// Init and listen
 	for channelName, handler := range channelNames {
 		// Init all the channels listening on
 		mp.Messages[channelName] = make(chan *MP.Message)
+		fmt.Println("Added channel name is "+channelName)
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}

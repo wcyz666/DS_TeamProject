@@ -164,7 +164,8 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	var joinReq JoinRequest
 	MP.DecodeData(&joinReq,msg.Data)
 	var joinRes JoinResponse
-
+        fmt.Println("[DHT] HandleJoinReq")
+        
 	if (true == dhtNode.AmITheOnlyNodeInDHT()){
 		/* Me apocolyse, got my first disciple. Join request received for a DHT ring of one node */
 		/* Add new node as both prev and next node of current node */
