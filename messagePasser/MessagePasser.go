@@ -215,3 +215,10 @@ func (mp *MessagePasser) Send(msg Message)  {
 	}
 
 }
+
+func (mp *MessagePasser) GetNodeIpAndName()(string,string){
+	nodeName := mp.connections.localname
+	nodeIP, _ := dns.ExternalIP()
+	return nodeIP,nodeName
+}
+

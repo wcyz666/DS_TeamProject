@@ -70,7 +70,6 @@ func Start() {
 
 		/* DHT call backs */
 		"join_dht_req":            	dhtNode.HandleJoinReq,
-		"join_dht_res":             dhtNode.HandleJoinRes,
 		"join_dht_complete":        dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
 		"join_dht_notify":          dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
 		"leave_dht_req":            dhtNode.Leave,

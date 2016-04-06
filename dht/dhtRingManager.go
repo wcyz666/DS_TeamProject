@@ -120,7 +120,11 @@ func (dhtNode *DHTNode)getPredecessorFromLeafTable()(*Node)  {
 
 /*TODO currently we are implementing a simple find successor scheme */
 func (dhtNode *DHTNode) findSuccessor(key string) (*Node){
-	return nil
+	if (computeTraversalDirection(dhtNode.curNodeNumericKey,getBigIntFromString(key)) == TRAVERSE_ANTI_CLOCK_WISE){
+		return dhtNode.leafTable.prevNode
+	} else {
+		return dhtNode.leafTable.nextNode
+	}
 }
 
 func (dhtNode *DHTNode) createOrJoinRing(){
@@ -134,9 +138,15 @@ func (dhtNode *DHTNode) createOrJoinRing(){
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		dhtNode.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.nodeKey})))
+		ip,name := dhtNode.mp.GetNodeIpAndName()
+		dhtNode.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.nodeKey,ip,name})))
 
 	}
+}
+
+func (dhtNode *DHTNode) sendJoinReq(node *Node){
+	ip,name := dhtNode.mp.GetNodeIpAndName()
+	dhtNode.mp.Send(MP.NewMessage(node.IpAddress, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.nodeKey,ip,name})))
 }
 
 func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
@@ -144,21 +154,32 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	MP.DecodeData(&joinReq,msg.Data)
 	var joinRes JoinResponse
 
-	/* Send failure status or redirect status if key is not managed by you */
+	/* Forward the message if key is not managed by you */
 	if (false == dhtNode.isKeyPresentInMyKeyspaceRange(joinReq.Key)){
 		/* Find successor node and send it in the response */
 		successor := dhtNode.findSuccessor(joinReq.Key)
 		if (nil == successor){
 			joinRes.Status = FAILURE
+			/* Send failure message to Join Request originator */
+			dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress,
+				            joinReq.OriginName, "join_dht_res", MP.EncodeData(joinRes)))
 		} else {
-			/* indicate to the node about the actual successor */
-			joinRes.Status = SUCCESSOR_REDIRECTION
-			joinRes.NewSuccessorNode = *successor
+			/* Forward the message towards successor */
+			dhtNode.mp.Send(MP.NewMessage(successor.IpAddress, "", "join_dht_req", MP.EncodeData(joinReq)))
 		}
-		dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_res", MP.EncodeData(joinRes)))
 		return
 	}
 
+	if (true == dhtNode.isRingUpdateInProgress){
+		joinRes.Status = JOIN_IN_PROGRESS_RETRY_LATER
+		dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress,
+			joinReq.OriginName, "join_dht_res", MP.EncodeData(joinRes)))
+		return
+	}
+
+	/* Since we are transferring a portion of our hashtable to new node and the process is still in progress
+	 * set this flag */
+	dhtNode.isRingUpdateInProgress = true
 	/* Retrieve entries which are less than new node's key and create a map out of it.*/
 	nodeKey := getBigIntFromString(joinReq.Key)
 	var entryKey *big.Int
@@ -171,27 +192,23 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 		}
 	}
 
-	/* Send the map in the response to caller */
+	/* Send the map in the response to Join Request originator */
 	joinRes.Status = SUCCESS
 	joinRes.Predecessor = *(dhtNode.getPredecessorFromLeafTable())
-	dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_res", MP.EncodeData(joinRes)))
+	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, joinReq.OriginName , "join_dht_res", MP.EncodeData(joinRes)))
 }
 
-func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) {
+func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 	var joinRes JoinResponse
 	MP.DecodeData(&joinRes,msg.Data)
+	var node *Node = nil
 
-	if (joinRes.Status == SUCCESSOR_REDIRECTION){
-		/* Send join request to new successor node */
-		dhtNode.mp.Send(MP.NewMessage(joinRes.NewSuccessorNode.IpAddress, "", "join_dht_req",
-			                             MP.EncodeData(JoinRequest{dhtNode.nodeKey})))
-
-	} else if (joinRes.Status == FAILURE){
+	if joinRes.Status == FAILURE {
 		panic ("Join procedure for DHT failed")
-
+	} else if (joinRes.Status == JOIN_IN_PROGRESS_RETRY_LATER) {
+		node = &(Node{msg.Src})
 	} else {
 		/* SUCCESS case */
-
 
 		/* 1. Add received map to local DHT table */
 		dhtNode.hashTable = joinRes.HashTable
@@ -203,6 +220,8 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) {
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, "", "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
 	}
+
+	return joinRes.Status,node
 }
 
 func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
@@ -224,6 +243,8 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 			delete(dhtNode.hashTable,k)
 		}
 	}
+
+	dhtNode.isRingUpdateInProgress = false
 }
 
 func (dhtNode *DHTNode) HandleJoinNotify(msg *MP.Message) {

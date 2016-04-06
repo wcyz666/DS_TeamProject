@@ -3,7 +3,9 @@ package dht
 /* Structure of messages exchanged between DHT nodes */
 
 type JoinRequest struct {
-	Key string
+	Key 			string
+	OriginIpAddress string
+	OriginName      string
 }
 
 type JoinResponse struct {

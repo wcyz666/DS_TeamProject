@@ -2,15 +2,53 @@ package dht
 
 import (
 	MP "../messagePasser"
+	"time"
+	"fmt"
 )
+
+const JOIN_MAX_REATTEMPTS = 5
 
 /*
  * DHT APIs Implementation.
  */
 
-/* Constructor */
+/* API to start DHT service on a super node.
+ * Params : Message passer reference
+ * Return value : DHT service reference on success
+ *                nil on failure
+ */
 func StartDHTService(mp *MP.MessagePasser) *DHTService {
 	var dhtService = DHTService{DhtNode:NewDHTNode(mp)}
+	mp.AddMappings([]string{"join_dht_res"})
+	numOfAttempts := JOIN_MAX_REATTEMPTS
+
+	for {
+		select {
+			case joinRes := <-mp.Messages["join_dht_res"]:
+				 status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
+				 if (JOIN_IN_PROGRESS_RETRY_LATER == status){
+					 numOfAttempts--
+					 if (numOfAttempts <= 0 ){
+						 return nil
+					 }
+					 /* Another instance of Join is in progress in successor Node
+					  * Retry after 2 seconds
+					  */
+					 timer1 := time.NewTimer(time.Second * 2)
+					 go func(){
+						 <-timer1.C
+						 fmt.Println("Retransmitting Join Request")
+						 dhtService.DhtNode.sendJoinReq(successor)
+					 }()
+				 } else {
+					/* Join completed with error or success. Return control to caller */
+					 if (status != SUCCESS){
+						 return  nil
+					 }
+					break;
+				 }
+		}
+	}
 	return &dhtService
 }
 
