@@ -176,6 +176,8 @@ func (mp *MessagePasser) receiveMapping() {
 		msg := <-mp.Incoming
 
 		_, exists := mp.Messages[msg.Kind]
+		fmt.Println("msg kind is "+msg.Kind)
+		fmt.Println("msg source is "+msg.Src)
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
@@ -204,8 +206,9 @@ func (mp *MessagePasser) Send(msg Message)  {
 		addr := dest
 		conn, err := net.Dial("tcp", addr + ":" + localPort)
 		fmt.Println("attempting to send to "+ addr + ":" + localPort)
+		fmt.Println("msg.kind is "+msg.Kind)
 		if (err != nil) {
-                        fmt.Println(" Error while sending message to "+ mp.connections.localname)
+			fmt.Println(" Error while sending message to "+ mp.connections.localname)
 			fmt.Println(" Error is "+err.Error())
 			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
