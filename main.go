@@ -6,8 +6,8 @@ import (
 	SuperNode "./superNode"
 	//"fmt"
 	"flag"
-//        dns "./dnsService"
-//        config "./config"
+        dns "./dnsService"
+        config "./config"
 )
 
 const (
@@ -44,7 +44,12 @@ func main() {
 
 	*/
 
-//	 dns.ClearAddrRecords(config.BootstrapDomainName)
+	 clearDNS:= flag.Bool("clearDNS",false,"set if you want to clear DNS A records")
 
-	start()
+	 flag.Parse()
+         if (*clearDNS){
+	     dns.ClearAddrRecords(config.BootstrapDomainName)
+	 } else { 
+	     start()
+	 }
 }
