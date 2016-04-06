@@ -7,6 +7,10 @@ import (
 )
 
 const JOIN_MAX_REATTEMPTS = 5
+const (
+	NEW_DHT_CREATED = iota
+	JOINING_EXISTING_DHT
+)
 
 /*
  * DHT APIs Implementation.
@@ -18,8 +22,14 @@ const JOIN_MAX_REATTEMPTS = 5
  *                nil on failure
  */
 func StartDHTService(mp *MP.MessagePasser) *DHTService {
-	var dhtService = DHTService{DhtNode:NewDHTNode(mp)}
+	dhtNode,status := NewDHTNode(mp)
+	var dhtService = DHTService{DhtNode: dhtNode}
 	mp.AddMappings([]string{"join_dht_res"})
+
+	if (status == NEW_DHT_CREATED){
+		return &dhtService
+	}
+
 	numOfAttempts := JOIN_MAX_REATTEMPTS
 
 	for {
