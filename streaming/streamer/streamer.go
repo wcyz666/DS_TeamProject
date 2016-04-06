@@ -1,8 +1,9 @@
 package streamer
 
 import (
-	MP "../messagePasser"
+	MP "../../messagePasser"
 	"strconv"
+	SDataType "../"
 )
 
 const(
@@ -90,7 +91,7 @@ func (streamer *Streamer) Stream(data string){
 /********************************************************************************/
 /* Being selected in the DHT and handle the join request*/
 func (streamer *Streamer) HandleJoin(msg *MP.Message){
-	var controlData StreamControlMsg
+	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 
 	// TODO: Actually start the election below
@@ -106,14 +107,14 @@ func (streamer *Streamer) HandleElection(msg *MP.Message){
 
 /* A New Program is added */
 func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
-	var controlData StreamControlMsg
+	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 	streamer.ProgramList[controlData.SrcName + "[" + strconv.Itoa(controlData.StreamID) + "]"] = controlData.Title
 }
 
 /* A program is stoped */
 func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
-	var controlData StreamControlMsg
+	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 	delete(streamer.ProgramList, controlData.SrcName + "[" + strconv.Itoa(controlData.StreamID) + "]")
 }

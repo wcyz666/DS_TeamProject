@@ -10,7 +10,7 @@ import (
 	Config "../config"
 	SNC "./superNodeContext/"
 	JoinElection "../supernodeLib/joinElection"
-	Streaming "../supernodeLib/streaming"
+	Streaming "../streaming/supernodeStreamingHandler"
 	"time"
 
 )
@@ -45,7 +45,7 @@ func Start() {
 
 	// Initialize all the package structs
 	//dHashtable = Dht.NewDHT(mp)
-	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
+	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp, superNodeContext)
 	jElection = JoinElection.NewJoinElection(mp)
 	//sElection = streamElection.NewStreamElection(mp)
 
@@ -57,9 +57,6 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
-		"stream_start":    streamHandler.StreamStart,
-		"stream_get_list": streamHandler.StreamGetList,
-		"stream_join":     streamHandler.StreamJoin,
 		"heartbeat": heartBeatHandler,
 		"hello":          jElection.Start,
 		"join": 			newChild,
@@ -88,7 +85,13 @@ func Start() {
 		"get_data_req":            dHashtable.HandleGetDataReq,
 		"get_data_res":            dHashtable.HandleGetDataRes,
 
-		//"stream_election":	sElection.Receive,
+		/* Here goes the handlers related to streaming process */
+		"stream_start": streamHandler.StreamStart,
+		"stream_stop": streamHandler.StreamStop,
+		"stream_join":     streamHandler.StreamJoin,
+		"stream_new_program": streamHandler.StreamNewProgram,
+
+
 	}
 
 	// Init and listen

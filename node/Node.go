@@ -4,12 +4,11 @@ import (
 	DNS "../dnsService"
 	nameService "../localNameService"
 	MP "../messagePasser/"
-	StreamElection "../streamElection"
 	"fmt"
 	JE "../supernodeLib/joinElection"
 	NC "./nodeContext"
 	"time"
-	Streamer "../streamer"
+	Streamer "../streaming/streamer"
 )
 
 const (
@@ -19,7 +18,6 @@ const (
 
 
 var mp *MP.MessagePasser
-var sElection *StreamElection.StreamElection
 var nodeContext *NC.NodeContext
 var exitChannal chan int
 
@@ -107,7 +105,6 @@ func Start() {
 	mp.AddMappings([]string{"exit", "init_fail", "ack"})
 
 	// Initialize all the package structs
-	sElection = StreamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
 	// TODO: Register your channel name and binded eventhandlers here
@@ -123,8 +120,8 @@ func Start() {
 		"error" : errorHandler,
 
 		// The streaming related handlers goes here
-		"stream_election": streamer.HandleElection,
-		"streamer_join": streamer.HandleJoin,
+		"streaming_election": streamer.HandleElection,
+		"streaming_join": streamer.HandleJoin,
 		"streaming_data": streamer.HandleStreamerData,
 		"streaming_new_program": streamer.HandleNewProgram,
 		"streaming_stop_program": streamer.HandleStopProgram,
