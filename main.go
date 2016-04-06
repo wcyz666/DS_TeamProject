@@ -6,19 +6,15 @@ import (
 	SuperNode "./superNode"
 	//"fmt"
 	"flag"
-//        dns "./dnsService"
-//        config "./config"
+        dns "./dnsService"
+        config "./config"
 )
 
 const (
 	bootstrap_dns = "DS.supernodes.com"
 )
 
-func start() {
-	me := flag.String("class", "supernode", "the identity of the current node")
-
-	flag.Parse()
-
+func start(me *string) {
 	if *me == "node" {
 		node.Start()
 	} else {
@@ -44,7 +40,13 @@ func main() {
 
 	*/
 
-//	 dns.ClearAddrRecords(config.BootstrapDomainName)
+	 clearDNS:= flag.Bool("clearDNS",false,"set if you want to clear DNS A records")
+         me := flag.String("class", "supernode", "the identity of the current node")
 
-	start()
+	 flag.Parse()
+         if (*clearDNS){
+	     dns.ClearAddrRecords(config.BootstrapDomainName)
+	 } else { 
+	     start(me)
+	 }
 }

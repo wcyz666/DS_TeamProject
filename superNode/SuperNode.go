@@ -91,7 +91,7 @@ func Start() {
 
 		//"stream_election":	sElection.Receive,
 	}
-
+	
 	// Init and listen
 	for channelName, handler := range channelNames {
 		// Init all the channels listening on
