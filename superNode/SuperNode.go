@@ -13,6 +13,7 @@ import (
 	Streaming "../supernodeLib/streaming"
 	"time"
 
+	"strconv"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 )
 
 var mp *MP.MessagePasser
-var dHashtable *Dht.DHTService
+var dhtService *Dht.DHTService
 var streamHandler *Streaming.StreamingHandler
 var jElection *JoinElection.JoinElection
 var superNodeContext *SNC.SuperNodeContext
@@ -44,11 +45,11 @@ func Start() {
 	mp.AddMappings([]string{"exit"})
 
 	// Initialize all the package structs
-	dHashtable = Dht.StartDHTService(mp)
-	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
+	dhtService = Dht.NewDHTService(mp)
+	streamHandler = Streaming.NewStreamingHandler(dhtService, mp)
 	jElection = JoinElection.NewJoinElection(mp)
 
-	dhtNode := dHashtable.DhtNode
+	dhtNode := dhtService.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
@@ -91,13 +92,22 @@ func Start() {
 
 		//"stream_election":	sElection.Receive,
 	}
-	
+
 	// Init and listen
-	for channelName, handler := range channelNames {
+	for channelName, _ := range channelNames {
 		// Init all the channels listening on
 		mp.Messages[channelName] = make(chan *MP.Message)
+
+	}
+
+	for channelName, handler := range channelNames {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
+	}
+
+	status := dhtService.Start()
+	if (Dht.DHT_API_SUCCESS != status){
+		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
 
 	exitMsg := <- mp.Messages["exit"]

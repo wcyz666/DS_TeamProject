@@ -48,7 +48,10 @@ func (client *Client) Read(mp *MessagePasser) {
 			return
 		}
 		msg := new(Message)
-		msg.Deserialize(line)
+		err = msg.Deserialize(line)
+		if (err !=nil) {
+			fmt.Println("err is " + err.Error())
+		}
 
 		_, exists := mp.connections.clients[msg.SrcName]
 		if exists == false {
@@ -72,10 +75,12 @@ func (client *Client) Read(mp *MessagePasser) {
 func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
+		fmt.Println("Attempting to send Message of type :" + msg.Kind)
 		seri, _ := msg.Serialize()
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
+			fmt.Println("Error while sending message "+ err.Error())
 			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
 		}
@@ -176,6 +181,7 @@ func (mp *MessagePasser) receiveMapping() {
 		msg := <-mp.Incoming
 
 		_, exists := mp.Messages[msg.Kind]
+
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
@@ -203,10 +209,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 
 		addr := dest
 		conn, err := net.Dial("tcp", addr + ":" + localPort)
-		fmt.Println("attempting to send to "+ addr + ":" + localPort)
 		if (err != nil) {
-                        fmt.Println(" Error while sending message to "+ mp.connections.localname)
-			fmt.Println(" Error is "+err.Error())
 			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
 			return
@@ -224,4 +227,5 @@ func (mp *MessagePasser) GetNodeIpAndName()(string,string){
 	nodeIP, _ := dns.ExternalIP()
 	return nodeIP,nodeName
 }
+
 
