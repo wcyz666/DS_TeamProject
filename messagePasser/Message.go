@@ -73,11 +73,13 @@ func (d *Message) GobDecode(buf []byte) error {
 }
 
 func (d *Message) Serialize() ([]byte, error) {
+        fmt.Println("coming to serialize")
 	var buffer = new(bytes.Buffer)
 	enc := gob.NewEncoder(buffer)
 	err := enc.Encode(d)
+        return buffer.Bytes(),err
 	// Use \xfe as the delimiter
-	return append(buffer.Bytes(), 254), err
+	//return append(buffer.Bytes(), 254), err
 }
 
 func (d *Message) Deserialize(buffer []byte) error {
