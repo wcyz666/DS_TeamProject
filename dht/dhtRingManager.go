@@ -223,7 +223,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	joinRes.Status = SUCCESS
 	joinRes.Predecessor = *(dhtNode.getPredecessorFromLeafTable())
 	fmt.Println("[DHT] Sending Successful Join Response to " + joinReq.OriginIpAddress)
-	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, joinReq.OriginName , "join_dht_res", MP.EncodeData(joinRes)))
+	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, "" , "join_dht_res", MP.EncodeData(joinRes)))
 }
 
 func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
