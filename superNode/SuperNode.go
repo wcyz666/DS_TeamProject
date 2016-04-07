@@ -12,7 +12,6 @@ import (
 	JoinElection "../supernodeLib/joinElection"
 	Streaming "../supernodeLib/streaming"
 	"time"
-	lns "../localNameService"
 
 	"strconv"
 )
