@@ -10,9 +10,10 @@ import (
 	Config "../config"
 	SNC "./superNodeContext/"
 	JoinElection "../supernodeLib/joinElection"
-	Streaming "../supernodeLib/streaming"
+	Streaming "../streaming/supernodeStreamingHandler"
 	"time"
 
+	"strconv"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 )
 
 var mp *MP.MessagePasser
-var dHashtable *Dht.DHTService
+var dhtService *Dht.DHTService
 var streamHandler *Streaming.StreamingHandler
 var jElection *JoinElection.JoinElection
 var superNodeContext *SNC.SuperNodeContext
@@ -44,12 +45,12 @@ func Start() {
 	mp.AddMappings([]string{"exit"})
 
 	// Initialize all the package structs
-	dHashtable = Dht.StartDHTService(mp)
 
-	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp)
+	dhtService = Dht.NewDHTService(mp)
+	streamHandler = Streaming.NewStreamingHandler(dhtService, mp, superNodeContext)
 	jElection = JoinElection.NewJoinElection(mp)
 
-	dhtNode := dHashtable.DhtNode
+	dhtNode := dhtService.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
@@ -60,9 +61,6 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
-		"stream_start":    streamHandler.StreamStart,
-		"stream_get_list": streamHandler.StreamGetList,
-		"stream_join":     streamHandler.StreamJoin,
 		"heartbeat": heartBeatHandler,
 		"hello":          jElection.Start,
 		"join": 			newChild,
@@ -90,17 +88,33 @@ func Start() {
 		"get_data_req":            dhtNode.HandleGetDataReq,
 		"get_data_res":            dhtNode.HandleGetDataRes,
 
-		//"stream_election":	sElection.Receive,
+		/* Here goes the handlers related to streaming process */
+		"stream_start": streamHandler.StreamStart,
+		"stream_stop": streamHandler.StreamStop,
+		"stream_join":     streamHandler.StreamJoin,
+		"stream_program_start": streamHandler.StreamProgramStart,  // This is sent from other supernodes
+		"stream_program_stop": streamHandler.StreamProgramStop,  // This is sent from other supernodes
+
+
 	}
-	
+
 	// Init and listen
-	for channelName, handler := range channelNames {
+	for channelName, _ := range channelNames {
 		// Init all the channels listening on
 		mp.Messages[channelName] = make(chan *MP.Message)
+
+	}
+
+	for channelName, handler := range channelNames {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
 	go nodeStateWatcher()
+
+	status := dhtService.Start()
+	if (Dht.DHT_API_SUCCESS != status){
+		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
+	}
 
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)

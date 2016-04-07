@@ -17,15 +17,14 @@ const (
 )
 
 /* Constructor */
-func NewDHTNode(mp *MP.MessagePasser) (*DHTNode,int) {
+func NewDHTNode(mp *MP.MessagePasser) (*DHTNode) {
 	var dhtNode = DHTNode{mp: mp}
 	dhtNode.hashTable = make(map[string][]MemberShipInfo)
 	/* Use hash of mac address of the super node as the key for partitioning key space */
 	dhtNode.nodeKey = lns.GetLocalName()
 
 	dhtNode.curNodeNumericKey =  getBigIntFromString(dhtNode.nodeKey)
-	status := dhtNode.createOrJoinRing()
-	return &dhtNode,status
+	return &dhtNode
 }
 
 func getFirstNonSelfIpAddr() (string){
@@ -89,6 +88,10 @@ func getBigIntFromString(key string) *big.Int{
  * KeyspaceRange is from (previous node's key + 1) to current node's key
 */
 func (dhtNode *DHTNode) isKeyPresentInMyKeyspaceRange(key string) bool {
+	if ((dhtNode.leafTable.prevNode == nil ) && (dhtNode.leafTable.nextNode == nil)){
+		return true
+	}
+	
 	numericKey := getBigIntFromString(key)
 	if  ((dhtNode.leafTable.nextNode == nil) &&(dhtNode.leafTable.prevNode == nil)){
 		return true
@@ -130,7 +133,7 @@ func (dhtNode *DHTNode) findSuccessor(key string) (*Node){
 	}
 }
 
-func (dhtNode *DHTNode) createOrJoinRing()int{
+func (dhtNode *DHTNode) CreateOrJoinRing()int{
 	ipAddr := getFirstNonSelfIpAddr()
 	if ("" == ipAddr){
 		/* No entries exist or your are the only one. This means you are like
@@ -167,7 +170,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	var joinReq JoinRequest
 	MP.DecodeData(&joinReq,msg.Data)
 	var joinRes JoinResponse
-        fmt.Println("[DHT] HandleJoinReq")
+	fmt.Println("[DHT] HandleJoinReq")
         
 	if (true == dhtNode.AmITheOnlyNodeInDHT()){
 		/* Me apocolyse, got my first disciple. Join request received for a DHT ring of one node */
@@ -222,7 +225,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	joinRes.Status = SUCCESS
 	joinRes.Predecessor = *(dhtNode.getPredecessorFromLeafTable())
 	fmt.Println("[DHT] Sending Successful Join Response to " + joinReq.OriginIpAddress)
-	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, joinReq.OriginName , "join_dht_res", MP.EncodeData(joinRes)))
+	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, "" , "join_dht_res", MP.EncodeData(joinRes)))
 }
 
 func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {

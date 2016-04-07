@@ -12,6 +12,12 @@ const (
 	JOINING_EXISTING_DHT
 )
 
+const (
+	DHT_API_SUCCESS = iota
+	DHT_API_FAILURE_MAX_ATTEMPTS_REACHED
+	DHT_API_FAILURE
+)
+
 /*
  * DHT APIs Implementation.
  */
@@ -21,45 +27,48 @@ const (
  * Return value : DHT service reference on success
  *                nil on failure
  */
-func StartDHTService(mp *MP.MessagePasser) *DHTService {
-	dhtNode,status := NewDHTNode(mp)
+func NewDHTService(mp *MP.MessagePasser) *DHTService {
+	dhtNode := NewDHTNode(mp)
 	var dhtService = DHTService{DhtNode: dhtNode}
 	mp.AddMappings([]string{"join_dht_res"})
+	return &dhtService
+}
 
+func (dhtService *DHTService)Start() int{
+	status := dhtService.DhtNode.CreateOrJoinRing()
 	if (status == NEW_DHT_CREATED){
-		return &dhtService
+		return DHT_API_SUCCESS
 	}
 
 	numOfAttempts := JOIN_MAX_REATTEMPTS
 
 	for {
 		select {
-			case joinRes := <-mp.Messages["join_dht_res"]:
-				 status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
-				 if (JOIN_IN_PROGRESS_RETRY_LATER == status){
-					 numOfAttempts--
-					 if (numOfAttempts <= 0 ){
-						 return nil
-					 }
-					 /* Another instance of Join is in progress in successor Node
-					  * Retry after 2 seconds
-					  */
-					 timer1 := time.NewTimer(time.Second * 2)
-					 go func(){
-						 <-timer1.C
-						 fmt.Println("Retransmitting Join Request")
-						 dhtService.DhtNode.sendJoinReq(successor)
-					 }()
-				 } else {
-					/* Join completed with error or success. Return control to caller */
-					 if (status != SUCCESS){
-						 return  nil
-					 }
-					break;
-				 }
+		case joinRes := <-dhtService.DhtNode.mp.Messages["join_dht_res"]:
+			status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
+			if (JOIN_IN_PROGRESS_RETRY_LATER == status){
+				numOfAttempts--
+				if (numOfAttempts <= 0 ){
+					return DHT_API_FAILURE_MAX_ATTEMPTS_REACHED
+				}
+				/* Another instance of Join is in progress in successor Node
+				 * Retry after 2 seconds
+				 */
+				timer1 := time.NewTimer(time.Second * 2)
+				go func(){
+					<-timer1.C
+					fmt.Println("Retransmitting Join Request")
+					dhtService.DhtNode.sendJoinReq(successor)
+				}()
+			} else {
+				/* Join completed with error or success. Return control to caller */
+				if (status != SUCCESS){
+					return  DHT_API_FAILURE
+				}
+				break;
+			}
 		}
 	}
-	return &dhtService
 }
 
 func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {

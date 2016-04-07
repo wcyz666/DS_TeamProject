@@ -5,7 +5,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"encoding/binary"
 )
+
 
 const (
 	localPort = "6666"
@@ -42,13 +44,22 @@ type Connections struct {
 //The go routine here, keep waiting messages from connected client Blocking.
 func (client *Client) Read(mp *MessagePasser) {
 	for {
-		line, err := client.reader.ReadBytes('\xfe')
+		//line, err := client.reader.ReadBytes('\xfe')
+		length, err := binary.ReadVarint(client.reader)
+		buffer := make([]byte, length)
+		client.reader.Read(buffer)
+
 		if err != nil {
 			fmt.Println("Client " + client.name + " disconneted!")
 			return
 		}
 		msg := new(Message)
-		msg.Deserialize(line)
+		msg.Deserialize(buffer)
+
+		err = msg.Deserialize(buffer)
+		if (err !=nil) {
+			fmt.Println("err is " + err.Error())
+		}
 
 		_, exists := mp.connections.clients[msg.SrcName]
 		if exists == false {
@@ -72,11 +83,15 @@ func (client *Client) Read(mp *MessagePasser) {
 func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
+		fmt.Println("Attempting to send Message of type :" + msg.Kind)
+
 		seri, _ := msg.Serialize()
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
 			fmt.Println("Error in sending messages out in Client[" + client.name + "]")
+			fmt.Println("Error while sending message "+ err.Error())
+
 			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
 			return
@@ -178,6 +193,7 @@ func (mp *MessagePasser) receiveMapping() {
 		msg := <-mp.Incoming
 
 		_, exists := mp.Messages[msg.Kind]
+
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
@@ -207,10 +223,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 
 		addr := dest
 		conn, err := net.Dial("tcp", addr + ":" + localPort)
-		fmt.Println("attempting to send to "+ addr + ":" + localPort)
 		if (err != nil) {
-                        fmt.Println(" Error while sending message to "+ mp.connections.localname)
-			fmt.Println(" Error is "+err.Error())
 			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
 			return
@@ -228,4 +241,5 @@ func (mp *MessagePasser) GetNodeIpAndName()(string,string){
 	nodeIP, _ := dns.ExternalIP()
 	return nodeIP,nodeName
 }
+
 
