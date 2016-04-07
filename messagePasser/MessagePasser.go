@@ -178,6 +178,10 @@ func (mp *MessagePasser) receiveMapping() {
 		_, exists := mp.Messages[msg.Kind]
 		fmt.Println("msg kind is "+msg.Kind)
 		fmt.Println("msg source is "+msg.Src)
+		fmt.Println("msg dest is "+msg.Dest)
+		fmt.Println("msg destname  is "+msg.DestName)
+		fmt.Println("msg src Name is"+ msg.SrcName)
+
 		if exists == false {
 			mp.AddMapping(msg.Kind)
 		}
@@ -193,20 +197,21 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.Src, _ = dns.ExternalIP()
 
 	dest := msg.DestName
+	fmt.Println("attempting to send to "+ dest + ":" + localPort)
+	fmt.Println("msg.kind is "+msg.Kind)
 
 	if _, ok := mp.connections.clients[dest]; ok == false {
 		dest = msg.Dest
 	}
 	if client, ok := mp.connections.clients[dest]; ok {
 		// Already contains the dest peer
+		fmt.Println("Coming to already contains part")
 		client.outgoing <- &msg
 	} else {
 		// Try connecting to the peer
 
 		addr := dest
 		conn, err := net.Dial("tcp", addr + ":" + localPort)
-		fmt.Println("attempting to send to "+ addr + ":" + localPort)
-		fmt.Println("msg.kind is "+msg.Kind)
 		if (err != nil) {
 			fmt.Println(" Error while sending message to "+ mp.connections.localname)
 			fmt.Println(" Error is "+err.Error())
