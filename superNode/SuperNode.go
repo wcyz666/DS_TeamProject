@@ -29,43 +29,6 @@ var superNodeContext *SNC.SuperNodeContext
 
 //var sElection	*streamElection.StreamElection
 
-func logMemberList(){
-	memberShipList,status := dhtService.Get(lns.GetLocalName())
-	if (status == Dht.SUCCESS){
-		fmt.Println("Success")
-		fmt.Println("Members in the group are ")
-		for _,value := range memberShipList {
-			fmt.Println(value)
-		}
-	} else if (status == Dht.KEY_NOT_PRESENT){
-		fmt.Println("Key not present")
-	} else {
-		fmt.Println("Failure")
-	}
-}
-
-func performDhtUnitTest(){
-	memberShipInfo := Dht.MemberShipInfo{"1.2.3.4"}
-	/*Streaming Group ID should be a unique identifier. Probably local name of root streamer node */
-	/*Creating a new Streaming Group */
-	dhtService.Create(lns.GetLocalName(),memberShipInfo)
-	fmt.Println("Creating Group")
-	logMemberList()
-
-	memberShipInfo = Dht.MemberShipInfo{"5.6.7.8"}
-	dhtService.Append(lns.GetLocalName(),memberShipInfo)
-	fmt.Println("Appending Data")
-	logMemberList()
-
-	dhtService.Remove(lns.GetLocalName(),memberShipInfo)
-	fmt.Println("Removing Data")
-	logMemberList()
-
-	dhtService.Delete(lns.GetLocalName())
-	fmt.Println("Deleting Group")
-	logMemberList()
-}
-
 func Start() {
 	// Initialize SuperNodeContext
 	// Currently SuperNodeContext contains all info of the assigned child nodes
@@ -144,7 +107,6 @@ func Start() {
 	}
 
 	status := dhtService.Start()
-	performDhtUnitTest()
 	if (Dht.DHT_API_SUCCESS != status){
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
