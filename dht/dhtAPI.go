@@ -73,10 +73,19 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
+	var createNewEntryReq CreateNewEntryRequest
+
+	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.createEntry(streamingGroupID, data)
+
+	// send the entry to the next node
 	} else {
-		/* TODO send update to other node */
+		createNewEntryReq.Key = streamingGroupID
+		createNewEntryReq.Data = data
+		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		dht.DhtNode.mp.Send(msg)
 	}
 	return status
 }
@@ -110,3 +119,4 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 	}
 	return status
 }
+

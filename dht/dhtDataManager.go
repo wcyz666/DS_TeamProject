@@ -85,6 +85,24 @@ func (dhtNode *DHTNode) getData(key string) ([]MemberShipInfo, int) {
 
 func (dhtNode *DHTNode) HandleCreateNewEntryReq(msg *MP.Message) {
 
+	var createNewEntryReq CreateNewEntryRequest
+	MP.DecodeData(&createNewEntryReq, msg.Data)
+	//var createNewEntryRes CreateNewEntryResponse
+
+
+	// put entry in this node
+	if (dhtNode.isKeyPresentInMyKeyspaceRange(createNewEntryReq.Key)) {
+		dhtNode.createEntry(createNewEntryReq.Key, createNewEntryReq.Data)
+
+	// send entry to next node
+	} else {
+		ip, name := dhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		dhtNode.mp.Send(msg)
+	}
+
+	// send response back
+
 }
 
 func (dhtNode *DHTNode) HandleCreateNewEntryRes(msg *MP.Message) {
@@ -114,5 +132,7 @@ func (dhtNode *DHTNode) HandleGetDataReq(msg *MP.Message){
 func (dhtNode *DHTNode) HandleGetDataRes(msg *MP.Message){
 
 }
+
+
 
 
