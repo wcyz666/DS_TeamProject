@@ -72,10 +72,12 @@ func (client *Client) Read(mp *MessagePasser) {
 func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
+		fmt.Println("Attempting to send Message of type :" + msg.Kind)
 		seri, _ := msg.Serialize()
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
+			fmt.Println("Error while sending message "+ err.Error())
 			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
 		}
