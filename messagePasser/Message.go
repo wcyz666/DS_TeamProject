@@ -73,7 +73,6 @@ func (d *Message) GobDecode(buf []byte) error {
 }
 
 func (d *Message) Serialize() ([]byte, error) {
-        fmt.Println("coming to serialize")
 	var buffer = new(bytes.Buffer)
 	enc := gob.NewEncoder(buffer)
 	err := enc.Encode(d)
