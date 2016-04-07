@@ -1,54 +1,122 @@
 package dht
 
+import (
+	MP "../messagePasser"
+	"time"
+	"fmt"
+)
+
+const JOIN_MAX_REATTEMPTS = 5
+const (
+	NEW_DHT_CREATED = iota
+	JOINING_EXISTING_DHT
+)
+
 /*
  * DHT APIs Implementation.
-*/
+ */
 
-func (dht *DHT) Get(streamingGroupID string) ([]MemberShipInfo, int) {
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		return dht.getData(streamingGroupID)
+/* API to start DHT service on a super node.
+ * Params : Message passer reference
+ * Return value : DHT service reference on success
+ *                nil on failure
+ */
+func StartDHTService(mp *MP.MessagePasser) *DHTService {
+	dhtNode,status := NewDHTNode(mp)
+	var dhtService = DHTService{DhtNode: dhtNode}
+	mp.AddMappings([]string{"join_dht_res"})
+
+	if (status == NEW_DHT_CREATED){
+		return &dhtService
+	}
+
+	numOfAttempts := JOIN_MAX_REATTEMPTS
+
+	for {
+		select {
+			case joinRes := <-mp.Messages["join_dht_res"]:
+				 status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
+				 if (JOIN_IN_PROGRESS_RETRY_LATER == status){
+					 numOfAttempts--
+					 if (numOfAttempts <= 0 ){
+						 return nil
+					 }
+					 /* Another instance of Join is in progress in successor Node
+					  * Retry after 2 seconds
+					  */
+					 timer1 := time.NewTimer(time.Second * 2)
+					 go func(){
+						 <-timer1.C
+						 fmt.Println("Retransmitting Join Request")
+						 dhtService.DhtNode.sendJoinReq(successor)
+					 }()
+				 } else {
+					/* Join completed with error or success. Return control to caller */
+					 if (status != SUCCESS){
+						 return  nil
+					 }
+					break;
+				 }
+		}
+	}
+	return &dhtService
+}
+
+func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		return dht.DhtNode.getData(streamingGroupID)
 	} else {
 		/* TODO fetch data from other node */
 		return make([]MemberShipInfo, 0), SUCCESS
 	}
 }
 
-func (dht *DHT) Create(streamingGroupID string, data MemberShipInfo) (int){
+func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status = dht.createEntry(streamingGroupID, data)
+	var createNewEntryReq CreateNewEntryRequest
+
+	// add entry to this node
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status = dht.DhtNode.createEntry(streamingGroupID, data)
+
+	// send the entry to the next node
 	} else {
-		/* TODO send update to other node */
+		createNewEntryReq.Key = streamingGroupID
+		createNewEntryReq.Data = data
+		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		dht.DhtNode.mp.Send(msg)
 	}
 	return status
 }
 
-func (dht *DHT) Delete(streamingGroupID string) (int) {
+func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status = dht.deleteEntry(streamingGroupID)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status = dht.DhtNode.deleteEntry(streamingGroupID)
 	} else {
 		/* TODO send update to other node */
 	}
 	return status
 }
 
-func (dht *DHT) Append(streamingGroupID string, data MemberShipInfo) (int) {
+func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
 	status := SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status =  dht.appendData(streamingGroupID, data)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status =  dht.DhtNode.appendData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
 	}
 	return status
 }
 
-func (dht *DHT) Remove(streamingGroupID string, data MemberShipInfo) (int){
+func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
 	status := SUCCESS
-	if dht.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
-		status = dht.removeData(streamingGroupID, data)
+	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
+		status = dht.DhtNode.removeData(streamingGroupID, data)
 	} else {
 		/* TODO send update to other node */
 	}
 	return status
 }
+
