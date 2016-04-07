@@ -77,8 +77,6 @@ func (client *Client) Write(mp *MessagePasser) {
 		msg := <-client.outgoing
 		fmt.Println("Attempting to send Message of type :" + msg.Kind)
 		seri, _ := msg.Serialize()
-                fmt.Println("Before Sending Data")
-                fmt.Println(seri)
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
