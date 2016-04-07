@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"strconv"
 )
 
 const (
@@ -49,6 +50,9 @@ func (client *Client) Read(mp *MessagePasser) {
 		}
 		msg := new(Message)
 		msg.Deserialize(line)
+		fmt.Println("length is "+ strconv.Itoa(len(line)))
+		fmt.Println("kind is "+msg.Kind)
+		fmt.Println("bytes is "+ string(line))
 
 		_, exists := mp.connections.clients[msg.SrcName]
 		if exists == false {
