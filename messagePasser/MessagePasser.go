@@ -52,7 +52,8 @@ func (client *Client) Read(mp *MessagePasser) {
 		if (err !=nil) {
 			fmt.Println("err is " + err.Error())
 		}
-		fmt.Println("length is "+ strconv.Itoa(len(line)))
+		//fmt.Println("length is "+ strconv.Itoa(len(line)))
+                fmt.Println("Before Receiving Data")
                 fmt.Println(line)
 		fmt.Println("kind is "+msg.Kind)
 		//fmt.Println("bytes is "+ string(line))
@@ -81,6 +82,7 @@ func (client *Client) Write(mp *MessagePasser) {
 		msg := <-client.outgoing
 		fmt.Println("Attempting to send Message of type :" + msg.Kind)
 		seri, _ := msg.Serialize()
+                fmt.Println("Before Sending Data")
                 fmt.Println(seri)
 
 		_, err := client.writer.Write(seri)
@@ -242,4 +244,5 @@ func (mp *MessagePasser) GetNodeIpAndName()(string,string){
 	nodeIP, _ := dns.ExternalIP()
 	return nodeIP,nodeName
 }
+
 
