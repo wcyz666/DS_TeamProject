@@ -5,7 +5,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"encoding/binary"
 )
+
 
 const (
 	localPort = "6666"
@@ -42,13 +44,18 @@ type Connections struct {
 //The go routine here, keep waiting messages from connected client Blocking.
 func (client *Client) Read(mp *MessagePasser) {
 	for {
-		line, err := client.reader.ReadBytes('\xfe')
+		//line, err := client.reader.ReadBytes('\xfe')
+		length, err := binary.ReadVarint(client.reader)
+		buffer := make([]byte, length)
+		client.reader.Read(buffer)
+
 		if err != nil {
 			fmt.Println("Client " + client.name + " disconneted!")
 			return
 		}
 		msg := new(Message)
-		msg.Deserialize(line)
+		msg.Deserialize(buffer)
+
 
 		_, exists := mp.connections.clients[msg.SrcName]
 		if exists == false {
@@ -72,6 +79,7 @@ func (client *Client) Read(mp *MessagePasser) {
 func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
+
 		seri, _ := msg.Serialize()
 
 		_, err := client.writer.Write(seri)

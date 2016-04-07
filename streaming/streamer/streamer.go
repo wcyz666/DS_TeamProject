@@ -30,8 +30,8 @@ type Streamer struct{
 /*
 Initialization
  */
-func NewStreamer(mp *MP.MessagePasser, ) *Streamer{
-	streamer := Streamer{STATE:IDEAL, mp: mp, streamID:0}
+func NewStreamer(mp *MP.MessagePasser, nodeContext *NC.NodeContext) *Streamer{
+	streamer := Streamer{STATE:IDEAL, mp: mp, streamID:0, nodeContext:nodeContext}
 	streamer.StreamingData = make(chan string)
 	streamer.ReceivingData = make(chan string)
 	go streamer.backgroundStreaming()
@@ -91,7 +91,7 @@ func (streamer *Streamer) Stop(){
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_stop", MP.EncodeData(data)))
 
 	// Notify Stream Children
-	streamer.HandleStop(MP.NewMessage("", "", "streaming_stop", MP.EncodeData("")))
+	streamer.HandleStop(nil)
 
 
 	streamer.STATE = IDEAL
