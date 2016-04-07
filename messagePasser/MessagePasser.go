@@ -51,7 +51,7 @@ func (client *Client) Read(mp *MessagePasser) {
 		msg := new(Message)
 		err = msg.Deserialize(line)
 		if (err !=nil) {
-			fmt.Println("err is " + err)
+			fmt.Println("err is " + err.Error())
 		}
 		//fmt.Println("length is "+ strconv.Itoa(len(line)))
 		fmt.Println("kind is "+msg.Kind)
