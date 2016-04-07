@@ -15,12 +15,12 @@ This class takes care of
 	 2. Sync related information in the DHT and with other supernodes
 */
 type StreamingHandler struct {
-	dHashtable *dht.DHT
+	dHashtable *dht.DHTService
 	mp         *MP.MessagePasser
 	superNodeContext	*SNC.SuperNodeContext
 }
 
-func NewStreamingHandler(dHashtable *dht.DHT, mp *MP.MessagePasser, superNodeContext *SNC.SuperNodeContext) *StreamingHandler {
+func NewStreamingHandler(dHashtable *dht.DHTService, mp *MP.MessagePasser, superNodeContext *SNC.SuperNodeContext) *StreamingHandler {
 	return &StreamingHandler{dHashtable: dHashtable, mp: mp, superNodeContext:superNodeContext}
 }
 

@@ -77,6 +77,7 @@ func (d *Message) Serialize() ([]byte, error) {
 	var buffer = new(bytes.Buffer)
 	enc := gob.NewEncoder(buffer)
 	err := enc.Encode(d)
+        //return buffer.Bytes(),err
 	// Use \xfe as the delimiter
 	// return append(buffer.Bytes(), 254), err
 	length := int64(len(buffer.Bytes()))

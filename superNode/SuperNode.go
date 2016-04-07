@@ -13,6 +13,7 @@ import (
 	Streaming "../streaming/supernodeStreamingHandler"
 	"time"
 
+	"strconv"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 )
 
 var mp *MP.MessagePasser
-var dHashtable *Dht.DHT
+var dhtService *Dht.DHTService
 var streamHandler *Streaming.StreamingHandler
 var jElection *JoinElection.JoinElection
 var superNodeContext *SNC.SuperNodeContext
@@ -44,9 +45,12 @@ func Start() {
 	mp.AddMappings([]string{"exit"})
 
 	// Initialize all the package structs
-	//dHashtable = Dht.NewDHT(mp)
-	streamHandler = Streaming.NewStreamingHandler(dHashtable, mp, superNodeContext)
+	dhtService = Dht.NewDHTService(mp)
+
+	streamHandler = Streaming.NewStreamingHandler(dhtService, mp, superNodeContext)
 	jElection = JoinElection.NewJoinElection(mp)
+
+	dhtNode := dhtService.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
 
 	// Define all the channel names and the binded functions
@@ -64,26 +68,25 @@ func Start() {
 		"error": errorHandler,
 
 		/* DHT call backs */
-		"join_dht_req":            	dHashtable.HandleJoinReq,
-		"join_dht_res":             dHashtable.HandleJoinRes,
-		"join_dht_complete":        dHashtable.HandleJoinComplete,  // To indicate successor about completion of join
-		"join_dht_notify":          dHashtable.HandleJoinNotify,    // To indicate predecessor about completion of join
-		"leave_dht_req":            dHashtable.Leave,
+		"join_dht_req":            	dhtNode.HandleJoinReq,
+		"join_dht_complete":        dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
+		"join_dht_notify":          dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
+		"leave_dht_req":            dhtNode.Leave,
 
 		/* Having separate channels will allow concurrent access to hash map.
 		 * Need to update hash table to be a concurrent map */
 		// Creates new (key,value) pair in DHT. Used when creating a new streaming group
-		"create_entry_req":         dHashtable.HandleCreateNewEntryReq,
-		"create_entry_res":         dHashtable.HandleCreateNewEntryRes,
+		"create_entry_req":         dhtNode.HandleCreateNewEntryReq,
+		"create_entry_res":         dhtNode.HandleCreateNewEntryRes,
 		// Update existing entry in DHT. Used when adding or removing a member to existing streaming group
-		"update_entry_req":         dHashtable.HandleUpdateEntryReq,
-		"update_entry_res":         dHashtable.HandleUpdateEntryRes,
+		"update_entry_req":         dhtNode.HandleUpdateEntryReq,
+		"update_entry_res":         dhtNode.HandleUpdateEntryRes,
 		// Delete existing entry in DHT. Used when dissolving a streaming group
-		"delete_entry_req":         dHashtable.HandleDeleteEntryReq,
-		"delete_entry_res":         dHashtable.HandleDeleteEntryRes,
+		"delete_entry_req":         dhtNode.HandleDeleteEntryReq,
+		"delete_entry_res":         dhtNode.HandleDeleteEntryRes,
 		// Query contents of existing entry using its key . Used to learn about members of an existing group
-		"get_data_req":            dHashtable.HandleGetDataReq,
-		"get_data_res":            dHashtable.HandleGetDataRes,
+		"get_data_req":            dhtNode.HandleGetDataReq,
+		"get_data_res":            dhtNode.HandleGetDataRes,
 
 		/* Here goes the handlers related to streaming process */
 		"stream_start": streamHandler.StreamStart,
@@ -96,13 +99,22 @@ func Start() {
 	}
 
 	// Init and listen
-	for channelName, handler := range channelNames {
+	for channelName, _ := range channelNames {
 		// Init all the channels listening on
 		mp.Messages[channelName] = make(chan *MP.Message)
+
+	}
+
+	for channelName, handler := range channelNames {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
 	go nodeStateWatcher()
+
+	status := dhtService.Start()
+	if (Dht.DHT_API_SUCCESS != status){
+		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
+	}
 
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)
