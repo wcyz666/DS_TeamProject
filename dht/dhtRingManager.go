@@ -90,7 +90,9 @@ func getBigIntFromString(key string) *big.Int{
 */
 func (dhtNode *DHTNode) isKeyPresentInMyKeyspaceRange(key string) bool {
 	numericKey := getBigIntFromString(key)
-
+	if  ((dhtNode.leafTable.nextNode == nil) &&(dhtNode.leafTable.prevNode == nil)){
+		return true
+	}
 	/* If I have to traverse anti-clock wise from my node to reach the key and traverse clock-wise
 	* from my previous node to reach the key, then it is a key in key space managed by me */
 	if ((computeTraversalDirection(dhtNode.curNodeNumericKey,numericKey) == TRAVERSE_ANTI_CLOCK_WISE) &&
