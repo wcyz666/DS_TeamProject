@@ -88,6 +88,10 @@ func getBigIntFromString(key string) *big.Int{
  * KeyspaceRange is from (previous node's key + 1) to current node's key
 */
 func (dhtNode *DHTNode) isKeyPresentInMyKeyspaceRange(key string) bool {
+	if ((dhtNode.leafTable.prevNode == nil ) && (dhtNode.leafTable.nextNode == nil)){
+		return true
+	}
+	
 	numericKey := getBigIntFromString(key)
 	if  ((dhtNode.leafTable.nextNode == nil) &&(dhtNode.leafTable.prevNode == nil)){
 		return true
