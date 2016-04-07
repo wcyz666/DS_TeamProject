@@ -10,7 +10,7 @@ import (
 	Config "../config"
 	SNC "./superNodeContext/"
 	JoinElection "../supernodeLib/joinElection"
-	Streaming "../supernodeLib/streaming"
+	Streaming "../streaming/supernodeStreamingHandler"
 	"time"
 
 	"strconv"
@@ -46,7 +46,8 @@ func Start() {
 
 	// Initialize all the package structs
 	dhtService = Dht.NewDHTService(mp)
-	streamHandler = Streaming.NewStreamingHandler(dhtService, mp)
+
+	streamHandler = Streaming.NewStreamingHandler(dhtService, mp, superNodeContext)
 	jElection = JoinElection.NewJoinElection(mp)
 
 	dhtNode := dhtService.DhtNode
@@ -60,9 +61,6 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
-		"stream_start":    streamHandler.StreamStart,
-		"stream_get_list": streamHandler.StreamGetList,
-		"stream_join":     streamHandler.StreamJoin,
 		"heartbeat": heartBeatHandler,
 		"hello":          jElection.Start,
 		"join": 			newChild,
@@ -90,7 +88,14 @@ func Start() {
 		"get_data_req":            dhtNode.HandleGetDataReq,
 		"get_data_res":            dhtNode.HandleGetDataRes,
 
-		//"stream_election":	sElection.Receive,
+		/* Here goes the handlers related to streaming process */
+		"stream_start": streamHandler.StreamStart,
+		"stream_stop": streamHandler.StreamStop,
+		"stream_join":     streamHandler.StreamJoin,
+		"stream_program_start": streamHandler.StreamProgramStart,  // This is sent from other supernodes
+		"stream_program_stop": streamHandler.StreamProgramStop,  // This is sent from other supernodes
+
+
 	}
 
 	// Init and listen
@@ -104,6 +109,7 @@ func Start() {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
+	go nodeStateWatcher()
 
 	status := dhtService.Start()
 	if (Dht.DHT_API_SUCCESS != status){
@@ -132,12 +138,16 @@ func heartBeatHandler(msg *MP.Message)  {
 
 func nodeStateWatcher() {
 	for {
-		time.Sleep(10 * time.Second)
-		fmt.Println("SuperNode: check node state")
+		time.Sleep(5 * time.Second)
 		hasDead, deadNodes := superNodeContext.CheckDead()
 		if hasDead {
-			superNodeContext.RemoveNodes(deadNodes)
+			for _, nodeName := range deadNodes {
+				mp.RemoveMapping(superNodeContext.GetIPByName(nodeName))
+				mp.RemoveMapping(nodeName)
+				superNodeContext.RemoveNodes(nodeName)
+			}
 		}
+		fmt.Printf("SuperNode: check node state, Alive child count: [%d]\n", superNodeContext.GetNodeCount())
 		superNodeContext.ResetState()
 	}
 }
@@ -145,5 +155,5 @@ func nodeStateWatcher() {
 func newChild(msg *MP.Message)  {
 	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
 	mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "ack", MP.EncodeData("this is an ACK message")))
-	superNodeContext.AddNode(msg.SrcName)
+	superNodeContext.AddNode(msg.SrcName, msg.Src)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"encoding/binary"
 )
 
 type Message struct {
@@ -78,7 +79,12 @@ func (d *Message) Serialize() ([]byte, error) {
 	err := enc.Encode(d)
         //return buffer.Bytes(),err
 	// Use \xfe as the delimiter
-	return append(buffer.Bytes(), 254), err
+	// return append(buffer.Bytes(), 254), err
+	length := int64(len(buffer.Bytes()))
+	var lenBuffer = make([]byte, 4)
+	used := binary.PutVarint(lenBuffer, length)
+	return append(lenBuffer[:used], buffer.Bytes()...), err
+	//return buffer.Bytes(), err
 }
 
 func (d *Message) Deserialize(buffer []byte) error {
@@ -98,7 +104,7 @@ func EncodeData(data interface {})([]byte){
 	return buffer.Bytes()
 }
 
-func DecodeData(decData interface {}, encData[] byte)(error){
+func DecodeData(decData interface{}, encData[] byte)(error){
 	buf := bytes.NewBuffer(encData)
 	dec := gob.NewDecoder(buf)
 	err := dec.Decode(decData)
@@ -113,6 +119,8 @@ func main() {
 	buffer, _ := msg.Serialize()
 	fmt.Println(buffer)
 
+
+	//binary.ReadUvarint()
 	// Create a new struct and deserialize into it
 	msg2 := new(Message)
 	fmt.Println(msg2)

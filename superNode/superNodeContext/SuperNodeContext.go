@@ -10,25 +10,28 @@ type SuperNodeContext struct {
     nodes map[string]*nodeInfo
 }
 
-func (sc *SuperNodeContext) GetNodeCount(nodeName string) int {
+func (sc *SuperNodeContext) GetNodeCount() int {
     return len(sc.nodes)
 }
+
+func (sc *SuperNodeContext) GetIPByName(nodeName string) string {
+    return sc.nodes[nodeName].IP;
+}
+
 
 func NewSuperNodeContext() (* SuperNodeContext) {
     nodes := make(map[string]*nodeInfo)
     return &SuperNodeContext{nodes : nodes, LocalName: LNS.GetLocalName()}
 }
 
-func (sc *SuperNodeContext) AddNode(nodeName string)  {
+func (sc *SuperNodeContext) AddNode(nodeName string, msgIP string)  {
     fmt.Printf("Supernode Context: add node %s\n", nodeName)
-    sc.nodes[nodeName] = &nodeInfo{isLive: true}
+    sc.nodes[nodeName] = &nodeInfo{isLive: true, IP: msgIP}
 }
 
-func (sc *SuperNodeContext) RemoveNodes(nodeNames []string)  {
-    for _, nodeName := range nodeNames {
-        fmt.Printf("Supernode Context: remove node %s\n", nodeName)
-        delete(sc.nodes, nodeName)
-    }
+func (sc *SuperNodeContext) RemoveNodes(nodeName string)  {
+    fmt.Printf("Supernode Context: remove node %s\n", nodeName)
+    delete(sc.nodes, nodeName)
 }
 
 func (sc *SuperNodeContext) SetAlive(nodeName string) {
@@ -58,4 +61,5 @@ func (sc *SuperNodeContext) CheckDead() (hasDead bool, deadNodes []string) {
 
 type nodeInfo struct {
     isLive bool
+    IP string
 }

@@ -4,13 +4,15 @@ import (
 	//"fmt"
 
 	MP "../../messagePasser"
-	//dns "../dnsService"
-
+	DNS "../../dnsService"
+	LNS "../../localNameService"
+	"fmt"
 )
 
 /**
 The package takes care of all the conditions a new node join the network
 */
+
 
 type JoinElection struct {
 	mp *MP.MessagePasser
@@ -24,15 +26,17 @@ func NewJoinElection(mp *MP.MessagePasser) *JoinElection {
 
 func (j *JoinElection) Start(msg *MP.Message) {
 	// Start the election process below
+	fmt.Println("Supernode: election start for node [%s]\n", msg.SrcName)
 	// TODO: Actually implement the election algorithm
-
 
 	// Current directly take over the child node
 	// Send assign message
 	childNodeAddr := msg.Src
 	childName := msg.SrcName
 	kind := "join_assign"
-	j.mp.Send(MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData("hehehe")))
+	myIP, _ := DNS.ExternalIP()
+	result := ElectionResult{ParentIP: myIP, ParentName: LNS.GetLocalName()}
+	j.mp.Send(MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(result)))
 }
 
 func (j *JoinElection) Receive(msg *MP.Message) {
