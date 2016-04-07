@@ -49,8 +49,11 @@ func (client *Client) Read(mp *MessagePasser) {
 			return
 		}
 		msg := new(Message)
-		msg.Deserialize(line)
-		fmt.Println("length is "+ strconv.Itoa(len(line)))
+		err = msg.Deserialize(line)
+		if (err !=nil) {
+			fmt.Println("err is " + err)
+		}
+		//fmt.Println("length is "+ strconv.Itoa(len(line)))
 		fmt.Println("kind is "+msg.Kind)
 		fmt.Println("bytes is "+ string(line))
 
