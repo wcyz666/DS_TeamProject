@@ -88,122 +88,115 @@ func (dhtNode *DHTNode) getData(key string) ([]MemberShipInfo, int) {
  */
 func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 
+	// decode message into proper structure
+	var msgDataReq DataOperationRequest
+	var msgDataRes DataOperationResponse
+	MP.DecodeData(&msgDataReq, msg.Data)
+
+
 	msg_type := msg.Kind
 
 	switch msg_type{
 
-
 	/* handle CreateNewEntry request */
 	case "create_entry_req":
-		var createNewEntryReq CreateNewEntryRequest
-		MP.DecodeData(&createNewEntryReq, msg.Data)
-		var createNewEntryRes CreateNewEntryResponse
 
 		// create entry in this node
-		if (dhtNode.isKeyPresentInMyKeyspaceRange(createNewEntryReq.Key)) {
-			dhtNode.createEntry(createNewEntryReq.Key, createNewEntryReq.Data)
-			createNewEntryRes.Status = SUCCESS
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)) {
+			dhtNode.createEntry(msgDataReq.Key, msgDataReq.Data)
+			msgDataRes.Status = SUCCESS
 
 		// forward entry to next node
 		} else {
 			ip, name := dhtNode.GetNextNodeIPAndNameInRing()
-			msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+			msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(msgDataReq))
 			dhtNode.mp.Send(msg)
 		}
 
 		// send response if entry was successful
-		if (createNewEntryRes.Status == SUCCESS) {
-			ip := createNewEntryReq.OriginIpAddress
-			name := createNewEntryReq.OriginName
-			msg := MP.NewMessage(ip, name, "create_new_entry_res", MP.EncodeData(createNewEntryRes))
+		if (msgDataRes.Status == SUCCESS) {
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "create_new_entry_res", MP.EncodeData(msgDataRes))
 			dhtNode.mp.Send(msg)
 		}
 
 
 	/* handle UpdateEntry request */
 	case "update_entry_req":
-		var updateReq UpdateRequest
-		MP.DecodeData(&updateReq, msg.Data)
-		var updateRes UpdateResponse
 
 		// update entry in this node
-		if (dhtNode.isKeyPresentInMyKeyspaceRange(updateReq.Key)) {
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)) {
 
 			// add data
-			if(updateReq.Add == true){
-				dhtNode.appendData(updateReq.Key, updateReq.Data)
+			if(msgDataReq.Add == true){
+				dhtNode.appendData(msgDataReq.Key, msgDataReq.Data)
 
 			// remove data
-			} else if (updateReq.Remove == true){
-				dhtNode.removeData(updateReq.Key, updateReq.Data)
+			} else if (msgDataReq.Remove == true){
+				dhtNode.removeData(msgDataReq.Key, msgDataReq.Data)
 			}
 
 		// forward entry to next node
 		} else {
 			ip, name := dhtNode.GetNextNodeIPAndNameInRing()
-			msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(updateReq))
+			msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(msgDataReq))
 			dhtNode.mp.Send(msg)
 		}
 
 		// send response if entry was successful
-		if (updateRes.Status == SUCCESS){
-			ip := updateReq.OriginIpAddress
-			name := updateReq.OriginName
-			msg := MP.NewMessage(ip, name, "update_entry_res", MP.EncodeData(updateRes))
+		if (msgDataRes.Status == SUCCESS){
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "update_entry_res", MP.EncodeData(msgDataRes))
 			dhtNode.mp.Send(msg)
 		}
 
 
 	/* handle DeleteEntry request */
 	case "delete_entry_req":
-		var deleteEntryReq DeleteEntryRequest
-		MP.DecodeData(&deleteEntryReq, msg.Data)
-		var deleteEntryRes DeleteEntryResponse
 
 		// delete entry in this node
-		if (dhtNode.isKeyPresentInMyKeyspaceRange(deleteEntryReq.Key)){
-			dhtNode.deleteEntry(deleteEntryReq.Key)
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)){
+			dhtNode.deleteEntry(msgDataReq.Key)
 
 		// send entry to next node
 		} else {
-			ip := deleteEntryReq.OriginIpAddress
-			name := deleteEntryReq.OriginName
-			msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(deleteEntryRes))
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(msgDataRes))
 			dhtNode.mp.Send(msg)
 		}
 
 		// send response if deletion was successful
-		if (deleteEntryRes.Status == SUCCESS){
-			ip := deleteEntryReq.OriginIpAddress
-			name := deleteEntryReq.OriginName
-			msg := MP.NewMessage(ip, name, "delete_entry_res", MP.EncodeData(deleteEntryRes))
+		if (msgDataRes.Status == SUCCESS){
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "delete_entry_res", MP.EncodeData(msgDataRes))
 			dhtNode.mp.Send(msg)
 		}
 
 
 	/*handle GetDate request */
 	case "get_data_req":
-		var getDataReq GetDataRequest
-		MP.DecodeData(&getDataReq, msg.Data)
-		var getDataRes GetDataResponse
 
 		// get entry in this node
-		if (dhtNode.isKeyPresentInMyKeyspaceRange(getDataReq.Key)){
-			getDataRes.Data, getDataRes.Status = dhtNode.getData(getDataReq.Key)
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)){
+			msgDataRes.Data, msgDataRes.Status = dhtNode.getData(msgDataReq.Key)
 
 		// send entry to next node
 		} else {
-			ip := getDataReq.OriginIpAddress
-			name := getDataReq.OriginName
-			msg := MP.NewMessage(ip, name, "get_data_req", MP.EncodeData(getDataRes))
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "get_data_req", MP.EncodeData(msgDataRes))
 			dhtNode.mp.Send(msg)
 		}
 
 		// send response if retrieval was successful
-		if (getDataRes.Status == SUCCESS){
-			ip := getDataReq.OriginIpAddress
-			name := getDataReq.OriginName
-			msg := MP.NewMessage(ip, name, "get_data_res", MP.EncodeData(getDataRes))
+		if (msgDataRes.Status == SUCCESS){
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "get_data_res", MP.EncodeData(msgDataRes))
 			dhtNode.mp.Send(msg)
 		}
 
