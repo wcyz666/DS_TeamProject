@@ -14,6 +14,7 @@ const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 type Node struct {
 	IpAddress string
 	Name      string
+	Key       string
 }
 
 type LeafTable struct {
@@ -31,6 +32,7 @@ type DHTNode struct {
 	hashTable             	map[string][]MemberShipInfo
 	mp                    	*MP.MessagePasser
 	nodeKey               	string
+	nodeName                string
 	ipAddress               string
 	prevNodeNumericKey    	*big.Int
 	curNodeNumericKey      	*big.Int

@@ -12,7 +12,7 @@ type JoinResponse struct {
 	Status           int
 	HashTable        map[string][]MemberShipInfo
 	Predecessor      Node
-	NewSuccessorNode Node // Used as re-direction mechanism when key is no longer managed by this node
+	Successor        Node
 }
 
 type JoinComplete struct {

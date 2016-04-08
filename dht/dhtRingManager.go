@@ -23,6 +23,7 @@ func NewDHTNode(mp *MP.MessagePasser) (*DHTNode) {
 	dhtNode.hashTable = make(map[string][]MemberShipInfo)
 	/* Use hash of mac address of the super node as the key for partitioning key space */
 	dhtNode.nodeKey = lns.GetLocalName()
+	dhtNode.nodeName = lns.GetLocalName()
 	dhtNode.ipAddress, _ = dns.ExternalIP()
 	dhtNode.curNodeNumericKey =  getBigIntFromString(dhtNode.nodeKey)
 	return &dhtNode
@@ -127,7 +128,7 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 	/* Update prev and next node information for now */
 	newNodeNumericKey := getBigIntFromString(newNodeKey)
 
-	var node = Node{newNodeIpAddress,newNodeName}
+	var node = Node{newNodeIpAddress, newNodeName, newNodeKey}
 	if (true == isPrevNode){
 		dhtNode.leafTable.prevNode = &node
 		dhtNode.prevNodeNumericKey = newNodeNumericKey
@@ -190,8 +191,8 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
         
 	if (true == dhtNode.AmITheOnlyNodeInDHT()){
 		/* Me apocolyse, got my first disciple. Join request received for a DHT ring of one node */
-		/* Add new node as both prev and next node of current node */
-		node := Node{joinReq.OriginIpAddress,joinReq.OriginName}
+		/* Send a Join Response indicating that new Node's predecessor and successor is myself */
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
 		joinRes.Predecessor = node
 		fmt.Println("[DHT] Adding my first disciple (i.e.) second node in DHT.")
 	} else {
@@ -239,6 +240,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 
 	/* Send the map in the response to Join Request originator */
 	joinRes.Status = SUCCESS
+	joinRes.Successor = Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
 
 	fmt.Println("[DHT] Sending Successful Join Response to " + joinReq.OriginIpAddress)
 	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, "" , "join_dht_res", MP.EncodeData(joinRes)))
@@ -260,21 +262,15 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.hashTable = joinRes.HashTable
 
 		/* Update prev and next nodes */
-		dhtNode.leafTable.nextNode = &(Node{msg.Src,msg.SrcName})
-
-		/* If my successor node indicates that I am its predecessor, then it is a loop and
-		 * we are the only 2 nodes in the DHT*/
-		if (joinRes.Predecessor.IpAddress == dhtNode.ipAddress){
-			dhtNode.leafTable.prevNode = dhtNode.leafTable.nextNode
-		} else {
-			dhtNode.leafTable.prevNode =&(Node{joinRes.Predecessor.IpAddress,""})
-	}
+		dhtNode.leafTable.nextNode = &(joinRes.Successor)
+		dhtNode.leafTable.prevNode = &(joinRes.Predecessor)
 
 		/* 2. Send Join complete to successor */
-		dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
+		dhtNode.mp.Send(MP.NewMessage(joinRes.Successor.IpAddress, joinRes.Successor.Name, "join_dht_complete",
+			                  MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
 
 		/* 3. Send join notification to predecessor */
-		dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress, "", "join_dht_notify",
+		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
 	}
 
@@ -328,7 +324,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 	} else {
 		/* Add current node details into the list. Currently we use this for debugging
 		 * to understand the structure of the ring */
-		node := Node{msg.Dest,msg.DestName}
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
 		broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
 
 		nextNode := dhtNode.leafTable.nextNode
@@ -340,8 +336,9 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
   describes about streaming group being newly launched */
 func (dhtNode *DHTNode) CreateBroadcastMessage(){
 	var broadcastMsg BroadcastMessage
-	broadcastMsg.OriginIpAddress, broadcastMsg.OriginName= dhtNode.mp.GetNodeIpAndName()
-	node:= Node{broadcastMsg.OriginIpAddress,broadcastMsg.OriginName}
+	broadcastMsg.OriginIpAddress = dhtNode.ipAddress
+	broadcastMsg.OriginName = dhtNode.nodeName
+	node:= Node{broadcastMsg.OriginIpAddress,broadcastMsg.OriginName,dhtNode.nodeKey}
 	broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
 
 	nextNode := dhtNode.leafTable.nextNode
