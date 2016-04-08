@@ -107,13 +107,14 @@ func (dhtNode *DHTNode) isKeyPresentInMyKeyspaceRange(key string) bool {
 }
 
 /*TODO Function responsible for updating leaf table and prefix table based on new information */
-func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress string, newNodeName string, newNodeKey string){
+func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress string, newNodeName string,
+																	 newNodeKey string, isPrevNode bool){
 
 	/* Update prev and next node information for now */
 	newNodeNumericKey := getBigIntFromString(newNodeKey)
 
 	var node = Node{newNodeIpAddress,newNodeName}
-	if (TRAVERSE_ANTI_CLOCK_WISE == computeTraversalDirection(dhtNode.curNodeNumericKey, newNodeNumericKey)){
+	if (true == isPrevNode){
 		dhtNode.leafTable.prevNode = &node
 		dhtNode.prevNodeNumericKey = newNodeNumericKey
 	} else{
@@ -177,8 +178,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 		/* Me apocolyse, got my first disciple. Join request received for a DHT ring of one node */
 		/* Add new node as both prev and next node of current node */
 		node := Node{joinReq.OriginIpAddress,joinReq.OriginName}
-		dhtNode.leafTable.prevNode = &node
-		dhtNode.leafTable.nextNode = &node
+		joinRes.Predecessor = node
 		fmt.Println("[DHT] Adding my first disciple (i.e.) second node in DHT.")
 	} else {
 		/* Forward the message if key is not managed by you */
@@ -196,6 +196,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 			}
 			return
 		}
+		joinRes.Predecessor = *(dhtNode.getPredecessorFromLeafTable())
 	}
 
 
@@ -224,7 +225,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 
 	/* Send the map in the response to Join Request originator */
 	joinRes.Status = SUCCESS
-	joinRes.Predecessor = *(dhtNode.getPredecessorFromLeafTable())
+
 	fmt.Println("[DHT] Sending Successful Join Response to " + joinReq.OriginIpAddress)
 	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, "" , "join_dht_res", MP.EncodeData(joinRes)))
 }
@@ -244,6 +245,17 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		/* 1. Add received map to local DHT table */
 		dhtNode.hashTable = joinRes.HashTable
 
+		/* Update prev and next nodes */
+		dhtNode.leafTable.nextNode = &(Node{msg.Src,msg.SrcName})
+
+		/* If my successor node indicates that I am its predecessor, then it is a loop and
+		 * we are the only 2 nodes in the DHT*/
+		if (joinRes.Predecessor.IpAddress == dhtNode.ipAddress){
+			dhtNode.leafTable.prevNode = dhtNode.leafTable.nextNode
+		} else {
+			dhtNode.leafTable.prevNode =&(Node{joinRes.Predecessor.IpAddress,""})
+		}
+
 		/* 2. Send Join complete to successor */
 		dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
 
@@ -261,7 +273,7 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 	fmt.Println("[DHT] Join Complete received")
 
 	/* Update routing information to include this new node */
-	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinComplete.Key)
+	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinComplete.Key,true)
 
 	/* Delete entries transferred to new node */
 	/* TODO After replication, this needs to be done in farthest replica */
@@ -285,7 +297,7 @@ func (dhtNode *DHTNode) HandleJoinNotify(msg *MP.Message) {
 	fmt.Println("[DHT] Join Notify received")
 
 	/* Update routing information to include this new node */
-	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinNotify.Key)
+	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinNotify.Key,false)
 }
 
 func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
