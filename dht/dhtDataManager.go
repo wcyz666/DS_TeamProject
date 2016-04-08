@@ -4,7 +4,6 @@ package dht
 
 import (
 	MP "../messagePasser"
-	"syscall"
 )
 
 /* Private Methods */
@@ -67,7 +66,7 @@ func (dhtName *DHTNode) removeData(key string, data MemberShipInfo) (int) {
 	}
 	/* Delete entry present at index */
 	if isMemberShipDataPresent {
-		dhtName.hashTable[key] = append(dhtName.hashTable[key][:index], dhtName.hashTable[key][(index+1):]         )
+		dhtName.hashTable[key] = append(dhtName.hashTable[key][:index], dhtName.hashTable[key][(index+1):]...)
 	}
 
 	return  SUCCESS
@@ -129,7 +128,15 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 
 		// update entry in this node
 		if (dhtNode.isKeyPresentInMyKeyspaceRange(updateReq.Key)) {
-			/* TODO: Update code */
+
+			// add data
+			if(updateReq.Add == true){
+				dhtNode.appendData(updateReq.Key, updateReq.Data)
+
+			// remove data
+			} else if (updateReq.Remove == true){
+				dhtNode.removeData(updateReq.Key, updateReq.Data)
+			}
 
 		// forward entry to next node
 		} else {
@@ -161,7 +168,7 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 		} else {
 			ip := deleteEntryReq.OriginIpAddress
 			name := deleteEntryReq.OriginName
-			msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(deteEntryRes))
+			msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(deleteEntryRes))
 			dhtNode.mp.Send(msg)
 		}
 
@@ -227,21 +234,5 @@ func (dhtNode *DHTNode) HandleResponse(msg *MP.Message) {
 	/* handle GetDate */
 	case "get_data_res":
 	}
-}
-
-
-var createNewEntryReq CreateNewEntryRequest
-MP.DecodeData(&createNewEntryReq, msg.Data)
-//var createNewEntryRes CreateNewEntryResponse
-
-// put entry in this node
-if (dhtNode.isKeyPresentInMyKeyspaceRange(createNewEntryReq.Key)) {
-dhtNode.createEntry(createNewEntryReq.Key, createNewEntryReq.Data)
-
-// send entry to next node
-} else {
-ip, name := dhtNode.GetNextNodeIPAndNameInRing()
-msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
-dhtNode.mp.Send(msg)
 }
 
