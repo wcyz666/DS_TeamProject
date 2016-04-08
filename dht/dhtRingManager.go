@@ -49,6 +49,7 @@ func computeTraversalDirection(curNodeKey *big.Int, newKey *big.Int ) int{
 	status := TRAVERSE_CLOCK_WISE
 
 	zero := getBigIntFromString("0")
+	one  := getBigIntFromString("1")
 	maxKey := getBigIntFromString(MAX_KEY)
 
 	/* compute the distance in clock wise and anti clock wise direction and travel in the direction
@@ -63,9 +64,11 @@ func computeTraversalDirection(curNodeKey *big.Int, newKey *big.Int ) int{
 	if (k.Cmp(zero) > 0) {
 		antiClockWiseDistance = k
 		clockWiseDistance.Sub(maxKey,antiClockWiseDistance)
+		clockWiseDistance.Add(clockWiseDistance,one)
 	} else {
 		clockWiseDistance.Sub(zero,k)
 		antiClockWiseDistance.Sub(maxKey,clockWiseDistance)
+		antiClockWiseDistance.Add(antiClockWiseDistance,one)
 	}
 
 	if (clockWiseDistance.Cmp(antiClockWiseDistance) > 0){
@@ -89,21 +92,32 @@ func getBigIntFromString(key string) *big.Int{
  * KeyspaceRange is from (previous node's key + 1) to current node's key
 */
 func (dhtNode *DHTNode) isKeyPresentInMyKeyspaceRange(key string) bool {
-	if ((dhtNode.leafTable.prevNode == nil ) && (dhtNode.leafTable.nextNode == nil)){
-		return true
-	}
-	
 	numericKey := getBigIntFromString(key)
 	if  ((dhtNode.leafTable.nextNode == nil) &&(dhtNode.leafTable.prevNode == nil)){
 		return true
 	}
-	/* If I have to traverse anti-clock wise from my node to reach the key and traverse clock-wise
-	* from my previous node to reach the key, then it is a key in key space managed by me */
-	if ((computeTraversalDirection(dhtNode.curNodeNumericKey,numericKey) == TRAVERSE_ANTI_CLOCK_WISE) &&
-	    (computeTraversalDirection(dhtNode.prevNodeNumericKey,numericKey) == TRAVERSE_CLOCK_WISE)){
-		return true
+
+	zero := getBigIntFromString("0")
+	maxKey := getBigIntFromString(MAX_KEY)
+
+	/* If curNodeKey > prevNodeKey, check if new key in (prevNodeKey, curNodeKey]
+	 * If not, check if new key is in (prevNodeKey, Maxkey) or [0, curNodeKey]
+	*/
+	if (dhtNode.curNodeNumericKey.Cmp(dhtNode.prevNodeNumericKey) > 0){
+		if ((numericKey.Cmp(dhtNode.prevNodeNumericKey) > 0) &&
+		    (numericKey.Cmp(dhtNode.curNodeNumericKey) <= 0)){
+			return true
+		} else {
+			return false
+		}
+	} else {
+		if (((numericKey.Cmp(dhtNode.prevNodeNumericKey) > 0) && (numericKey.Cmp(maxKey) <=0)) ||
+			((numericKey.Cmp(zero)>=0) && (numericKey.Cmp(dhtNode.curNodeNumericKey) <=0))) {
+			return true
+		} else {
+			return false
+		}
 	}
-	return false
 }
 
 /*TODO Function responsible for updating leaf table and prefix table based on new information */
