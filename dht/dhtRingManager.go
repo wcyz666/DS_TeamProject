@@ -292,6 +292,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 	var broadcastMsg BroadcastMessage
 	MP.DecodeData(&broadcastMsg,msg.Data)
 
+	fmt.Println("Processing Handle Broadcast Request in "+dhtNode.nodeKey)
 	if (broadcastMsg.OriginName == dhtNode.nodeKey) {
 		/* Token returned back to us. Don't forward */
 		fmt.Println("Nodes in the ring are ")
@@ -326,7 +327,7 @@ func (dhtNode *DHTNode) CreateBroadcastMessage(){
 		}
 		return
 	}
-
+	fmt.Println("Sending initial broad cast message with node key" + broadcastMsg.OriginName)
 	dhtNode.mp.Send(MP.NewMessage(nextNode.IpAddress, "", "dht_broadcast_msg",
 		MP.EncodeData(broadcastMsg)))
 }
