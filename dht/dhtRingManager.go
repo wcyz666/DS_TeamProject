@@ -26,6 +26,11 @@ func NewDHTNode(mp *MP.MessagePasser) (*DHTNode) {
 	dhtNode.nodeName = lns.GetLocalName()
 	dhtNode.ipAddress, _ = dns.ExternalIP()
 	dhtNode.curNodeNumericKey =  getBigIntFromString(dhtNode.nodeKey)
+	fmt.Println("*****  		Node Initial Config 		*****")
+	fmt.Println("		key = "+ dhtNode.nodeKey)
+	fmt.Println("		name = "+ dhtNode.nodeName)
+	fmt.Println("		ipaddr = "+ dhtNode.ipAddress)
+	fmt.Println("")
 	return &dhtNode
 }
 
@@ -135,6 +140,9 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 	} else{
 		dhtNode.leafTable.nextNode = &node
 	}
+
+	fmt.Println("New Previous Node is "+ dhtNode.leafTable.prevNode.IpAddress)
+	fmt.Println("New next node is "+ dhtNode.leafTable.nextNode.IpAddress)
 }
 
 func (dhtNode *DHTNode)getPredecessorFromLeafTable()(*Node)  {
