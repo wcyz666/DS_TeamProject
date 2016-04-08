@@ -205,7 +205,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	if (true == dhtNode.AmITheOnlyNodeInDHT()){
 		/* Me apocolyse, got my first disciple. Join request received for a DHT ring of one node */
 		/* Send a Join Response indicating that new Node's predecessor and successor is myself */
-		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}            
 		joinRes.Predecessor = node
 		fmt.Println("[DHT] Adding my first disciple (i.e.) second node in DHT.")
 	} else {
@@ -254,7 +254,9 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	/* Send the map in the response to Join Request originator */
 	joinRes.Status = SUCCESS
 	joinRes.Successor = Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
-
+        
+        fmt.Println("[DHT] Sent Predecessor is " + joinRes.Predecessor.IpAddress) 
+        fmt.Println("[DHT] Sent Predecessor name is " + joinRes.Predecessor.Name)
 	fmt.Println("[DHT] Sending Successful Join Response to " + joinReq.OriginIpAddress)
 	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, "" , "join_dht_res", MP.EncodeData(joinRes)))
 }
@@ -280,10 +282,12 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.updateLeafAndPrefixTablesWithNewNode(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name,
 			joinRes.Predecessor.Key,true)
 
+		fmt.Println("Sending Join Response message to "+ joinRes.Successor.IpAddress + " with key " + joinRes.Successor.Name)	
 		/* 2. Send Join complete to successor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Successor.IpAddress, joinRes.Successor.Name, "join_dht_complete",
 			                  MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
 
+		fmt.Println("Sending Join Response message to "+ joinRes.Predecessor.IpAddress + " with key " + joinRes.Predecessor.Name)
 		/* 3. Send join notification to predecessor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
