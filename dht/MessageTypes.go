@@ -23,3 +23,13 @@ type JoinComplete struct {
 type JoinNotify struct {
 	Key string
 }
+
+/* NewEntry structures */
+type CreateNewEntryRequest struct {
+	Key string
+	Data MemberShipInfo
+}
+
+type CreateNewEntryResponse struct {
+	Status int
+}

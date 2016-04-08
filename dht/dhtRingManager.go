@@ -302,4 +302,12 @@ func (dhtNode *DHTNode) HandleRequest() {
 
 }
 
+func (dhtNOde *DHTNode) GetNextNodeIPAndNameInRing() (string, string){
+	var ip, name string
+
+	/* TODO: Implement this function */
+
+	return ip, name
+}
+
 

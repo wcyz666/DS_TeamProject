@@ -5,7 +5,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"encoding/binary"
 )
+
 
 const (
 	localPort = "6666"
@@ -42,13 +44,19 @@ type Connections struct {
 //The go routine here, keep waiting messages from connected client Blocking.
 func (client *Client) Read(mp *MessagePasser) {
 	for {
-		line, err := client.reader.ReadBytes('\xfe')
+		//line, err := client.reader.ReadBytes('\xfe')
+		length, err := binary.ReadVarint(client.reader)
+		buffer := make([]byte, length)
+		client.reader.Read(buffer)
+
 		if err != nil {
 			fmt.Println("Client " + client.name + " disconneted!")
 			return
 		}
 		msg := new(Message)
-		err = msg.Deserialize(line)
+		msg.Deserialize(buffer)
+
+		err = msg.Deserialize(buffer)
 		if (err !=nil) {
 			fmt.Println("err is " + err.Error())
 		}
@@ -76,13 +84,17 @@ func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
 		fmt.Println("Attempting to send Message of type :" + msg.Kind)
+
 		seri, _ := msg.Serialize()
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
+			fmt.Println("Error in sending messages out in Client[" + client.name + "]")
 			fmt.Println("Error while sending message "+ err.Error())
+
 			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errorMsg
+			return
 		}
 		client.writer.Flush()
 	}
@@ -188,7 +200,9 @@ func (mp *MessagePasser) receiveMapping() {
 		mp.Messages[msg.Kind] <- msg
 	}
 }
-
+func (mp *MessagePasser) RemoveMapping(key string) {
+	delete(mp.connections.clients, key)
+}
 /*
 Send a message
 */
