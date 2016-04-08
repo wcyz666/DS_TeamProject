@@ -254,7 +254,7 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 	if joinRes.Status == FAILURE {
 		panic ("Join procedure for DHT failed")
 	} else if (joinRes.Status == JOIN_IN_PROGRESS_RETRY_LATER) {
-		node = &(Node{msg.Src,msg.SrcName})
+		node = &(joinRes.Successor)
 	} else {
 		/* SUCCESS case */
 		fmt.Println("[DHT] Join Response with Success received")
