@@ -33,3 +33,10 @@ type CreateNewEntryRequest struct {
 type CreateNewEntryResponse struct {
 	Status int
 }
+
+type BroadcastMessage struct {
+	/* Currently used for debugging. List of Maps {NodeIpAddress: Node Key }*/
+	TraversedNodesList [] Node
+	OriginIpAddress string
+	OriginName      string
+}

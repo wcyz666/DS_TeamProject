@@ -9,6 +9,7 @@ import (
 	lns "../localNameService"
 	"math/big"
 	"fmt"
+	"time"
 )
 
 const (
@@ -106,12 +107,12 @@ func (dhtNode *DHTNode) isKeyPresentInMyKeyspaceRange(key string) bool {
 }
 
 /*TODO Function responsible for updating leaf table and prefix table based on new information */
-func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress string, newNodeKey string){
+func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress string, newNodeName string, newNodeKey string){
 
 	/* Update prev and next node information for now */
 	newNodeNumericKey := getBigIntFromString(newNodeKey)
 
-	var node = Node{newNodeIpAddress}
+	var node = Node{newNodeIpAddress,newNodeName}
 	if (TRAVERSE_ANTI_CLOCK_WISE == computeTraversalDirection(dhtNode.curNodeNumericKey, newNodeNumericKey)){
 		dhtNode.leafTable.prevNode = &node
 		dhtNode.prevNodeNumericKey = newNodeNumericKey
@@ -175,7 +176,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	if (true == dhtNode.AmITheOnlyNodeInDHT()){
 		/* Me apocolyse, got my first disciple. Join request received for a DHT ring of one node */
 		/* Add new node as both prev and next node of current node */
-		node := Node{joinReq.OriginIpAddress}
+		node := Node{joinReq.OriginIpAddress,joinReq.OriginName}
 		dhtNode.leafTable.prevNode = &node
 		dhtNode.leafTable.nextNode = &node
 		fmt.Println("[DHT] Adding my first disciple (i.e.) second node in DHT.")
@@ -236,7 +237,7 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 	if joinRes.Status == FAILURE {
 		panic ("Join procedure for DHT failed")
 	} else if (joinRes.Status == JOIN_IN_PROGRESS_RETRY_LATER) {
-		node = &(Node{msg.Src})
+		node = &(Node{msg.Src,msg.SrcName})
 	} else {
 		/* SUCCESS case */
 		fmt.Println("[DHT] Join Response with Success received")
@@ -260,7 +261,7 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 	fmt.Println("[DHT] Join Complete received")
 
 	/* Update routing information to include this new node */
-	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src,joinComplete.Key)
+	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinComplete.Key)
 
 	/* Delete entries transferred to new node */
 	/* TODO After replication, this needs to be done in farthest replica */
@@ -284,7 +285,59 @@ func (dhtNode *DHTNode) HandleJoinNotify(msg *MP.Message) {
 	fmt.Println("[DHT] Join Notify received")
 
 	/* Update routing information to include this new node */
-	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src,joinNotify.Key)
+	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinNotify.Key)
+}
+
+func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
+	var broadcastMsg BroadcastMessage
+	MP.DecodeData(&broadcastMsg,msg.Data)
+
+	if (broadcastMsg.OriginName == dhtNode.nodeKey) {
+		/* Token returned back to us. Don't forward */
+		fmt.Println("Nodes in the ring are ")
+		for _, val := range broadcastMsg.TraversedNodesList {
+			fmt.Println(val.IpAddress)
+		}
+	} else {
+		/* Add current node details into the list. Currently we use this for debugging
+		 * to understand the structure of the ring */
+		node := Node{msg.Dest,msg.DestName}
+		broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
+
+		nextNode := dhtNode.leafTable.nextNode
+		dhtNode.mp.Send(MP.NewMessage(nextNode.IpAddress, "", "dht_broadcast_msg",
+			MP.EncodeData(broadcastMsg)))
+	}
+}
+/*TODO add a parameter to take suitable payload for broadcast. For e.g. we can have type which
+  describes about streaming group being newly launched */
+func (dhtNode *DHTNode) CreateBroadcastMessage(){
+	var broadcastMsg BroadcastMessage
+	broadcastMsg.OriginIpAddress, broadcastMsg.OriginName= dhtNode.mp.GetNodeIpAndName()
+	node:= Node{broadcastMsg.OriginIpAddress,broadcastMsg.OriginName}
+	broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
+
+	nextNode := dhtNode.leafTable.nextNode
+	if (nextNode == nil){
+		if (dhtNode.leafTable.prevNode == nil){
+			fmt.Println("DHT with only one node")
+		} else {
+			panic ("Broken Ring. Next node cannot be nil if there are more than 1 node in DHT")
+		}
+		return
+	}
+
+	dhtNode.mp.Send(MP.NewMessage(nextNode.IpAddress, "", "dht_broadcast_msg",
+		MP.EncodeData(broadcastMsg)))
+}
+
+func (dhtNode *DHTNode) PerformPeriodicBroadcast(){
+	ticker := time.NewTicker(time.Second * 25)
+	go func() {
+		for _ = range ticker.C {
+			dhtNode.CreateBroadcastMessage()
+		}
+	}()
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {
@@ -295,6 +348,8 @@ func (dhtNode *DHTNode) Refresh(StreamingGroupID string) {
 
 }
 
+
+
 /* handler responsible for processing messages received from other nodes
  * and updating the local hash table
  */
@@ -302,12 +357,8 @@ func (dhtNode *DHTNode) HandleRequest() {
 
 }
 
-func (dhtNOde *DHTNode) GetNextNodeIPAndNameInRing() (string, string){
-	var ip, name string
-
-	/* TODO: Implement this function */
-
-	return ip, name
+func (dhtNOde *DHTNode) GetNextNodeToForwardInRing(key string) (*Node){
+	return dhtNOde.findSuccessor(key)
 }
 
 
