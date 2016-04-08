@@ -103,8 +103,7 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 
 		// create entry in this node
 		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)) {
-			dhtNode.createEntry(msgDataReq.Key, msgDataReq.Data)
-			msgDataRes.Status = SUCCESS
+			msgDataRes.Status = dhtNode.createEntry(msgDataReq.Key, msgDataReq.Data)
 
 		// forward entry to next node
 		} else {
@@ -130,7 +129,7 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 
 			// add data
 			if(msgDataReq.Add == true){
-				dhtNode.appendData(msgDataReq.Key, msgDataReq.Data)
+				msgDataRes.Status = dhtNode.appendData(msgDataReq.Key, msgDataReq.Data)
 
 			// remove data
 			} else if (msgDataReq.Remove == true){
@@ -158,7 +157,7 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 
 		// delete entry in this node
 		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)){
-			dhtNode.deleteEntry(msgDataReq.Key)
+			msgDataRes.Status = dhtNode.deleteEntry(msgDataReq.Key)
 
 		// send entry to next node
 		} else {
@@ -204,7 +203,6 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 	default:
 		panic("WARNING: Unknown kind in HandleRequest")
 	}
-
 }
 
 
@@ -213,7 +211,6 @@ func (dhtNode *DHTNode) HandleResponse(msg *MP.Message) {
 	msg_type := msg.Kind
 
 	switch msg_type{
-
 
 	/* handle CreateEntry response */
 	case "create_entry_res":
