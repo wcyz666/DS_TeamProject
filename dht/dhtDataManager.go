@@ -93,11 +93,10 @@ func (dhtNode *DHTNode) HandleCreateNewEntryReq(msg *MP.Message) {
 	// put entry in this node
 	if (dhtNode.isKeyPresentInMyKeyspaceRange(createNewEntryReq.Key)) {
 		dhtNode.createEntry(createNewEntryReq.Key, createNewEntryReq.Data)
-
 	// send entry to next node
 	} else {
-		ip, name := dhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		nextNode := dhtNode.GetNextNodeToForwardInRing(createNewEntryReq.Key)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
 		dhtNode.mp.Send(msg)
 	}
 

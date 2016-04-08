@@ -37,6 +37,8 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 func (dhtService *DHTService)Start() int{
 	status := dhtService.DhtNode.CreateOrJoinRing()
 	if (status == NEW_DHT_CREATED){
+		/* Unit testing the ring*/
+		dhtService.DhtNode.PerformPeriodicBroadcast()
 		return DHT_API_SUCCESS
 	}
 
@@ -92,8 +94,8 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 	} else {
 		createNewEntryReq.Key = streamingGroupID
 		createNewEntryReq.Data = data
-		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
 		dht.DhtNode.mp.Send(msg)
 	}
 	return status

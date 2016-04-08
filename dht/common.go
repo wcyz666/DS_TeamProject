@@ -13,6 +13,7 @@ const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 
 type Node struct {
 	IpAddress string
+	Name      string
 }
 
 type LeafTable struct {
