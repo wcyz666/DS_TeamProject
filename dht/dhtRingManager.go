@@ -141,8 +141,13 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 		dhtNode.leafTable.nextNode = &node
 	}
 
-	fmt.Println("New Previous Node is "+ dhtNode.leafTable.prevNode.IpAddress)
-	fmt.Println("New next node is "+ dhtNode.leafTable.nextNode.IpAddress)
+	if (dhtNode.leafTable.prevNode != nil) {
+		fmt.Println("New Previous Node is " + dhtNode.leafTable.prevNode.IpAddress)
+	}
+
+	if (dhtNode.leafTable.nextNode != nil){
+		fmt.Println("New next node is "+ dhtNode.leafTable.nextNode.IpAddress)
+	}
 }
 
 func (dhtNode *DHTNode)getPredecessorFromLeafTable()(*Node)  {
@@ -324,7 +329,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 	var broadcastMsg BroadcastMessage
 	MP.DecodeData(&broadcastMsg,msg.Data)
 
-	fmt.Println("Processing Handle Broadcast Request in "+dhtNode.nodeKey)
+	fmt.Println("Received broadcast message from " + msg.Src)
 	if (broadcastMsg.OriginIpAddress == dhtNode.ipAddress) {
 		/* Token returned back to us. Don't forward */
 		fmt.Println("Nodes in the ring are ")
@@ -338,6 +343,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 		broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
 
 		nextNode := dhtNode.leafTable.nextNode
+		fmt.Println("Forwarding Broadcast message to " + nextNode.IpAddress)
 		dhtNode.mp.Send(MP.NewMessage(nextNode.IpAddress, "", "dht_broadcast_msg",
 			MP.EncodeData(broadcastMsg)))
 	}
