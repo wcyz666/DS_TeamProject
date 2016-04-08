@@ -148,7 +148,7 @@ func nodeStateWatcher() {
 				superNodeContext.RemoveNodes(nodeName)
 			}
 		}
-		fmt.Printf("SuperNode: check node state, Alive child count: [%d]\n", superNodeContext.GetNodeCount())
+		//fmt.Printf("SuperNode: check node state, Alive child count: [%d]\n", superNodeContext.GetNodeCount())
 		superNodeContext.ResetState()
 	}
 }
