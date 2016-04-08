@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"net"
+	"fmt"
 )
 
 func getFirstMac() string {
@@ -12,7 +13,7 @@ func getFirstMac() string {
 		panic("Poor soul, here is what you got: " + err.Error())
 	}
 	inter := interfaces[0]
-
+	fmt.Println("HW address is "+ inter.HardwareAddr.String())
 	return inter.HardwareAddr.String()
 }
 
