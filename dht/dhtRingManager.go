@@ -254,13 +254,13 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 			dhtNode.leafTable.prevNode = dhtNode.leafTable.nextNode
 		} else {
 			dhtNode.leafTable.prevNode =&(Node{joinRes.Predecessor.IpAddress,""})
-		}
+	}
 
 		/* 2. Send Join complete to successor */
 		dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "join_dht_complete", MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
 
 		/* 3. Send join notification to predecessor */
-		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, "", "join_dht_notify",
+		dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress, "", "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
 	}
 
