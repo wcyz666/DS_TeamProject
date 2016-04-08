@@ -206,23 +206,34 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 }
 
 
-func (dhtNode *DHTNode) HandleResponse(msg *MP.Message) {
+func (dhtNode *DHTNode) HandleResponse(msg *MP.Message) (int, []MemberShipInfo) {
 
 	msg_type := msg.Kind
+
+	var msgDataRes DataOperationResponse
+	MP.DecodeData(&msgDataRes, msg.Data)
 
 	switch msg_type{
 
 	/* handle CreateEntry response */
 	case "create_entry_res":
 
+
 	/* handle UpdateEntry */
 	case "update_entry_res":
+
 
 	/* handle DeleteEntry */
 	case "delete_entry_res":
 
+
 	/* handle GetDate */
 	case "get_data_res":
+
+
+	default:
+		panic("WARNING: Unknown kind in HandleResponse")
 	}
+
 }
 

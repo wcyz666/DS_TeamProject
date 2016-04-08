@@ -72,17 +72,29 @@ func (dhtService *DHTService)Start() int{
 }
 
 func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		return dht.DhtNode.getData(streamingGroupID)
 	} else {
-		/* TODO fetch data from other node */
-		return make([]MemberShipInfo, 0), SUCCESS
+		dataOperationReq.Key = streamingGroupID
+		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "get_data_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <-dht.DhtNode.mp.Messages["get_data_res"]:
+			status, data := dht.DhtNode.HandleResponse(getDataResMsg)
+			return data, status
+		}
+
+		return make([]MemberShipInfo, 0), FAILURE
 	}
 }
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	var createNewEntryReq DataOperationRequest
+	var dataOperationReq DataOperationRequest
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
@@ -90,41 +102,80 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 
 	// send the entry to the next node
 	} else {
-		createNewEntryReq.Key = streamingGroupID
-		createNewEntryReq.Data = data
+		dataOperationReq.Key = streamingGroupID
+		dataOperationReq.Data = data
 		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["create_new_entry_res"]:
+			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+		}
 	}
 	return status
 }
 
 func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
 	} else {
-		/* TODO send update to other node */
+		dataOperationReq.Key = streamingGroupID
+		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["delete_entry_res"]:
+			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+		}
 	}
 	return status
 }
 
 func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
 	status := SUCCESS
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status =  dht.DhtNode.appendData(streamingGroupID, data)
 	} else {
-		/* TODO send update to other node */
+		dataOperationReq.Key = streamingGroupID
+		dataOperationReq.Add = true
+		dataOperationReq.Remove = false
+		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
+			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+		}
 	}
 	return status
 }
 
 func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
 	status := SUCCESS
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.removeData(streamingGroupID, data)
 	} else {
-		/* TODO send update to other node */
+		dataOperationReq.Key = streamingGroupID
+		dataOperationReq.Add = false
+		dataOperationReq.Remove = true
+		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
+		msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
+			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+		}
 	}
 	return status
 }
