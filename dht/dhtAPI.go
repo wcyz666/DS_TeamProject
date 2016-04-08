@@ -82,7 +82,7 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	var createNewEntryReq CreateNewEntryRequest
+	var createNewEntryReq DataOperationRequest
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
