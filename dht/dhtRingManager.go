@@ -262,8 +262,10 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.hashTable = joinRes.HashTable
 
 		/* Update prev and next nodes */
-		dhtNode.leafTable.nextNode = &(joinRes.Successor)
-		dhtNode.leafTable.prevNode = &(joinRes.Predecessor)
+		dhtNode.updateLeafAndPrefixTablesWithNewNode(joinRes.Successor.IpAddress, joinRes.Successor.Name,
+		                                     joinRes.Successor.Key,false)
+		dhtNode.updateLeafAndPrefixTablesWithNewNode(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name,
+			joinRes.Predecessor.Key,true)
 
 		/* 2. Send Join complete to successor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Successor.IpAddress, joinRes.Successor.Name, "join_dht_complete",
