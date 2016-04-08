@@ -23,7 +23,7 @@ func NewDHTNode(mp *MP.MessagePasser) (*DHTNode) {
 	dhtNode.hashTable = make(map[string][]MemberShipInfo)
 	/* Use hash of mac address of the super node as the key for partitioning key space */
 	dhtNode.nodeKey = lns.GetLocalName()
-
+	dhtNode.ipAddress = dns.ExternalIP()
 	dhtNode.curNodeNumericKey =  getBigIntFromString(dhtNode.nodeKey)
 	return &dhtNode
 }
@@ -293,7 +293,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 	MP.DecodeData(&broadcastMsg,msg.Data)
 
 	fmt.Println("Processing Handle Broadcast Request in "+dhtNode.nodeKey)
-	if (broadcastMsg.OriginName == dhtNode.nodeKey) {
+	if (broadcastMsg.OriginIpAddress == dhtNode.ipAddress) {
 		/* Token returned back to us. Don't forward */
 		fmt.Println("Nodes in the ring are ")
 		for _, val := range broadcastMsg.TraversedNodesList {

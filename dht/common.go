@@ -31,6 +31,7 @@ type DHTNode struct {
 	hashTable             	map[string][]MemberShipInfo
 	mp                    	*MP.MessagePasser
 	nodeKey               	string
+	ipAddress               string
 	prevNodeNumericKey    	*big.Int
 	curNodeNumericKey      	*big.Int
 	/* When a super node is already involved in a ring update (i.e.) transferring portion
