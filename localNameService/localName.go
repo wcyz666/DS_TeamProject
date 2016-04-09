@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"net"
-	"fmt"
 )
 
 func getFirstMac() string {
