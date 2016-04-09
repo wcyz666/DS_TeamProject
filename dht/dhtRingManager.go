@@ -393,16 +393,8 @@ func (dhtNode *DHTNode) Refresh(StreamingGroupID string) {
 }
 
 
-
-/* handler responsible for processing messages received from other nodes
- * and updating the local hash table
- */
-func (dhtNode *DHTNode) HandleRequest() {
-
-}
-
-func (dhtNOde *DHTNode) GetNextNodeToForwardInRing(key string) (*Node){
-	return dhtNOde.findSuccessor(key)
+func (dhtNode *DHTNode) GetNextNodeToForwardInRing(key string) (*Node){
+	return dhtNode.findSuccessor(key)
 }
 
 

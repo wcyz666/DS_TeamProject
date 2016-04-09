@@ -24,10 +24,14 @@ type JoinNotify struct {
 	Key string
 }
 
-/* NewEntry structures */
-type CreateNewEntryRequest struct {
-	Key string
-	Data MemberShipInfo
+
+type DataOperationRequest struct {
+	Key 		string			/* Key entry */
+	Data 		MemberShipInfo		/* Data entry, used for Update operations only */
+	Remove 		bool			/* indicate removal in Update operation */
+	Add 		bool			/* indicate append in Update operation */
+	OriginIpAddress	string			/* Source IP address, used for response message */
+	OriginName	string			/* Dest IP address, used for response message */
 }
 
 type CreateNewEntryResponse struct {
@@ -40,3 +44,9 @@ type BroadcastMessage struct {
 	OriginIpAddress string
 	OriginName      string
 }
+
+type DataOperationResponse struct {
+	Status	int				/* status of the requested data operation */
+	Data []MemberShipInfo			/* data response from GetData operation */
+}
+

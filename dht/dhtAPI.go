@@ -31,6 +31,8 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 	dhtNode := NewDHTNode(mp)
 	var dhtService = DHTService{DhtNode: dhtNode}
 	mp.AddMappings([]string{"join_dht_res"})
+	/*TODO check if adding a global handler for receving data operation response is fine */
+	mp.AddMappings([]string{"dht_data_operation_res"})
 	return &dhtService
 }
 
@@ -74,17 +76,29 @@ func (dhtService *DHTService)Start() int{
 }
 
 func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		return dht.DhtNode.getData(streamingGroupID)
 	} else {
-		/* TODO fetch data from other node */
-		return make([]MemberShipInfo, 0), SUCCESS
+		dataOperationReq.Key = streamingGroupID
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "get_data_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <-dht.DhtNode.mp.Messages["get_data_res"]:
+			status, data := dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
+			return data, status
+		}
+
+		return make([]MemberShipInfo, 0), FAILURE
 	}
 }
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	var createNewEntryReq CreateNewEntryRequest
+	var dataOperationReq DataOperationRequest
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
@@ -92,41 +106,80 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 
 	// send the entry to the next node
 	} else {
-		createNewEntryReq.Key = streamingGroupID
-		createNewEntryReq.Data = data
+		dataOperationReq.Key = streamingGroupID
+		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
-		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["create_new_entry_res"]:
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
+		}
 	}
 	return status
 }
 
 func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
 	} else {
-		/* TODO send update to other node */
+		dataOperationReq.Key = streamingGroupID
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "delete_entry_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["delete_entry_res"]:
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
+		}
 	}
 	return status
 }
 
 func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
 	status := SUCCESS
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status =  dht.DhtNode.appendData(streamingGroupID, data)
 	} else {
-		/* TODO send update to other node */
+		dataOperationReq.Key = streamingGroupID
+		dataOperationReq.Add = true
+		dataOperationReq.Remove = false
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
+		}
 	}
 	return status
 }
 
 func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
 	status := SUCCESS
+	var dataOperationReq DataOperationRequest
+
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.removeData(streamingGroupID, data)
 	} else {
-		/* TODO send update to other node */
+		dataOperationReq.Key = streamingGroupID
+		dataOperationReq.Add = false
+		dataOperationReq.Remove = true
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
+		dht.DhtNode.mp.Send(msg)
+
+		select {
+		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
+		}
 	}
 	return status
 }

@@ -83,55 +83,156 @@ func (dhtNode *DHTNode) getData(key string) ([]MemberShipInfo, int) {
 }
 
 
-func (dhtNode *DHTNode) HandleCreateNewEntryReq(msg *MP.Message) {
+/* handler responsible for processing messages received from other nodes
+ * and updating the local hash table
+ */
+func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 
-	var createNewEntryReq CreateNewEntryRequest
-	MP.DecodeData(&createNewEntryReq, msg.Data)
-	//var createNewEntryRes CreateNewEntryResponse
+	// decode message into proper structure
+	var msgDataReq DataOperationRequest
+	var msgDataRes DataOperationResponse
+	MP.DecodeData(&msgDataReq, msg.Data)
+
+	msg_type := msg.Kind
+
+	switch msg_type{
+
+	/* handle CreateNewEntry request */
+	case "create_entry_req":
+
+		// create entry in this node
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)) {
+			msgDataRes.Status = dhtNode.createEntry(msgDataReq.Key, msgDataReq.Data)
+
+		// forward entry to next node
+		} else {
+			nextNode := dhtNode.GetNextNodeToForwardInRing(msgDataReq.Key)
+			msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(msgDataReq))
+			dhtNode.mp.Send(msg)
+		}
+
+		// send response if entry was successful
+		if (msgDataRes.Status == SUCCESS) {
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "create_new_entry_res", MP.EncodeData(msgDataRes))
+			dhtNode.mp.Send(msg)
+		}
 
 
-	// put entry in this node
-	if (dhtNode.isKeyPresentInMyKeyspaceRange(createNewEntryReq.Key)) {
-		dhtNode.createEntry(createNewEntryReq.Key, createNewEntryReq.Data)
-	// send entry to next node
-	} else {
-		nextNode := dhtNode.GetNextNodeToForwardInRing(createNewEntryReq.Key)
-		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(createNewEntryReq))
-		dhtNode.mp.Send(msg)
+	/* handle UpdateEntry request */
+	case "update_entry_req":
+
+		// update entry in this node
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)) {
+
+			// add data
+			if(msgDataReq.Add == true){
+				msgDataRes.Status = dhtNode.appendData(msgDataReq.Key, msgDataReq.Data)
+
+			// remove data
+			} else if (msgDataReq.Remove == true){
+				dhtNode.removeData(msgDataReq.Key, msgDataReq.Data)
+			}
+
+		// forward entry to next node
+		} else {
+			nextNode := dhtNode.GetNextNodeToForwardInRing(msgDataReq.Key)
+			msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(msgDataReq))
+			dhtNode.mp.Send(msg)
+		}
+
+		// send response if entry was successful
+		if (msgDataRes.Status == SUCCESS){
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "update_entry_res", MP.EncodeData(msgDataRes))
+			dhtNode.mp.Send(msg)
+		}
+
+
+	/* handle DeleteEntry request */
+	case "delete_entry_req":
+
+		// delete entry in this node
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)){
+			msgDataRes.Status = dhtNode.deleteEntry(msgDataReq.Key)
+
+		// send entry to next node
+		} else {
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(msgDataRes))
+			dhtNode.mp.Send(msg)
+		}
+
+		// send response if deletion was successful
+		if (msgDataRes.Status == SUCCESS){
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "delete_entry_res", MP.EncodeData(msgDataRes))
+			dhtNode.mp.Send(msg)
+		}
+
+
+	/*handle GetDate request */
+	case "get_data_req":
+
+		// get entry in this node
+		if (dhtNode.isKeyPresentInMyKeyspaceRange(msgDataReq.Key)){
+			msgDataRes.Data, msgDataRes.Status = dhtNode.getData(msgDataReq.Key)
+
+		// send entry to next node
+		} else {
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "get_data_req", MP.EncodeData(msgDataRes))
+			dhtNode.mp.Send(msg)
+		}
+
+		// send response if retrieval was successful
+		if (msgDataRes.Status == SUCCESS){
+			ip := msgDataReq.OriginIpAddress
+			name := msgDataReq.OriginName
+			msg := MP.NewMessage(ip, name, "get_data_res", MP.EncodeData(msgDataRes))
+			dhtNode.mp.Send(msg)
+		}
+
+	/* handle unknown kind in message request*/
+	default:
+		panic("WARNING: Unknown kind in HandleRequest")
 	}
-
-	// send response back
-
-}
-
-func (dhtNode *DHTNode) HandleCreateNewEntryRes(msg *MP.Message) {
-
-}
-
-func (dhtNode *DHTNode) HandleUpdateEntryReq(msg *MP.Message){
-
-}
-
-func (dhtNode *DHTNode) HandleUpdateEntryRes(msg *MP.Message){
-
-}
-
-func (dhtNode *DHTNode) HandleDeleteEntryReq(msg *MP.Message){
-
-}
-
-func (dhtNode *DHTNode) HandleDeleteEntryRes(msg *MP.Message){
-
-}
-
-func (dhtNode *DHTNode) HandleGetDataReq(msg *MP.Message){
-
-}
-
-func (dhtNode *DHTNode) HandleGetDataRes(msg *MP.Message){
-
 }
 
 
+func (dhtNode *DHTNode) HandleDataOperationResponse(msg *MP.Message) (int, []MemberShipInfo) {
 
+	msg_type := msg.Kind
+
+	var msgDataRes DataOperationResponse
+	MP.DecodeData(&msgDataRes, msg.Data)
+
+	switch msg_type{
+
+	/* handle CreateEntry response */
+	case "create_entry_res":
+
+
+	/* handle UpdateEntry */
+	case "update_entry_res":
+
+
+	/* handle DeleteEntry */
+	case "delete_entry_res":
+
+
+	/* handle GetDate */
+	case "get_data_res":
+
+
+	default:
+		panic("WARNING: Unknown kind in HandleResponse")
+	}
+	return FAILURE, make([]MemberShipInfo, 0)
+}
 

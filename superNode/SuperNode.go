@@ -76,18 +76,7 @@ func Start() {
 
 		/* Having separate channels will allow concurrent access to hash map.
 		 * Need to update hash table to be a concurrent map */
-		// Creates new (key,value) pair in DHT. Used when creating a new streaming group
-		"create_entry_req":         dhtNode.HandleCreateNewEntryReq,
-		"create_entry_res":         dhtNode.HandleCreateNewEntryRes,
-		// Update existing entry in DHT. Used when adding or removing a member to existing streaming group
-		"update_entry_req":         dhtNode.HandleUpdateEntryReq,
-		"update_entry_res":         dhtNode.HandleUpdateEntryRes,
-		// Delete existing entry in DHT. Used when dissolving a streaming group
-		"delete_entry_req":         dhtNode.HandleDeleteEntryReq,
-		"delete_entry_res":         dhtNode.HandleDeleteEntryRes,
-		// Query contents of existing entry using its key . Used to learn about members of an existing group
-		"get_data_req":            dhtNode.HandleGetDataReq,
-		"get_data_res":            dhtNode.HandleGetDataRes,
+		"dht_data_operation_req":	dhtNode.HandleDataOperationRequest,
 
 		/* Here goes the handlers related to streaming process */
 		"stream_start": streamHandler.StreamStart,
