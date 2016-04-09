@@ -38,7 +38,7 @@ func (dhtService *DHTService)Start() int{
 	status := dhtService.DhtNode.CreateOrJoinRing()
 	if (status == NEW_DHT_CREATED){
 		/* Unit testing the ring*/
-		dhtService.DhtNode.PerformPeriodicBroadcast()
+		//dhtService.DhtNode.PerformPeriodicBroadcast()
 		return DHT_API_SUCCESS
 	}
 
