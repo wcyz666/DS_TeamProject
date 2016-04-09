@@ -255,8 +255,8 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	joinRes.Status = SUCCESS
 	joinRes.Successor = Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
         
-        fmt.Println("[DHT] Sent Predecessor is " + joinRes.Predecessor.IpAddress) 
-        fmt.Println("[DHT] Sent Predecessor name is " + joinRes.Predecessor.Name)
+	fmt.Println("[DHT] Sent Predecessor is " + joinRes.Predecessor.IpAddress)
+	fmt.Println("[DHT] Sent Predecessor name is " + joinRes.Predecessor.Name)
 	fmt.Println("[DHT] Sending Successful Join Response to " + joinReq.OriginIpAddress)
 	dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress, "" , "join_dht_res", MP.EncodeData(joinRes)))
 }
@@ -382,6 +382,13 @@ func (dhtNode *DHTNode) PerformPeriodicBroadcast(){
 			dhtNode.CreateBroadcastMessage()
 		}
 	}()
+}
+
+func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
+	/* Previous Node failure detected */
+	if (dhtNode.leafTable.prevNode.IpAddress == IpAddress){
+		/*Now previous node's key space becomes mine.*/
+	}
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {

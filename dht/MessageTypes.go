@@ -50,3 +50,9 @@ type DataOperationResponse struct {
 	Data []MemberShipInfo			/* data response from GetData operation */
 }
 
+type NeighbourhoodUpdateMessage struct {
+	TraversalDirection int
+	nodeList [] Node
+	OriginIpAddress string
+	OriginName  string
+}
