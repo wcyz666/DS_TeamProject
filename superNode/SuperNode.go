@@ -72,6 +72,7 @@ func Start() {
 		"join_dht_complete":        dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
 		"join_dht_notify":          dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
 		"leave_dht_req":            dhtNode.Leave,
+		"dht_broadcast_msg":        dhtNode.HandleBroadcastMessage,
 
 		/* Having separate channels will allow concurrent access to hash map.
 		 * Need to update hash table to be a concurrent map */
@@ -136,7 +137,7 @@ func nodeStateWatcher() {
 				superNodeContext.RemoveNodes(nodeName)
 			}
 		}
-		fmt.Printf("SuperNode: check node state, Alive child count: [%d]\n", superNodeContext.GetNodeCount())
+		//fmt.Printf("SuperNode: check node state, Alive child count: [%d]\n", superNodeContext.GetNodeCount())
 		superNodeContext.ResetState()
 	}
 }

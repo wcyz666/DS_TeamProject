@@ -93,7 +93,6 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 	var msgDataRes DataOperationResponse
 	MP.DecodeData(&msgDataReq, msg.Data)
 
-
 	msg_type := msg.Kind
 
 	switch msg_type{
@@ -107,8 +106,8 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 
 		// forward entry to next node
 		} else {
-			ip, name := dhtNode.GetNextNodeIPAndNameInRing()
-			msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(msgDataReq))
+			nextNode := dhtNode.GetNextNodeToForwardInRing(msgDataReq.Key)
+			msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(msgDataReq))
 			dhtNode.mp.Send(msg)
 		}
 
@@ -138,8 +137,8 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 
 		// forward entry to next node
 		} else {
-			ip, name := dhtNode.GetNextNodeIPAndNameInRing()
-			msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(msgDataReq))
+			nextNode := dhtNode.GetNextNodeToForwardInRing(msgDataReq.Key)
+			msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(msgDataReq))
 			dhtNode.mp.Send(msg)
 		}
 

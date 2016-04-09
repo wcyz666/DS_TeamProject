@@ -39,6 +39,8 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 func (dhtService *DHTService)Start() int{
 	status := dhtService.DhtNode.CreateOrJoinRing()
 	if (status == NEW_DHT_CREATED){
+		/* Unit testing the ring*/
+		//dhtService.DhtNode.PerformPeriodicBroadcast()
 		return DHT_API_SUCCESS
 	}
 
@@ -80,8 +82,8 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 		return dht.DhtNode.getData(streamingGroupID)
 	} else {
 		dataOperationReq.Key = streamingGroupID
-		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "get_data_req", MP.EncodeData(dataOperationReq))
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "get_data_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
 
 		select {
@@ -106,8 +108,8 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 	} else {
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Data = data
-		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "create_new_entry_req", MP.EncodeData(dataOperationReq))
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
 
 		select {
@@ -126,8 +128,8 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
 	} else {
 		dataOperationReq.Key = streamingGroupID
-		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "delete_entry_req", MP.EncodeData(dataOperationReq))
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "delete_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
 
 		select {
@@ -148,8 +150,8 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Add = true
 		dataOperationReq.Remove = false
-		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(dataOperationReq))
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
 
 		select {
@@ -170,8 +172,8 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Add = false
 		dataOperationReq.Remove = true
-		ip, name := dht.DhtNode.GetNextNodeIPAndNameInRing()
-		msg := MP.NewMessage(ip, name, "update_entry_req", MP.EncodeData(dataOperationReq))
+		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
 
 		select {

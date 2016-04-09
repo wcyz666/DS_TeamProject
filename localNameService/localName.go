@@ -11,9 +11,15 @@ func getFirstMac() string {
 	if err != nil {
 		panic("Poor soul, here is what you got: " + err.Error())
 	}
-	inter := interfaces[0]
 
-	return inter.HardwareAddr.String()
+	for _,inter := range interfaces {
+		//fmt.Println("HW address is "+ inter.HardwareAddr.String())
+		if (inter.HardwareAddr.String() != ""){
+			return inter.HardwareAddr.String()
+		}
+	}
+	/*SHOULD NOT COME HERE*/
+	return ""
 }
 
 func hash(text string) string {

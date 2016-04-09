@@ -12,7 +12,7 @@ type JoinResponse struct {
 	Status           int
 	HashTable        map[string][]MemberShipInfo
 	Predecessor      Node
-	NewSuccessorNode Node // Used as re-direction mechanism when key is no longer managed by this node
+	Successor        Node
 }
 
 type JoinComplete struct {
@@ -34,9 +34,19 @@ type DataOperationRequest struct {
 	OriginName	string			/* Dest IP address, used for response message */
 }
 
+type CreateNewEntryResponse struct {
+	Status int
+}
+
+type BroadcastMessage struct {
+	/* Currently used for debugging. List of Maps {NodeIpAddress: Node Key }*/
+	TraversedNodesList [] Node
+	OriginIpAddress string
+	OriginName      string
+}
+
 type DataOperationResponse struct {
 	Status	int				/* status of the requested data operation */
 	Data []MemberShipInfo			/* data response from GetData operation */
 }
-
 
