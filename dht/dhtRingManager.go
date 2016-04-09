@@ -294,25 +294,22 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
 
-		/* Trigger neighbourhood discovery only if we have more than 2 nodes */
-		if (dhtNode.leafTable.prevNode.IpAddress != dhtNode.leafTable.nextNode.IpAddress) {
-			/* Schedule a trigger to query about neighbourhood details after 3 seconds */
-			timer1 := time.NewTimer(time.Second * 3)
-			go func(){
-				<-timer1.C
-				fmt.Println("Triggering Neighbourhood discovery")
-				var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
-					OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE}
+		/* Schedule a trigger to query about neighbourhood details after 3 seconds */
+		timer1 := time.NewTimer(time.Second * 3)
+		go func(){
+			<-timer1.C
+			fmt.Println("Triggering Neighbourhood discovery")
+			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
+				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE}
 
-				neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
-				dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
-					"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
 
-				neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
-				dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
-					"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
-			}()
-		}
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+		}()
 	}
 	return joinRes.Status,node
 }
