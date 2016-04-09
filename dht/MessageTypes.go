@@ -1,7 +1,5 @@
 package dht
 
-import "cmd/api/testdata/src/pkg/p1"
-
 /* Structure of messages exchanged between DHT nodes */
 
 type JoinRequest struct {

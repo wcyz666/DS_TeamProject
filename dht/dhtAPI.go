@@ -31,6 +31,8 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 	dhtNode := NewDHTNode(mp)
 	var dhtService = DHTService{DhtNode: dhtNode}
 	mp.AddMappings([]string{"join_dht_res"})
+	/*TODO check if adding a global handler for receving data operation response is fine */
+	mp.AddMappings([]string{"dht_data_operation_res"})
 	return &dhtService
 }
 
@@ -84,7 +86,7 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 
 		select {
 		case getDataResMsg := <-dht.DhtNode.mp.Messages["get_data_res"]:
-			status, data := dht.DhtNode.HandleResponse(getDataResMsg)
+			status, data := dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 			return data, status
 		}
 
@@ -110,7 +112,7 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 
 		select {
 		case getDataResMsg := <- dht.DhtNode.mp.Messages["create_new_entry_res"]:
-			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 		}
 	}
 	return status
@@ -130,7 +132,7 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 
 		select {
 		case getDataResMsg := <- dht.DhtNode.mp.Messages["delete_entry_res"]:
-			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 		}
 	}
 	return status
@@ -152,7 +154,7 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 
 		select {
 		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
-			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 		}
 	}
 	return status
@@ -174,7 +176,7 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 
 		select {
 		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
-			status,_ = dht.DhtNode.HandleResponse(getDataResMsg)
+			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 		}
 	}
 	return status

@@ -86,7 +86,7 @@ func (dhtNode *DHTNode) getData(key string) ([]MemberShipInfo, int) {
 /* handler responsible for processing messages received from other nodes
  * and updating the local hash table
  */
-func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
+func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 
 	// decode message into proper structure
 	var msgDataReq DataOperationRequest
@@ -206,7 +206,7 @@ func (dhtNode *DHTNode) HandleRequest(msg *MP.Message){
 }
 
 
-func (dhtNode *DHTNode) HandleResponse(msg *MP.Message) (int, []MemberShipInfo) {
+func (dhtNode *DHTNode) HandleDataOperationResponse(msg *MP.Message) (int, []MemberShipInfo) {
 
 	msg_type := msg.Kind
 
@@ -234,6 +234,6 @@ func (dhtNode *DHTNode) HandleResponse(msg *MP.Message) (int, []MemberShipInfo) 
 	default:
 		panic("WARNING: Unknown kind in HandleResponse")
 	}
-
+	return FAILURE, make([]MemberShipInfo, 0)
 }
 
