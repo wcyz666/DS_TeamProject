@@ -338,7 +338,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 		/* Token returned back to us. Don't forward */
 		fmt.Println("Nodes in the ring are ")
 		for _, val := range broadcastMsg.TraversedNodesList {
-			fmt.Println(val.IpAddress)
+			fmt.Println("IP: "+ val.IpAddress +" Node key: " + val.Key)
 		}
 	} else {
 		/* Add current node details into the list. Currently we use this for debugging

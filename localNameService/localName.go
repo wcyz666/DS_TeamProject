@@ -14,11 +14,12 @@ func getFirstMac() string {
 	}
 
 	for _,inter := range interfaces {
-		fmt.Println("HW address is "+ inter.HardwareAddr.String())
+		//fmt.Println("HW address is "+ inter.HardwareAddr.String())
 		if (inter.HardwareAddr.String() != ""){
 			return inter.HardwareAddr.String()
 		}
 	}
+	/*SHOULD NOT COME HERE*/
 	return ""
 }
 
