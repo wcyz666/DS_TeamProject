@@ -68,21 +68,24 @@ func Start() {
 		"error": errorHandler,
 
 		/* DHT call backs */
-		"join_dht_req":            	dhtNode.HandleJoinReq,
-		"join_dht_complete":        dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
-		"join_dht_notify":          dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
-		"leave_dht_req":            dhtNode.Leave,
-		"dht_broadcast_msg":        dhtNode.HandleBroadcastMessage,
+		"join_dht_req":            		dhtNode.HandleJoinReq,
+		"join_dht_complete":        	dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
+		"join_dht_notify":          	dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
+		"leave_dht_req":            	dhtNode.Leave,
+		"dht_broadcast_msg":        	dhtNode.HandleBroadcastMessage,
+		"dht_neighbourhood_discovery":	dhtNode.HandleNeighbourhoodDiscovery,
+		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
+		"dht_ring_repair_res":			dhtNode.HandleRingRepairResponse,
 
 		/* Data operation handlers */
 		"create_entry_req":		dhtNode.HandleDataOperationRequest,
-		"create_entry_res":		dhtNode.HandleDataOperationResponse,
+		//"create_entry_res":		dhtNode.HandleDataOperationResponse,
 		"update_entry_req":		dhtNode.HandleDataOperationRequest,
-		"update_entry_res":		dhtNode.HandleDataOperationResponse,
+		//"update_entry_res":		dhtNode.HandleDataOperationResponse,
 		"delete_entry_req":		dhtNode.HandleDataOperationRequest,
-		"delete_entry_res":		dhtNode.HandleDataOperationResponse,
+		//"delete_entry_res":		dhtNode.HandleDataOperationResponse,
 		"get_data_req":			dhtNode.HandleDataOperationRequest,
-		"get_data_res":			dhtNode.HandleDataOperationResponse,
+		//"get_data_res":			dhtNode.HandleDataOperationResponse,
 
 		/* Having separate channels will allow concurrent access to hash map.
 		 * Need to update hash table to be a concurrent map */

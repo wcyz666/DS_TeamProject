@@ -15,6 +15,8 @@ import (
 const (
 	TRAVERSE_CLOCK_WISE   = iota // Traverse in the direction of next node
 	TRAVERSE_ANTI_CLOCK_WISE // Traverse in direction of prev node
+
+	RING_REPAIR_REQUEST_FAILURE_TIMER = 10
 )
 
 /* Constructor */
@@ -140,14 +142,6 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 	} else{
 		dhtNode.leafTable.nextNode = &node
 	}
-
-	if (dhtNode.leafTable.prevNode != nil) {
-		fmt.Println("New Previous Node is " + dhtNode.leafTable.prevNode.IpAddress)
-	}
-
-	if (dhtNode.leafTable.nextNode != nil){
-		fmt.Println("New next node is "+ dhtNode.leafTable.nextNode.IpAddress)
-	}
 }
 
 func (dhtNode *DHTNode)getPredecessorFromLeafTable()(*Node)  {
@@ -171,6 +165,8 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		fmt.Println("[DHT]	Creating New DHT")
 		dhtNode.leafTable.nextNode = nil
 		dhtNode.leafTable.prevNode = nil
+
+		dhtNode.StartPeriodicLeafTableRefresh()
 		return NEW_DHT_CREATED
 	} else {
 		/* Send a message to one of the super nodes requesting to provide successor node's information
@@ -282,18 +278,45 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.updateLeafAndPrefixTablesWithNewNode(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name,
 			joinRes.Predecessor.Key,true)
 
-		fmt.Println("Sending Join Response message to "+ joinRes.Successor.IpAddress + " with key " + joinRes.Successor.Name)	
+		fmt.Println("Sending Join complete message to "+ joinRes.Successor.IpAddress + " with key " + joinRes.Successor.Name)
 		/* 2. Send Join complete to successor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Successor.IpAddress, joinRes.Successor.Name, "join_dht_complete",
 			                  MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
 
-		fmt.Println("Sending Join Response message to "+ joinRes.Predecessor.IpAddress + " with key " + joinRes.Predecessor.Name)
+		fmt.Println("Sending Join notify message to "+ joinRes.Predecessor.IpAddress + " with key " + joinRes.Predecessor.Name)
 		/* 3. Send join notification to predecessor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
-	}
 
+		dhtNode.StartPeriodicLeafTableRefresh()
+	}
 	return joinRes.Status,node
+}
+
+func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
+	/* Schedule a trigger to query about neighbourhood details after 3 seconds */
+	timer1 := time.NewTimer(time.Second * 3)
+	go func(){
+		<-timer1.C
+		fmt.Println("Initiating periodic leaf table refresh procedure")
+
+		if (false == dhtNode.AmITheOnlyNodeInDHT()) {
+
+			//fmt.Println("Triggering Periodic Neighbourhood discovery")
+			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
+				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
+
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress, dhtNode.leafTable.prevNode.Name,
+				"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
+
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress, dhtNode.leafTable.nextNode.Name,
+				"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
+		}
+
+		dhtNode.PerformPeriodicLeafTableRefresh()
+	}()
 }
 
 func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
@@ -385,14 +408,144 @@ func (dhtNode *DHTNode) PerformPeriodicBroadcast(){
 }
 
 func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
-	/* Previous Node failure detected */
+	/* Previous Node failure detected. Ip Address parameter is the
+	 * Ip Address of the node that failed */
+
+	/* Trigger recovery if I am the successor of the node. Otherwise
+	 * wait for successor to trigger recovery */
 	if (dhtNode.leafTable.prevNode.IpAddress == IpAddress){
 		/*Now previous node's key space becomes mine.*/
+		prevNodeList := dhtNode.leafTable.PrevNodeList
+		if (len(prevNodeList) > 1){
+			newPrevNode := dhtNode.leafTable.PrevNodeList[1]
+			dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
+			/* Send a ring repair request along with my node information */
+			dhtNode.mp.Send(MP.NewMessage(newPrevNode.IpAddress, newPrevNode.Name, "dht_ring_repair_req",
+								MP.EncodeData(RingRepairRequest{dhtNode.nodeKey})))
+			dhtNode.isRingUpdateInProgress = true
+			/* Start a timer to detect ring repair failure and move to next node */
+			timer1 := time.NewTimer(time.Second * RING_REPAIR_REQUEST_FAILURE_TIMER)
+			go func(){
+				<-timer1.C
+				fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
+				dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
+			}()
+
+
+		} else {
+			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
+				dhtNode.leafTable.nextNode = nil
+				dhtNode.leafTable.NextNodeList = nil
+			}
+			dhtNode.leafTable.prevNode = nil
+			dhtNode.leafTable.PrevNodeList = nil
+		}
+	}
+}
+func (dhtNode *DHTNode) HandleRingRepairRequest(msg *MP.Message){
+	var ringRepairReq RingRepairRequest
+	MP.DecodeData(&ringRepairReq,msg.Data)
+	fmt.Println("[DHT] Ring Repair Request received")
+
+	/* Update routing information to include this new node */
+	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairReq.Key,false)
+	dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "dht_ring_repair_res",
+		MP.EncodeData(RingRepairResponse{SUCCESS, dhtNode.nodeKey})))
+}
+
+func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
+	var ringRepairRes RingRepairResponse
+	MP.DecodeData(&ringRepairRes,msg.Data)
+	fmt.Println("[DHT] Ring Repair Response received")
+
+	/* Update routing information to include this new node */
+	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairRes.Key,true)
+	dhtNode.isRingUpdateInProgress = false
+}
+
+func logNodeList(nodeList []Node){
+	for _,node := range nodeList {
+		fmt.Println("		IP: "+ node.IpAddress + " Key: "+ node.Key)
+	}
+}
+
+func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
+	var discoveryMsg NeighbourhoodDiscoveryMessage
+	MP.DecodeData(&discoveryMsg,msg.Data)
+	//fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+
+	//strconv.Itoa(discoveryMsg.TraversalDirection) + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
+
+	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
+		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
+		   Otherwise append your IP address and append it to the list.*/
+		if (discoveryMsg.ResidualHopCount != 0){
+			node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+			discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
+		}
+
+		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
+			dhtNode.leafTable.PrevNodeList = discoveryMsg.NodeList
+
+		} else {
+			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
+		}
+
+		//fmt.Println("[DHT] Lead Table contents")
+		//fmt.Println("[DHT]	Previous Node List")
+		//logNodeList(dhtNode.leafTable.PrevNodeList)
+		//fmt.Println("[DHT]	Next Node List")
+		//logNodeList(dhtNode.leafTable.NextNodeList)
+
+	} else{
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+		discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
+
+		discoveryMsg.ResidualHopCount--
+		if (discoveryMsg.ResidualHopCount == 0){
+			//fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
+			//logNodeList(discoveryMsg.NodeList)
+			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
+				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
+		} else {
+			var nodeToForward *Node
+			if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
+				nodeToForward = dhtNode.leafTable.prevNode
+			} else {
+				nodeToForward = dhtNode.leafTable.nextNode
+			}
+			//fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
+			//logNodeList(discoveryMsg.NodeList)
+			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
+				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
+		}
 	}
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {
 
+}
+
+func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
+	ticker := time.NewTicker(time.Second * PERIODIC_LEAF_TABLE_REFRESH)
+	go func() {
+		for _ = range ticker.C {
+			if (dhtNode.AmITheOnlyNodeInDHT()){
+				continue
+			}
+
+			//fmt.Println("Triggering Periodic Neighbourhood discovery")
+			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
+				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
+
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress,dhtNode.leafTable.nextNode.Name,
+				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+		}
+	}()
 }
 
 func (dhtNode *DHTNode) Refresh(StreamingGroupID string) {
