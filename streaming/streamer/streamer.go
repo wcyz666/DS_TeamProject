@@ -54,7 +54,7 @@ func (streamer *Streamer) backgroundStreaming(){
 	for{
 		data := <- streamer.StreamingData
 		for _, destName := range(streamer.Streamingchildren){
-			msg := MP.NewMessage(destName, destName, "streaming_data", MP.EncodeData(data))
+			msg := MP.NewMessage("", destName, "streaming_data", MP.EncodeData(data))
 			fmt.Print("Sneding streaming data:" )
 			fmt.Println(msg)
 			go streamer.mp.Send(msg)
