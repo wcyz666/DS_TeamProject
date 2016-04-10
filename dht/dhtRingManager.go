@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"fmt"
 	"time"
+	"strconv"
 )
 
 const (
@@ -141,14 +142,6 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 		dhtNode.prevNodeNumericKey = newNodeNumericKey
 	} else{
 		dhtNode.leafTable.nextNode = &node
-	}
-
-	if (dhtNode.leafTable.prevNode != nil) {
-		fmt.Println("New Previous Node is " + dhtNode.leafTable.prevNode.IpAddress)
-	}
-
-	if (dhtNode.leafTable.nextNode != nil){
-		fmt.Println("New next node is "+ dhtNode.leafTable.nextNode.IpAddress)
 	}
 }
 
@@ -467,6 +460,7 @@ func logNodeList(nodeList []Node){
 func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	var discoveryMsg NeighbourhoodDiscoveryMessage
 	MP.DecodeData(&discoveryMsg,msg.Data)
+	fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
 
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
@@ -513,7 +507,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
-			fmt.Println("Forwarded message. Residual count is zero")
+			fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
 			logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
@@ -524,7 +518,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			} else {
 				nodeToForward = dhtNode.leafTable.nextNode
 			}
-			fmt.Println("Forwarded message. Non zero residual count")
+			fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
 			logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))

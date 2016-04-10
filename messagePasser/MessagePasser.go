@@ -83,7 +83,7 @@ func (client *Client) Read(mp *MessagePasser) {
 func (client *Client) Write(mp *MessagePasser) {
 	for {
 		msg := <-client.outgoing
-		fmt.Println("Attempting to send Message of type :" + msg.Kind)
+		//fmt.Println("Attempting to send Message of type :" + msg.Kind)
 
 		seri, _ := msg.Serialize()
 
