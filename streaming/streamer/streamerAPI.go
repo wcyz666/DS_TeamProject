@@ -32,7 +32,7 @@ func (streamer *Streamer) Start(title string){
 	fmt.Print(data)
 	fmt.Println(" to the supernode " + streamer.nodeContext.ParentName)
 	// Notify the parent
-	streamer.mp.Send(MP.NewMessage("", streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
+	streamer.mp.Send(MP.NewMessage("ip"+streamer.nodeContext.ParentName, streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
 	streamer.STATE = STREAMING
 }
 

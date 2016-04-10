@@ -54,7 +54,7 @@ func (streamer *Streamer) backgroundStreaming(){
 	for{
 		data := <- streamer.StreamingData
 		for _, destName := range(streamer.Streamingchildren){
-			msg := MP.NewMessage("", destName, "streaming_data", MP.EncodeData(data))
+			msg := MP.NewMessage("ip"+destName, destName, "streaming_data", MP.EncodeData(data))
 			fmt.Print("Sneding streaming data:" )
 			fmt.Println(msg)
 			go streamer.mp.Send(msg)
@@ -95,7 +95,7 @@ func (streamer *Streamer) HandleJoin(msg *MP.Message){
 	// Store this child
 	streamer.Streamingchildren = append(streamer.Streamingchildren, controlData.SrcName)
 	// Notify the src (the one join the network first)
-	streamer.mp.Send(MP.NewMessage("", controlData.SrcName, "streaming_assign", MP.EncodeData(data)))
+	streamer.mp.Send(MP.NewMessage("ip" + controlData.SrcName, controlData.SrcName, "streaming_assign", MP.EncodeData(data)))
 }
 
 /* Election related messgaes*/
@@ -107,7 +107,7 @@ func (streamer *Streamer) HandleElection(msg *MP.Message){
 func (streamer *Streamer) HandleStop(msg *MP.Message){
 	// Notify Stream Children
 	for _, destName := range(streamer.Streamingchildren){
-		msg := MP.NewMessage(destName, "", "streaming_stop", MP.EncodeData(""))
+		msg := MP.NewMessage("ip"+destName, destName, "streaming_stop", MP.EncodeData(""))
 		go streamer.mp.Send(msg)
 	}
 

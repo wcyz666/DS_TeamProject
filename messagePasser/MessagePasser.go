@@ -210,7 +210,12 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 
+	fmt.Println("Sending out data!")
+	fmt.Println(msg)
+
 	dest := msg.DestName
+
+	fmt.Println(mp.connections.clients)
 
 	if _, ok := mp.connections.clients[dest]; ok == false {
 		dest = msg.Dest
