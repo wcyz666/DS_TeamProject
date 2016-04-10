@@ -87,6 +87,7 @@ func Start() {
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
 	streamer = Streamer.NewStreamer(mp, nodeContext)
+	go app(streamer)
 
 	// We use for loop to connect with all supernode one-by-one,
 	// if a connection to one supernode fails, an error message
@@ -126,7 +127,6 @@ func Start() {
 		go listenOnChannel(channelName, handler)
 	}
 	go nodeJoin(IPs)
-	go app(streamer)
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)
 
