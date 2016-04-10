@@ -299,6 +299,7 @@ func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 	timer1 := time.NewTimer(time.Second * 3)
 	go func(){
 		<-timer1.C
+		fmt.Println("Initiating periodic leaf table refresh procedure")
 		dhtNode.PerformPeriodicLeafTableRefresh()
 	}()
 }
