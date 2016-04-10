@@ -324,13 +324,16 @@ func logNodeList(nodeList []Node){
 func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	var discoveryMsg NeighbourhoodDiscoveryMessage
 	MP.DecodeData(&discoveryMsg,msg.Data)
-	curNode := Node{dhtNode.ipAddress,dhtNode.nodeName,dhtNode.nodeKey}
 	fmt.Println("Recieved Neighbourhood discovery message with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
+	fmt.Println("Recieved list is ")
+	logNodeList(discoveryMsg.nodeList)
+
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
 		   Otherwise append your IP address and append it to the list.*/
 		if (discoveryMsg.ResidualHopCount != 0){
-			discoveryMsg.nodeList = append(discoveryMsg.nodeList, curNode)
+			node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+			discoveryMsg.nodeList = append(discoveryMsg.nodeList, node)
 		}
 
 		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
@@ -344,7 +347,10 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			logNodeList(discoveryMsg.nodeList)
 		}
 	} else{
-		discoveryMsg.nodeList = append(discoveryMsg.nodeList, curNode)
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+		discoveryMsg.nodeList = append(discoveryMsg.nodeList, node)
+		fmt.Println("Forwarded message")
+		logNodeList(discoveryMsg.nodeList)
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
 			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
