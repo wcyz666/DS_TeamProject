@@ -6,6 +6,8 @@ import (
 	SNC "../../superNode/superNodeContext"
 	SDataType "../"
 	"fmt"
+	"../../config"
+	DNS "../../dnsService"
 )
 
 /**
@@ -24,11 +26,20 @@ func NewStreamingHandler(dHashtable *dht.DHTService, mp *MP.MessagePasser, super
 	return &StreamingHandler{dHashtable: dHashtable, mp: mp, superNodeContext:superNodeContext}
 }
 
+/* Broadcast service */
+func (sHandler *StreamingHandler) broadcast(channelName string, data []byte){
+	// Get all the supernodes
+	IPs := DNS.GetAddr(config.BootstrapDomainName)
+	for _, ip := range(IPs) {
+		sHandler.mp.Send(MP.NewMessage(ip, "", channelName, data))
+	}
+}
+
 /* A node starts to stream messages */
 func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
-	//TODO: Notify all the supernodes
-
-	// TODO: NOTIFY all children
+	//Notify all the supernodes
+	//Including itself (Since one supernode may have multipy children)
+	sHandler.broadcast("stream_program_start", msg.Data)
 
 	//TODO: Update DHT table
 
@@ -37,7 +48,8 @@ func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
 
 /* A node starts to stream messages */
 func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
-	//TODO: Notify all the supernodes
+	//Notify all the supernodes
+	sHandler.broadcast("stream_program_stop", msg.Data)
 
 	//TODO: Update DHT table
 
@@ -45,12 +57,20 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 
 /* Update broadcasted from other supernodes */
 func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
-	//TODO: Notify the children the new program
+	//Notify the children the new program
+	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
+	for _, child := range(childrenNames){
+		sHandler.mp.Send(MP.NewMessage("", child, "streaming_new_program", msg.Data))
+	}
 }
 
 /* Update broadcasted from other supernodes */
 func (sHandler *StreamingHandler) StreamProgramStop(msg *MP.Message) {
-	//TODO: Notify the children the new program
+	//Notify the children the new program
+	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
+	for _, child := range(childrenNames){
+		sHandler.mp.Send(MP.NewMessage("", child, "streaming_stop_program", msg.Data))
+	}
 }
 
 /* A child node asks to join a certain streaming group */
