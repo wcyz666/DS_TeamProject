@@ -12,11 +12,11 @@ import (
 
 /* The request to be the first to start a streming */
 func (streamer *Streamer) Start(title string){
-	fmt.Println("Start to sttreaming a program!")
+
 	if streamer.STATE != IDEAL{
 		return
 	}
-
+	fmt.Println("Start to sttreaming a program!")
 	// Update local program id
 	streamer.streamID += 1
 
@@ -62,6 +62,8 @@ func (streamer *Streamer) Stop(){
 /* A node request to join a certain program */
 func (streamer *Streamer) Join(root string){
 	fmt.Println("Request to join a program! " + root)
+
+
 	if streamer.STATE != IDEAL {
 		return
 	}
