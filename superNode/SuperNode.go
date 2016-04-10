@@ -79,13 +79,13 @@ func Start() {
 
 		/* Data operation handlers */
 		"create_entry_req":		dhtNode.HandleDataOperationRequest,
-		"create_entry_res":		dhtNode.HandleDataOperationResponse,
+		//"create_entry_res":		dhtNode.HandleDataOperationResponse,
 		"update_entry_req":		dhtNode.HandleDataOperationRequest,
-		"update_entry_res":		dhtNode.HandleDataOperationResponse,
+		//"update_entry_res":		dhtNode.HandleDataOperationResponse,
 		"delete_entry_req":		dhtNode.HandleDataOperationRequest,
-		"delete_entry_res":		dhtNode.HandleDataOperationResponse,
+		//"delete_entry_res":		dhtNode.HandleDataOperationResponse,
 		"get_data_req":			dhtNode.HandleDataOperationRequest,
-		"get_data_res":			dhtNode.HandleDataOperationResponse,
+		//"get_data_res":			dhtNode.HandleDataOperationResponse,
 
 		/* Having separate channels will allow concurrent access to hash map.
 		 * Need to update hash table to be a concurrent map */
