@@ -279,12 +279,12 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.updateLeafAndPrefixTablesWithNewNode(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name,
 			joinRes.Predecessor.Key,true)
 
-		fmt.Println("Sending Join Response message to "+ joinRes.Successor.IpAddress + " with key " + joinRes.Successor.Name)	
+		fmt.Println("Sending Join complete message to "+ joinRes.Successor.IpAddress + " with key " + joinRes.Successor.Name)
 		/* 2. Send Join complete to successor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Successor.IpAddress, joinRes.Successor.Name, "join_dht_complete",
 			                  MP.EncodeData(JoinComplete{SUCCESS, dhtNode.nodeKey})))
 
-		fmt.Println("Sending Join Response message to "+ joinRes.Predecessor.IpAddress + " with key " + joinRes.Predecessor.Name)
+		fmt.Println("Sending Join notify message to "+ joinRes.Predecessor.IpAddress + " with key " + joinRes.Predecessor.Name)
 		/* 3. Send join notification to predecessor */
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
@@ -459,6 +459,10 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	MP.DecodeData(&discoveryMsg,msg.Data)
 	fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+
 	strconv.Itoa(discoveryMsg.TraversalDirection) + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
+	fmt.Println(" (prev,cur,next) is (" + dhtNode.leafTable.prevNode.Key + " , " + dhtNode.nodeKey + " , " +
+						dhtNode.leafTable.nextNode.Key + ")")
+	fmt.Println(" (prev,cur,next) is (" + dhtNode.leafTable.prevNode.IpAddress + " , " + dhtNode.ipAddress + " , " +
+						dhtNode.leafTable.nextNode.IpAddress + ")")
 
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
@@ -474,11 +478,11 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		} else {
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
-		fmt.Println("[DHT] Lead Table contents")
-		fmt.Println("[DHT]	Previous Node List")
-		logNodeList(dhtNode.leafTable.PrevNodeList)
-		fmt.Println("[DHT]	Next Node List")
-		logNodeList(dhtNode.leafTable.NextNodeList)
+	//	fmt.Println("[DHT] Lead Table contents")
+	//	fmt.Println("[DHT]	Previous Node List")
+	//	logNodeList(dhtNode.leafTable.PrevNodeList)
+//		fmt.Println("[DHT]	Next Node List")
+//		logNodeList(dhtNode.leafTable.NextNodeList)
 
 	} else{
 		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
