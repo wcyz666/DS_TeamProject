@@ -6,6 +6,7 @@ type StreamControlMsg struct {
 	// The message may be redirected by the supernodes
 	// So we need another identifier other than that in the message passer
 	SrcName string
+	SrcIp string
 	RootStreamer string
 	StreamID int
 	Title string

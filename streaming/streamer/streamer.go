@@ -83,19 +83,27 @@ func (streamer *Streamer) HandleJoin(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 
+	fmt.Println("Handling join request of " + controlData.SrcName)
+
 	// TODO: Actually start the election below
 
 	// Fake now
 	// Construct data, to be used by updating the program
+
+
 	data := SDataType.StreamControlMsg{
 		SrcName: streamer.nodeContext.LocalName,
+		SrcIp:  streamer.nodeContext.LocalIp,
 		RootStreamer: controlData.RootStreamer,
 	}
 
 	// Store this child
 	streamer.Streamingchildren = append(streamer.Streamingchildren, controlData.SrcName)
 	// Notify the src (the one join the network first)
-	streamer.mp.Send(MP.NewMessage("", controlData.SrcName, "streaming_assign", MP.EncodeData(data)))
+
+	assignMsg := MP.NewMessage(controlData.SrcIp, controlData.SrcName, "streaming_assign", MP.EncodeData(data))
+	fmt.Println(assignMsg)
+	streamer.mp.Send(assignMsg)
 }
 
 /* Election related messgaes*/

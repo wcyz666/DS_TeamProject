@@ -8,6 +8,7 @@ const (
 
 type NodeContext struct {
     LocalName    string
+    LocalIp      string
     ParentIP     string
     ParentName   string
     State        int

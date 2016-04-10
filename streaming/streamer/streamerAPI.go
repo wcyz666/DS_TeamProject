@@ -23,6 +23,7 @@ func (streamer *Streamer) Start(title string){
 	// Construct data, to be used by updating the program
 	data := SDataType.StreamControlMsg{
 		SrcName: streamer.nodeContext.LocalName,
+		SrcIp: streamer.nodeContext.LocalIp,
 		StreamID: streamer.streamID,
 		Title: title,
 		RootStreamer: streamer.nodeContext.LocalName,
@@ -45,6 +46,7 @@ func (streamer *Streamer) Stop(){
 	// Construct data, to be used by updating the program
 	data := SDataType.StreamControlMsg{
 		SrcName: streamer.nodeContext.LocalName,
+		SrcIp: streamer.nodeContext.LocalIp,
 		StreamID: streamer.streamID,
 		RootStreamer: streamer.nodeContext.LocalName,
 	}
@@ -71,6 +73,7 @@ func (streamer *Streamer) Join(root string){
 	// Construct data, to be used by updating the program
 	data := SDataType.StreamControlMsg{
 		SrcName: streamer.nodeContext.LocalName,
+		SrcIp: streamer.nodeContext.LocalIp,
 		RootStreamer: root,
 	}
 

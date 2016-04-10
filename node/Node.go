@@ -85,6 +85,7 @@ func Start() {
 	IPs := DNS.GetAddr(bootstrap_dns)
 	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
+	nodeContext.LocalIp, _ = DNS.ExternalIP()
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
 	streamer = Streamer.NewStreamer(mp, nodeContext)
 	go app(streamer)
