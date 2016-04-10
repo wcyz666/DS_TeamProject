@@ -111,6 +111,8 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 	// Clear
 	streamer.StreamingParent = streamer.nodeContext.LocalName
 	streamer.Streamingchildren = []string{}
+
+	//TODO: Clear all the data stored in the channels
 }
 
 /* A New Program is added */
@@ -119,16 +121,18 @@ func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
 	MP.DecodeData(&controlData, msg.Data)
 	streamer.ProgramList[controlData.SrcName] = controlData.Title
 	fmt.Println("New program detected! ")
-	fmt.Println("Current program list:" + streamer.ProgramList)
+	fmt.Println("Current program list:")
+	fmt.Println(streamer.ProgramList)
 }
 
 /* A program is stoped */
 func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	streamer.ProgramList = delete(streamer.ProgramList, controlData.SrcName)
+	delete(streamer.ProgramList, controlData.SrcName)
 	fmt.Println("Program deleted! ")
-	fmt.Println("Current program list:" + streamer.ProgramList)
+	fmt.Println("Current program list:")
+	fmt.Println(streamer.ProgramList)
 }
 
 /* Handle the receiving streaming data*/

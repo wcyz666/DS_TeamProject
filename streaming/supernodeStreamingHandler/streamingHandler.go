@@ -1,7 +1,7 @@
 package streaming
 
 import (
-	dht "../../dht"
+	DHT "../../dht"
 	MP "../../messagePasser"
 	SNC "../../superNode/superNodeContext"
 	SDataType "../"
@@ -17,13 +17,13 @@ This class takes care of
 	 2. Sync related information in the DHT and with other supernodes
 */
 type StreamingHandler struct {
-	dHashtable *dht.DHTService
+	dht *DHT.DHTService
 	mp         *MP.MessagePasser
 	superNodeContext	*SNC.SuperNodeContext
 }
 
-func NewStreamingHandler(dHashtable *dht.DHTService, mp *MP.MessagePasser, superNodeContext *SNC.SuperNodeContext) *StreamingHandler {
-	return &StreamingHandler{dHashtable: dHashtable, mp: mp, superNodeContext:superNodeContext}
+func NewStreamingHandler(dHashtable *DHT.DHTService, mp *MP.MessagePasser, superNodeContext *SNC.SuperNodeContext) *StreamingHandler {
+	return &StreamingHandler{dht: dHashtable, mp: mp, superNodeContext:superNodeContext}
 }
 
 /* Broadcast service */
@@ -42,7 +42,9 @@ func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
 	sHandler.broadcast("stream_program_start", msg.Data)
 
 	//TODO: Update DHT table
-
+	var controlData SDataType.StreamControlMsg
+	MP.DecodeData(&controlData, msg.Data)
+	sHandler.dht.Create(controlData.RootStreamer, DHT.MemberShipInfo{SuperNodeIp:controlData.SrcName})
 
 }
 
@@ -52,7 +54,9 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 	sHandler.broadcast("stream_program_stop", msg.Data)
 
 	//TODO: Update DHT table
-
+	var controlData SDataType.StreamControlMsg
+	MP.DecodeData(&controlData, msg.Data)
+	sHandler.dht.Delete(controlData.RootStreamer)
 }
 
 /* Update broadcasted from other supernodes */
@@ -83,5 +87,9 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 	fmt.Println(root)
 
 	// TODO: find the streaming group with root in the DHT and update it
+	streamers, _ := sHandler.dht.Get(root)
+	// Choose the last streamer to start the election
+	parentName := streamers[len(streamers)-1].SuperNodeIp
 	// TODO: Send "streaming_join" to one of the streamers
+	sHandler.mp.Send(MP.NewMessage("", parentName, "streaming_join", msg.Data))
 }

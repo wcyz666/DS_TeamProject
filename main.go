@@ -8,6 +8,7 @@ import (
 	"flag"
         dns "./dnsService"
         config "./config"
+	"fmt"
 )
 
 const (
@@ -16,8 +17,10 @@ const (
 
 func start(me *string) {
 	if *me == "node" {
+		fmt.Println("Start as node!")
 		node.Start()
 	} else {
+		fmt.Println("Start as supernode!")
 		SuperNode.Start()
 	}
 }
@@ -41,7 +44,7 @@ func main() {
 	*/
 
 	 clearDNS:= flag.Bool("clearDNS",false,"set if you want to clear DNS A records")
-	 me := flag.String("class", "supernode", "the identity of the current node")
+	 me := flag.String("class", "node", "the identity of the current node")
 
 	 flag.Parse()
 	 if (*clearDNS){

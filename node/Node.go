@@ -9,6 +9,9 @@ import (
 	NC "./nodeContext"
 	"time"
 	Streamer "../streaming/streamer"
+	"bufio"
+	"os"
+	"strings"
 )
 
 const (
@@ -20,6 +23,7 @@ const (
 var mp *MP.MessagePasser
 var nodeContext *NC.NodeContext
 var exitChannal chan int
+var streamer *Streamer.Streamer
 
 /**
 All internal helper functions
@@ -62,18 +66,6 @@ func joinAssign(msg *MP.Message) {
 }
 
 
-func streamAssign(msg *MP.Message) {
-
-}
-
-func programListParser(msg *MP.Message) {
-
-}
-
-func receiveReceive(msg *MP.Message) {
-
-}
-
 func errorHandler(msg *MP.Message) {
 	switch nodeContext.State {
 	// Re-throw it to init_fail channel
@@ -94,7 +86,7 @@ func Start() {
 	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
-	streamer := Streamer.NewStreamer(mp, nodeContext)
+	streamer = Streamer.NewStreamer(mp, nodeContext)
 
 	// We use for loop to connect with all supernode one-by-one,
 	// if a connection to one supernode fails, an error message
@@ -114,9 +106,6 @@ func Start() {
 
 	channelNames := map[string]func(*MP.Message){
 		"join_assign":     joinAssign,
-		"stream_assign":   streamAssign,
-		"program_list":    programListParser,
-		"election_stream": receiveReceive,
 		"error" : errorHandler,
 
 		// The streaming related handlers goes here
@@ -137,8 +126,10 @@ func Start() {
 		go listenOnChannel(channelName, handler)
 	}
 	go nodeJoin(IPs)
+	go app(streamer)
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)
+
 }
 
 /* Join the network */
@@ -168,38 +159,36 @@ func nodeJoin(IPs []string) {
 
 }
 
-/* Start Streaming */
-func StreamStart() {
 
-}
 
-/* Stop Streaming */
-func StreamStop() {
+/* Application */
+func app(streamer *Streamer.Streamer){
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("heheheh: ")
+	for {
+		text, _ := reader.ReadString('\n')
+		inputs := strings.Split(strings.TrimSpace(text), " ")
+		fmt.Println(inputs)
+		switch inputs[0] {
+		case "start":
+			if len(inputs) > 1 {
+				streamer.Start(inputs[1])
+			}
+		case "stop":
+			streamer.Stop()
+		case "join":
+			if len(inputs) > 1 {
+				streamer.Join(inputs[1])
+			}
+		case "stream":
+			if len(inputs) > 1 {
+				streamer.Stream(inputs[1])
+			}
+		case "log":
+			streamer.Log()
+		default:
+			fmt.Println("Please check the input!")
+		}
+	}
 
-}
-
-/* Join a streaming group */
-func StreamJoin(programId string) {
-
-}
-
-/* Stream Quit */
-func StreamQuit() {
-
-}
-
-/* Get the list of programs */
-// TODO: Add a return type
-func StreamGetList() {
-
-}
-
-/* Produce the stream the data */
-func StreamData(data string) {
-
-}
-
-/* Get the data from other streamers */
-func StreamReadData() string {
-	return ""
 }

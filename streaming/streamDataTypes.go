@@ -7,7 +7,6 @@ type StreamControlMsg struct {
 	// So we need another identifier other than that in the message passer
 	SrcName string
 	RootStreamer string
-	GroupId int
 	StreamID int
 	Title string
 }

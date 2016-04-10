@@ -25,9 +25,12 @@ func (streamer *Streamer) Start(title string){
 		SrcName: streamer.nodeContext.LocalName,
 		StreamID: streamer.streamID,
 		Title: title,
+		RootStreamer: streamer.nodeContext.LocalName,
 	}
 
-	fmt.Println("Sending confirming message " + data + " to the supernode " + streamer.nodeContext.ParentName)
+	fmt.Print("Sending confirming message ")
+	fmt.Print(data)
+	fmt.Println(" to the supernode " + streamer.nodeContext.ParentName)
 	// Notify the parent
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
 	streamer.STATE = STREAMING
@@ -71,7 +74,9 @@ func (streamer *Streamer) Join(root string){
 
 
 	// Notify the parent
-	fmt.Println("Sending confirming message " + data + " to the supernode " + streamer.nodeContext.ParentName)
+	fmt.Print("Sending confirming message ")
+	fmt.Print(data)
+	fmt.Println(" to the supernode " + streamer.nodeContext.ParentName)
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_join", MP.EncodeData(data)))
 
 
@@ -84,3 +89,15 @@ func (streamer *Streamer) Stream(data string){
 	streamer.StreamingData <- data
 }
 
+/* Log the essential information */
+func (streamer *Streamer) Log(){
+	fmt.Println("#################################")
+	fmt.Println("Local name: " + streamer.nodeContext.LocalName)
+	fmt.Println("Parent supernode: " + streamer.nodeContext.ParentName + " IP: " + streamer.nodeContext.ParentIP)
+	fmt.Println("Streaming parent: " + streamer.StreamingParent)
+	fmt.Print("Streaming children: ")
+	fmt.Println(streamer.Streamingchildren)
+	fmt.Print("Current program list: ")
+	fmt.Println(streamer.ProgramList)
+	fmt.Println("#################################")
+}
