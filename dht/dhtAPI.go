@@ -32,7 +32,8 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 	var dhtService = DHTService{DhtNode: dhtNode}
 	mp.AddMappings([]string{"join_dht_res"})
 	/*TODO check if adding a global handler for receving data operation response is fine */
-	mp.AddMappings([]string{"dht_data_operation_res"})
+	mp.AddMappings([]string{"dht_data_operation_res", "get_data_res", "delete_entry_res", "create_new_entry_res",
+							"update_entry_res"})
 	return &dhtService
 }
 
