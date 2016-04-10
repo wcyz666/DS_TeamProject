@@ -301,7 +301,7 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 			<-timer1.C
 			fmt.Println("Triggering Neighbourhood discovery")
 			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
-				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE}
+				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
 
 			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
 			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
@@ -313,61 +313,6 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		}()
 	}
 	return joinRes.Status,node
-}
-
-func logNodeList(nodeList []Node){
-	for _,node := range nodeList {
-		fmt.Println("IP: "+ node.IpAddress + " Key: "+ node.Key)
-	}
-}
-
-func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
-	var discoveryMsg NeighbourhoodDiscoveryMessage
-	MP.DecodeData(&discoveryMsg,msg.Data)
-	fmt.Println("Recieved Neighbourhood discovery message with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
-	fmt.Println("Recieved list is ")
-	logNodeList(discoveryMsg.NodeList)
-
-	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
-		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
-		   Otherwise append your IP address and append it to the list.*/
-		if (discoveryMsg.ResidualHopCount != 0){
-			node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
-			discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
-		}
-
-		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
-			dhtNode.leafTable.prevNodeList = discoveryMsg.NodeList
-			fmt.Println("Prev Node List")
-			logNodeList(discoveryMsg.NodeList)
-
-		} else {
-			dhtNode.leafTable.nextNodeList = discoveryMsg.NodeList
-			fmt.Println("Next Node List")
-			logNodeList(discoveryMsg.NodeList)
-		}
-	} else{
-		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
-		discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
-		discoveryMsg.ResidualHopCount--
-		if (discoveryMsg.ResidualHopCount == 0){
-			fmt.Println("Forwarded message. Residual count is zero")
-			logNodeList(discoveryMsg.NodeList)
-			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
-								"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
-		} else {
-			var nodeToForward *Node
-			if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
-				nodeToForward = dhtNode.leafTable.prevNode
-			} else {
-				nodeToForward = dhtNode.leafTable.nextNode
-			}
-			fmt.Println("Forwarded message. Non zero residual count")
-			logNodeList(discoveryMsg.NodeList)
-			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
-				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
-		}
-	}
 }
 
 func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
@@ -512,6 +457,79 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairRes.Key,true)
 	dhtNode.isRingUpdateInProgress = false
+}
+
+func logNodeList(nodeList []Node){
+	for _,node := range nodeList {
+		fmt.Println("IP: "+ node.IpAddress + " Key: "+ node.Key)
+	}
+}
+
+func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
+	var discoveryMsg NeighbourhoodDiscoveryMessage
+	MP.DecodeData(&discoveryMsg,msg.Data)
+	fmt.Println("Recieved Neighbourhood discovery message with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
+	fmt.Println("Recieved list is ")
+	logNodeList(discoveryMsg.NodeList)
+
+	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
+		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
+		   Otherwise append your IP address and append it to the list.*/
+		if (discoveryMsg.ResidualHopCount != 0){
+			node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+			discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
+		}
+
+		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
+			dhtNode.leafTable.prevNodeList = discoveryMsg.NodeList
+			fmt.Println("Prev Node List")
+			logNodeList(discoveryMsg.NodeList)
+
+		} else {
+			dhtNode.leafTable.nextNodeList = discoveryMsg.NodeList
+			fmt.Println("Next Node List")
+			logNodeList(discoveryMsg.NodeList)
+		}
+	} else{
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+		discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
+
+		/* Update local node based on the new information */
+		index := NEIGHBOURHOOD_DISTANCE - discoveryMsg.ResidualHopCount
+		newNode := Node {discoveryMsg.OriginIpAddress, discoveryMsg.OriginName, discoveryMsg.OriginKey }
+		listToUpdate := dhtNode.leafTable.prevNodeList
+		/* If discovery message is traversing anti-clockwise, then originating node is in clock wise
+		 * direction to me*/
+		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
+			listToUpdate = dhtNode.leafTable.nextNodeList
+		}
+
+		length := len (dhtNode.leafTable.nextNodeList)
+		if ( length < (index+1)){
+			listToUpdate = append(listToUpdate, newNode)
+		} else {
+			listToUpdate[index] = newNode
+		}
+
+		discoveryMsg.ResidualHopCount--
+		if (discoveryMsg.ResidualHopCount == 0){
+			fmt.Println("Forwarded message. Residual count is zero")
+			logNodeList(discoveryMsg.NodeList)
+			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
+				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
+		} else {
+			var nodeToForward *Node
+			if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
+				nodeToForward = dhtNode.leafTable.prevNode
+			} else {
+				nodeToForward = dhtNode.leafTable.nextNode
+			}
+			fmt.Println("Forwarded message. Non zero residual count")
+			logNodeList(discoveryMsg.NodeList)
+			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
+				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
+		}
+	}
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {

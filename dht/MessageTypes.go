@@ -56,6 +56,7 @@ type NeighbourhoodDiscoveryMessage struct {
 	NodeList           [] Node
 	OriginIpAddress    string
 	OriginName         string
+	OriginKey          string
 }
 
 type RingRepairRequest struct {
