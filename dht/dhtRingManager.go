@@ -166,6 +166,10 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		fmt.Println("[DHT]	Creating New DHT")
 		dhtNode.leafTable.nextNode = nil
 		dhtNode.leafTable.prevNode = nil
+		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
+		dhtNode.leafTable.NextNodeList = append(dhtNode.leafTable.NextNodeList, node)
+		dhtNode.leafTable.PrevNodeList = append(dhtNode.leafTable.PrevNodeList, node)
+		
 		return NEW_DHT_CREATED
 	} else {
 		/* Send a message to one of the super nodes requesting to provide successor node's information
@@ -487,19 +491,24 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		 * direction to me*/
 		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
 			length := len (dhtNode.leafTable.NextNodeList)
-			if ( length < (index+1)){
-				dhtNode.leafTable.NextNodeList = append(dhtNode.leafTable.NextNodeList, newNode)
-			} else {
-				dhtNode.leafTable.NextNodeList[index] = newNode
+			if ( length < (index+1)) {
+				panic ("This should not happen")
+			}
+			dhtNode.leafTable.NextNodeList[index] = newNode
+			if (length < NEIGHBOURHOOD_DISTANCE){
+				dhtNode.leafTable.NextNodeList = append(dhtNode.leafTable.NextNodeList, node)
 			}
 			fmt.Println("Updated NextNodeList is ")
 			logNodeList(dhtNode.leafTable.NextNodeList)
 		} else {
 			length := len (dhtNode.leafTable.PrevNodeList)
-			if ( length < (index+1)){
-				dhtNode.leafTable.PrevNodeList = append(dhtNode.leafTable.PrevNodeList, newNode)
-			} else {
-				dhtNode.leafTable.PrevNodeList[index] = newNode
+			if ( length < (index+1)) {
+				panic("This should not happen")
+			}
+
+			dhtNode.leafTable.PrevNodeList[index] = newNode
+			if (length < NEIGHBOURHOOD_DISTANCE){
+				dhtNode.leafTable.PrevNodeList = append(dhtNode.leafTable.PrevNodeList, node)
 			}
 			fmt.Println("Updated PrevNodeList is ")
 			logNodeList(dhtNode.leafTable.PrevNodeList)
