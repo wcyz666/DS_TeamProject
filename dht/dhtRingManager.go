@@ -489,22 +489,27 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		/* Update local node based on the new information */
 		index := NEIGHBOURHOOD_DISTANCE - discoveryMsg.ResidualHopCount
 		newNode := Node {discoveryMsg.OriginIpAddress, discoveryMsg.OriginName, discoveryMsg.OriginKey }
-		listToUpdate := dhtNode.leafTable.PrevNodeList
 		/* If discovery message is traversing anti-clockwise, then originating node is in clock wise
 		 * direction to me*/
 		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
-			listToUpdate = dhtNode.leafTable.NextNodeList
-		}
-
-		length := len (dhtNode.leafTable.NextNodeList)
-		if ( length < (index+1)){
-			listToUpdate = append(listToUpdate, newNode)
+			length := len (dhtNode.leafTable.NextNodeList)
+			if ( length < (index+1)){
+				dhtNode.leafTable.NextNodeList = append(dhtNode.leafTable.NextNodeList, newNode)
+			} else {
+				dhtNode.leafTable.NextNodeList[index] = newNode
+			}
+			fmt.Println("Updated NextNodeList is ")
+			logNodeList(dhtNode.leafTable.NextNodeList)
 		} else {
-			listToUpdate[index] = newNode
+			length := len (dhtNode.leafTable.PrevNodeList)
+			if ( length < (index+1)){
+				dhtNode.leafTable.PrevNodeList = append(dhtNode.leafTable.PrevNodeList, newNode)
+			} else {
+				dhtNode.leafTable.PrevNodeList[index] = newNode
+			}
+			fmt.Println("Updated PrevNodeList is ")
+			logNodeList(dhtNode.leafTable.PrevNodeList)
 		}
-
-		fmt.Println("Updated List is ")
-		logNodeList(listToUpdate)
 
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
