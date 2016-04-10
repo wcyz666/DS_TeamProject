@@ -16,7 +16,7 @@ func (streamer *Streamer) Start(title string){
 	if streamer.STATE != IDEAL{
 		return
 	}
-	fmt.Println("Start to sttreaming a program!")
+	fmt.Println("Start to streaming a program!")
 	// Update local program id
 	streamer.streamID += 1
 
@@ -32,7 +32,7 @@ func (streamer *Streamer) Start(title string){
 	fmt.Print(data)
 	fmt.Println(" to the supernode " + streamer.nodeContext.ParentName)
 	// Notify the parent
-	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
+	streamer.mp.Send(MP.NewMessage("", streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
 	streamer.STATE = STREAMING
 }
 
