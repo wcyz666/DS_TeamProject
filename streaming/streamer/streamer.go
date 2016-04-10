@@ -5,6 +5,7 @@ import (
 	"strconv"
 	SDataType "../"
 	NC "../../node/nodeContext"
+	"fmt"
 )
 
 const(
@@ -35,8 +36,18 @@ func NewStreamer(mp *MP.MessagePasser, nodeContext *NC.NodeContext) *Streamer{
 	streamer.StreamingData = make(chan string)
 	streamer.ReceivingData = make(chan string)
 	go streamer.backgroundStreaming()
+	go streamer.testReceive()
 	return &streamer
 }
+
+/* Temp function to show the receiving data*/
+func (streamer *Streamer)testReceive(){
+	for{
+		data := <-streamer.ReceivingData
+		fmt.Println("Received: " + data)
+	}
+}
+
 
 /* This function keep distributing the data in the channel to all the recipients*/
 func (streamer *Streamer) backgroundStreaming(){
@@ -56,6 +67,7 @@ The control flow related functions
 
 /* The request to be the first to start a streming */
 func (streamer *Streamer) Start(title string){
+	fmt.Println("Start to sttreaming a program!")
 	if streamer.STATE != IDEAL{
 		return
 	}
@@ -70,6 +82,7 @@ func (streamer *Streamer) Start(title string){
 		Title: title,
 	}
 
+	fmt.Println("Sending confirming message " + data + " to the supernode " + streamer.nodeContext.ParentName)
 	// Notify the parent
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
 	streamer.STATE = STREAMING
@@ -100,6 +113,7 @@ func (streamer *Streamer) Stop(){
 
 /* A node request to join a certain program */
 func (streamer *Streamer) Join(root string){
+	fmt.Println("Request to join a program! " + root)
 	if streamer.STATE != IDEAL {
 		return
 	}
@@ -110,7 +124,9 @@ func (streamer *Streamer) Join(root string){
 		RootStreamer: root,
 	}
 
+
 	// Notify the parent
+	fmt.Println("Sending confirming message " + data + " to the supernode " + streamer.nodeContext.ParentName)
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_join", MP.EncodeData(data)))
 
 
@@ -131,7 +147,7 @@ func (streamer *Streamer) Stream(data string){
 func (streamer *Streamer) HandleAssign(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-
+	fmt.Println("Handling assign! As child of " + controlData.SrcName)
 	streamer.StreamingParent = controlData.SrcName
 	streamer.STATE = STREAMING
 }
@@ -179,6 +195,8 @@ func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 	streamer.ProgramList[controlData.SrcName] = controlData.Title
+	fmt.Println("New program detected! ")
+	fmt.Println("Current program list:" + streamer.ProgramList)
 }
 
 /* A program is stoped */
@@ -186,6 +204,8 @@ func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 	streamer.ProgramList = delete(streamer.ProgramList, controlData.SrcName)
+	fmt.Println("Program deleted! ")
+	fmt.Println("Current program list:" + streamer.ProgramList)
 }
 
 /* Handle the receiving streaming data*/
