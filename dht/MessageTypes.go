@@ -53,9 +53,9 @@ type DataOperationResponse struct {
 type NeighbourhoodDiscoveryMessage struct {
 	ResidualHopCount   int
 	TraversalDirection int
-	nodeList [] Node
-	OriginIpAddress string
-	OriginName  string
+	NodeList           [] Node
+	OriginIpAddress    string
+	OriginName         string
 }
 
 type RingRepairRequest struct {
