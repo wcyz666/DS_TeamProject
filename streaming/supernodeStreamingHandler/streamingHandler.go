@@ -28,6 +28,8 @@ func NewStreamingHandler(dHashtable *dht.DHTService, mp *MP.MessagePasser, super
 func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
 	//TODO: Notify all the supernodes
 
+	// TODO: NOTIFY all children
+
 	//TODO: Update DHT table
 
 

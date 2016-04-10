@@ -85,6 +85,7 @@ func (streamer *Streamer) Stop(){
 	data := SDataType.StreamControlMsg{
 		SrcName: streamer.nodeContext.LocalName,
 		StreamID: streamer.streamID,
+		RootStreamer: streamer.nodeContext.LocalName,
 	}
 
 	// Notify the parent
@@ -149,6 +150,8 @@ func (streamer *Streamer) HandleJoin(msg *MP.Message){
 		RootStreamer: controlData.RootStreamer,
 	}
 
+	// Store this child
+	streamer.Streamingchildren = append(streamer.Streamingchildren, controlData.SrcName)
 	// Notify the src (the one join the network first)
 	streamer.mp.Send(MP.NewMessage("", controlData.SrcName, "streaming_assign", MP.EncodeData(data)))
 }
@@ -175,14 +178,14 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	streamer.ProgramList[controlData.SrcName + "[" + strconv.Itoa(controlData.StreamID) + "]"] = controlData.Title
+	streamer.ProgramList[controlData.SrcName] = controlData.Title
 }
 
 /* A program is stoped */
 func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	delete(streamer.ProgramList, controlData.SrcName + "[" + strconv.Itoa(controlData.StreamID) + "]")
+	streamer.ProgramList = delete(streamer.ProgramList, controlData.SrcName)
 }
 
 /* Handle the receiving streaming data*/
@@ -190,6 +193,5 @@ func (streamer *Streamer) HandleStreamerData(msg *MP.Message) {
 	var data string
 	MP.DecodeData(&data, msg.Data)
 	streamer.ReceivingData <- data
+	streamer.StreamingData <- data
 }
-
-
