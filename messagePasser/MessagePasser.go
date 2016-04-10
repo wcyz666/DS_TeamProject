@@ -236,6 +236,9 @@ func (mp *MessagePasser) Send(msg Message)  {
 		client := NewClient(conn, mp)
 		client.name = dest
 		mp.connections.clients[dest] = client
+		if msg.DestName != "" {
+			mp.connections.clients[msg.DestName] = client
+		}
 		client.outgoing <- &msg
 	}
 
