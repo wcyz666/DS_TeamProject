@@ -300,6 +300,23 @@ func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 	go func(){
 		<-timer1.C
 		fmt.Println("Initiating periodic leaf table refresh procedure")
+
+		if (dhtNode.AmITheOnlyNodeInDHT()){
+			return
+		}
+
+		fmt.Println("Triggering Periodic Neighbourhood discovery")
+		var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
+			OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
+
+		neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
+		dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+			"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+
+		neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
+		dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress,dhtNode.leafTable.nextNode.Name,
+			"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+
 		dhtNode.PerformPeriodicLeafTableRefresh()
 	}()
 }
@@ -530,7 +547,7 @@ func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
 				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
 
 			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
-			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress,dhtNode.leafTable.nextNode.Name,
 				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
 		}
 	}()
