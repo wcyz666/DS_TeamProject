@@ -303,7 +303,7 @@ func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 
 		if (false == dhtNode.AmITheOnlyNodeInDHT()) {
 
-			fmt.Println("Triggering Periodic Neighbourhood discovery")
+			//fmt.Println("Triggering Periodic Neighbourhood discovery")
 			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
 				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
 
@@ -315,7 +315,7 @@ func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress, dhtNode.leafTable.nextNode.Name,
 				"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
 		}
-		
+
 		dhtNode.PerformPeriodicLeafTableRefresh()
 	}()
 }
@@ -473,8 +473,8 @@ func logNodeList(nodeList []Node){
 func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	var discoveryMsg NeighbourhoodDiscoveryMessage
 	MP.DecodeData(&discoveryMsg,msg.Data)
-	fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+
-	strconv.Itoa(discoveryMsg.TraversalDirection) + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
+	//fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+
+	//strconv.Itoa(discoveryMsg.TraversalDirection) + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
 
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
@@ -490,11 +490,12 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		} else {
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
-		fmt.Println("[DHT] Lead Table contents")
-		fmt.Println("[DHT]	Previous Node List")
-		logNodeList(dhtNode.leafTable.PrevNodeList)
-		fmt.Println("[DHT]	Next Node List")
-		logNodeList(dhtNode.leafTable.NextNodeList)
+
+		//fmt.Println("[DHT] Lead Table contents")
+		//fmt.Println("[DHT]	Previous Node List")
+		//logNodeList(dhtNode.leafTable.PrevNodeList)
+		//fmt.Println("[DHT]	Next Node List")
+		//logNodeList(dhtNode.leafTable.NextNodeList)
 
 	} else{
 		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
@@ -502,7 +503,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
-			fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
+			//fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
 			//logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
@@ -513,7 +514,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			} else {
 				nodeToForward = dhtNode.leafTable.nextNode
 			}
-			fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
+			//fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
 			//logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
@@ -533,7 +534,7 @@ func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
 				continue
 			}
 
-			fmt.Println("Triggering Periodic Neighbourhood discovery")
+			//fmt.Println("Triggering Periodic Neighbourhood discovery")
 			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
 				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
 
