@@ -166,10 +166,8 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		fmt.Println("[DHT]	Creating New DHT")
 		dhtNode.leafTable.nextNode = nil
 		dhtNode.leafTable.prevNode = nil
-		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
-		dhtNode.leafTable.NextNodeList = append(dhtNode.leafTable.NextNodeList, node)
-		dhtNode.leafTable.PrevNodeList = append(dhtNode.leafTable.PrevNodeList, node)
-		
+
+		dhtNode.StartPeriodicLeafTableRefresh()
 		return NEW_DHT_CREATED
 	} else {
 		/* Send a message to one of the super nodes requesting to provide successor node's information
@@ -291,24 +289,18 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.nodeKey})))
 
-		/* Schedule a trigger to query about neighbourhood details after 3 seconds */
-		timer1 := time.NewTimer(time.Second * 3)
-		go func(){
-			<-timer1.C
-			fmt.Println("Triggering Neighbourhood discovery")
-			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
-				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
-
-			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
-			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
-				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
-
-			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
-			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
-				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
-		}()
+		dhtNode.StartPeriodicLeafTableRefresh()
 	}
 	return joinRes.Status,node
+}
+
+func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
+	/* Schedule a trigger to query about neighbourhood details after 3 seconds */
+	timer1 := time.NewTimer(time.Second * 3)
+	go func(){
+		<-timer1.C
+		dhtNode.PerformPeriodicLeafTableRefresh()
+	}()
 }
 
 func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
@@ -464,7 +456,8 @@ func logNodeList(nodeList []Node){
 func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	var discoveryMsg NeighbourhoodDiscoveryMessage
 	MP.DecodeData(&discoveryMsg,msg.Data)
-	fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
+	fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+
+	strconv.Itoa(discoveryMsg.TraversalDirection) + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
 
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
@@ -480,39 +473,15 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		} else {
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
+		fmt.Println("[DHT] Lead Table contents")
+		fmt.Println("[DHT]	Previous Node List")
+		logNodeList(dhtNode.leafTable.PrevNodeList)
+		fmt.Println("[DHT]	Next Node List")
+		logNodeList(dhtNode.leafTable.NextNodeList)
+
 	} else{
 		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
 		discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
-
-		/* Update local node based on the new information */
-		index := NEIGHBOURHOOD_DISTANCE - discoveryMsg.ResidualHopCount
-		newNode := Node {discoveryMsg.OriginIpAddress, discoveryMsg.OriginName, discoveryMsg.OriginKey }
-		/* If discovery message is traversing anti-clockwise, then originating node is in clock wise
-		 * direction to me*/
-		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
-			length := len (dhtNode.leafTable.NextNodeList)
-			if ( length < (index+1)) {
-				panic ("This should not happen")
-			}
-			dhtNode.leafTable.NextNodeList[index] = newNode
-			if (length < NEIGHBOURHOOD_DISTANCE){
-				dhtNode.leafTable.NextNodeList = append(dhtNode.leafTable.NextNodeList, node)
-			}
-			fmt.Println("Updated NextNodeList is ")
-			logNodeList(dhtNode.leafTable.NextNodeList)
-		} else {
-			length := len (dhtNode.leafTable.PrevNodeList)
-			if ( length < (index+1)) {
-				panic("This should not happen")
-			}
-
-			dhtNode.leafTable.PrevNodeList[index] = newNode
-			if (length < NEIGHBOURHOOD_DISTANCE){
-				dhtNode.leafTable.PrevNodeList = append(dhtNode.leafTable.PrevNodeList, node)
-			}
-			fmt.Println("Updated PrevNodeList is ")
-			logNodeList(dhtNode.leafTable.PrevNodeList)
-		}
 
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
@@ -533,16 +502,33 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		}
 	}
-
-	fmt.Println("[DHT] Lead Table contents")
-	fmt.Println("[DHT]	Previous Node List")
-	logNodeList(dhtNode.leafTable.PrevNodeList)
-	fmt.Println("[DHT]	Next Node List")
-	logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {
 
+}
+
+func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
+	ticker := time.NewTicker(time.Second * PERIODIC_LEAF_TABLE_REFRESH)
+	go func() {
+		for _ = range ticker.C {
+			if (dhtNode.AmITheOnlyNodeInDHT()){
+				continue
+			}
+
+			fmt.Println("Triggering Periodic Neighbourhood discovery")
+			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.ipAddress,
+				OriginName: dhtNode.nodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.nodeKey}
+
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+
+			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
+			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
+				"dht_neighbourhood_discovery",MP.EncodeData(neighbourhoodDiscovery)))
+		}
+	}()
 }
 
 func (dhtNode *DHTNode) Refresh(StreamingGroupID string) {
