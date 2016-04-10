@@ -476,10 +476,6 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	MP.DecodeData(&discoveryMsg,msg.Data)
 	fmt.Println("Received Neigbhiurhood request message from "+ msg.Src + " with direction "+
 	strconv.Itoa(discoveryMsg.TraversalDirection) + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
-	fmt.Println(" (prev,cur,next) is (" + dhtNode.leafTable.prevNode.Key + " , " + dhtNode.nodeKey + " , " +
-						dhtNode.leafTable.nextNode.Key + ")")
-	fmt.Println(" (prev,cur,next) is (" + dhtNode.leafTable.prevNode.IpAddress + " , " + dhtNode.ipAddress + " , " +
-						dhtNode.leafTable.nextNode.IpAddress + ")")
 
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
@@ -495,11 +491,11 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		} else {
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
-	//	fmt.Println("[DHT] Lead Table contents")
-	//	fmt.Println("[DHT]	Previous Node List")
-	//	logNodeList(dhtNode.leafTable.PrevNodeList)
-//		fmt.Println("[DHT]	Next Node List")
-//		logNodeList(dhtNode.leafTable.NextNodeList)
+		fmt.Println("[DHT] Lead Table contents")
+		fmt.Println("[DHT]	Previous Node List")
+		logNodeList(dhtNode.leafTable.PrevNodeList)
+		fmt.Println("[DHT]	Next Node List")
+		logNodeList(dhtNode.leafTable.NextNodeList)
 
 	} else{
 		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
@@ -508,7 +504,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
 			fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
-			logNodeList(discoveryMsg.NodeList)
+			//logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		} else {
@@ -519,7 +515,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 				nodeToForward = dhtNode.leafTable.nextNode
 			}
 			fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
-			logNodeList(discoveryMsg.NodeList)
+			//logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		}
