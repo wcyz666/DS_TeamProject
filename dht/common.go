@@ -20,12 +20,12 @@ type Node struct {
 
 type LeafTable struct {
 	/* prev and current nodes maintained separately for easy access*/
-	prevNode *Node
-	nextNode *Node
+	prevNode     *Node
+	nextNode     *Node
 	/* List of previous nodes in the neighbourhood */
-	prevNodeList [] Node
+	PrevNodeList [] Node
 	/* List of next nodes in the neighbourhood */
-	nextNodeList [] Node
+	NextNodeList [] Node
 }
 
 /* Initial DHT version contains details of next and previous nodes */

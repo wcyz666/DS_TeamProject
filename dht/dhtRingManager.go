@@ -410,10 +410,10 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 	 * wait for successor to trigger recovery */
 	if (dhtNode.leafTable.prevNode.IpAddress == IpAddress){
 		/*Now previous node's key space becomes mine.*/
-		prevNodeList := dhtNode.leafTable.prevNodeList
+		prevNodeList := dhtNode.leafTable.PrevNodeList
 		if (len(prevNodeList) > 1){
-			newPrevNode := dhtNode.leafTable.prevNodeList[1]
-			dhtNode.leafTable.prevNodeList = dhtNode.leafTable.prevNodeList[1:]
+			newPrevNode := dhtNode.leafTable.PrevNodeList[1]
+			dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
 			/* Send a ring repair request along with my node information */
 			dhtNode.mp.Send(MP.NewMessage(newPrevNode.IpAddress, newPrevNode.Name, "dht_ring_repair_req",
 								MP.EncodeData(RingRepairRequest{dhtNode.nodeKey})))
@@ -430,10 +430,10 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 		} else {
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
 				dhtNode.leafTable.nextNode = nil
-				dhtNode.leafTable.nextNodeList = nil
+				dhtNode.leafTable.NextNodeList = nil
 			}
 			dhtNode.leafTable.prevNode = nil
-			dhtNode.leafTable.prevNodeList = nil
+			dhtNode.leafTable.PrevNodeList = nil
 		}
 	}
 }
@@ -477,10 +477,10 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		}
 
 		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
-			dhtNode.leafTable.prevNodeList = discoveryMsg.NodeList
+			dhtNode.leafTable.PrevNodeList = discoveryMsg.NodeList
 
 		} else {
-			dhtNode.leafTable.nextNodeList = discoveryMsg.NodeList
+			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
 	} else{
 		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
@@ -489,19 +489,22 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 		/* Update local node based on the new information */
 		index := NEIGHBOURHOOD_DISTANCE - discoveryMsg.ResidualHopCount
 		newNode := Node {discoveryMsg.OriginIpAddress, discoveryMsg.OriginName, discoveryMsg.OriginKey }
-		listToUpdate := dhtNode.leafTable.prevNodeList
+		listToUpdate := dhtNode.leafTable.PrevNodeList
 		/* If discovery message is traversing anti-clockwise, then originating node is in clock wise
 		 * direction to me*/
 		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
-			listToUpdate = dhtNode.leafTable.nextNodeList
+			listToUpdate = dhtNode.leafTable.NextNodeList
 		}
 
-		length := len (dhtNode.leafTable.nextNodeList)
+		length := len (dhtNode.leafTable.NextNodeList)
 		if ( length < (index+1)){
 			listToUpdate = append(listToUpdate, newNode)
 		} else {
 			listToUpdate[index] = newNode
 		}
+
+		fmt.Println("Updated List is ")
+		logNodeList(listToUpdate)
 
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
@@ -525,9 +528,9 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 
 	fmt.Println("[DHT] Lead Table contents")
 	fmt.Println("[DHT]	Previous Node List")
-	logNodeList(dhtNode.leafTable.prevNodeList)
+	logNodeList(dhtNode.leafTable.PrevNodeList)
 	fmt.Println("[DHT]	Next Node List")
-	logNodeList(dhtNode.leafTable.nextNodeList)
+	logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {
