@@ -43,7 +43,7 @@ func (sc *SuperNodeContext) RemoveNodes(nodeName string)  {
 }
 
 func (sc *SuperNodeContext) SetAlive(nodeName string) {
-    fmt.Printf("Supernode Context: set alive node %s\n", nodeName)
+    //fmt.Printf("Supernode Context: set alive node %s\n", nodeName)
     sc.nodes[nodeName].isLive = true
 }
 

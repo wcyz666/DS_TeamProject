@@ -31,7 +31,7 @@ All internal helper functions
 func heartBeat() {
 	for {
 		time.Sleep(time.Second * 2)
-		fmt.Println("Node: send out heart beat message")
+		//fmt.Println("Node: send out heart beat message")
 		mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 	}
 }
