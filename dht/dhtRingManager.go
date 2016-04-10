@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"fmt"
 	"time"
-	"strconv"
 )
 
 const (
@@ -461,16 +460,13 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 
 func logNodeList(nodeList []Node){
 	for _,node := range nodeList {
-		fmt.Println("IP: "+ node.IpAddress + " Key: "+ node.Key)
+		fmt.Println("		IP: "+ node.IpAddress + " Key: "+ node.Key)
 	}
 }
 
 func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	var discoveryMsg NeighbourhoodDiscoveryMessage
 	MP.DecodeData(&discoveryMsg,msg.Data)
-	fmt.Println("Recieved Neighbourhood discovery message with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
-	fmt.Println("Recieved list is ")
-	logNodeList(discoveryMsg.NodeList)
 
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
@@ -482,13 +478,9 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 
 		if (discoveryMsg.TraversalDirection == TRAVERSE_ANTI_CLOCK_WISE){
 			dhtNode.leafTable.prevNodeList = discoveryMsg.NodeList
-			fmt.Println("Prev Node List")
-			logNodeList(discoveryMsg.NodeList)
 
 		} else {
 			dhtNode.leafTable.nextNodeList = discoveryMsg.NodeList
-			fmt.Println("Next Node List")
-			logNodeList(discoveryMsg.NodeList)
 		}
 	} else{
 		node := Node{dhtNode.ipAddress, dhtNode.nodeName, dhtNode.nodeKey}
@@ -530,6 +522,12 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		}
 	}
+
+	fmt.Println("[DHT] Lead Table contents")
+	fmt.Println("[DHT]	Previous Node List")
+	logNodeList(dhtNode.leafTable.prevNodeList)
+	fmt.Println("[DHT]	Next Node List")
+	logNodeList(dhtNode.leafTable.nextNodeList)
 }
 
 func (dhtNode *DHTNode) Leave(msg *MP.Message) {
