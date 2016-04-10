@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"fmt"
 	"time"
+	"strconv"
 )
 
 const (
@@ -324,6 +325,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	var discoveryMsg NeighbourhoodDiscoveryMessage
 	MP.DecodeData(&discoveryMsg,msg.Data)
 	curNode := Node{dhtNode.ipAddress,dhtNode.nodeName,dhtNode.nodeKey}
+	fmt.Println("Recieved Neighbourhood discovery message with direction "+ strconv.Itoa(discoveryMsg.TraversalDirection))
 	if (discoveryMsg.OriginIpAddress == dhtNode.ipAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
 		   Otherwise append your IP address and append it to the list.*/
@@ -490,6 +492,8 @@ func (dhtNode *DHTNode) HandleRingRepairRequest(msg *MP.Message){
 
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairReq.Key,false)
+	dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "dht_ring_repair_res",
+		MP.EncodeData(RingRepairResponse{SUCCESS, dhtNode.nodeKey})))
 }
 
 func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
