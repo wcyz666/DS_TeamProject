@@ -10,6 +10,8 @@ import (
 /* Planning to use MD5 to generate the Hash. Hence 128 bit */
 const HASH_KEY_SIZE = 128
 const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+const NEIGHBOURHOOD_DISTANCE = 2 // Neighbourhood distance on each direction
+const PERIODIC_LEAF_TABLE_REFRESH = 60
 
 type Node struct {
 	IpAddress string
@@ -18,9 +20,13 @@ type Node struct {
 }
 
 type LeafTable struct {
-	/* currently leaf table is of size 2 and stores only previous and next nodes */
-	prevNode *Node
-	nextNode *Node
+	/* prev and current nodes maintained separately for easy access*/
+	prevNode     *Node
+	nextNode     *Node
+	/* List of previous nodes in the neighbourhood */
+	PrevNodeList [] Node
+	/* List of next nodes in the neighbourhood */
+	NextNodeList [] Node
 }
 
 /* Initial DHT version contains details of next and previous nodes */

@@ -68,11 +68,14 @@ func Start() {
 		"error": errorHandler,
 
 		/* DHT call backs */
-		"join_dht_req":            	dhtNode.HandleJoinReq,
-		"join_dht_complete":        dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
-		"join_dht_notify":          dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
-		"leave_dht_req":            dhtNode.Leave,
-		"dht_broadcast_msg":        dhtNode.HandleBroadcastMessage,
+		"join_dht_req":            		dhtNode.HandleJoinReq,
+		"join_dht_complete":        	dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
+		"join_dht_notify":          	dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
+		"leave_dht_req":            	dhtNode.Leave,
+		"dht_broadcast_msg":        	dhtNode.HandleBroadcastMessage,
+		"dht_neighbourhood_discovery":	dhtNode.HandleNeighbourhoodDiscovery,
+		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
+		"dht_ring_repair_res":			dhtNode.HandleRingRepairResponse,
 
 		/* Data operation handlers */
 		"create_entry_req":		dhtNode.HandleDataOperationRequest,
