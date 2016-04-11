@@ -32,21 +32,21 @@ type LeafTable struct {
 /* Initial DHT version contains details of next and previous nodes */
 type DHTNode struct {
 	/* We interpret Hash value as a hexadecimal stream so each digit is 4 bit long */
-	prefixForwardingTable [HASH_KEY_SIZE/4][HASH_KEY_SIZE/4]*Node
-	leafTable LeafTable
+	prefixForwardingTable  [HASH_KEY_SIZE/4][HASH_KEY_SIZE/4]*Node
+	leafTable              LeafTable
 	/* TODO Can we use concurrent maps as described in https://github.com/streamrail/concurrent-map */
-	hashTable             	map[string][]MemberShipInfo
-	mp                    	*MP.MessagePasser
-	nodeKey               	string
-	nodeName                string
-	ipAddress               string
-	prevNodeNumericKey    	*big.Int
-	curNodeNumericKey      	*big.Int
+	hashTable              map[string][]MemberShipInfo
+	mp                     *MP.MessagePasser
+	NodeKey                string
+	NodeName               string
+	IpAddress              string
+	prevNodeNumericKey     *big.Int
+	curNodeNumericKey      *big.Int
 	/* When a super node is already involved in a ring update (i.e.) transferring portion
 	 * of its hash table as part of new node joining, flag is set. This is to avoid
 	 * multiple join operations happening at same super node at the same time which
 	 * may result in incorrect splitting of hash table among the super nodes in the ring */
-	isRingUpdateInProgress 	bool
+	isRingUpdateInProgress bool
 }
 
 type DHTService struct {

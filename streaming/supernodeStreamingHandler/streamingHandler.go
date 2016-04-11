@@ -41,7 +41,7 @@ func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
 	//Including itself (Since one supernode may have multipy children)
 	sHandler.broadcast("stream_program_start", msg.Data)
 
-	//TODO: Update DHT table
+	//Update DHT table
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 	sHandler.dht.Create(controlData.RootStreamer, DHT.MemberShipInfo{SuperNodeIp:controlData.SrcName})
@@ -53,7 +53,7 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 	//Notify all the supernodes
 	sHandler.broadcast("stream_program_stop", msg.Data)
 
-	//TODO: Update DHT table
+	//Update DHT table
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 	sHandler.dht.Delete(controlData.RootStreamer)
@@ -64,7 +64,7 @@ func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
 	//Notify the children the new program
 	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
 	fmt.Println("New programs detected! Sending to all children")
-	fmt.Println(childrenNames)
+	//fmt.Println(childrenNames)
 	for _, child := range(childrenNames){
 		sHandler.mp.Send(MP.NewMessage("", child, "streaming_new_program", msg.Data))
 	}
@@ -86,12 +86,14 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 	MP.DecodeData(&controlData, msg.Data)
 
 	root := controlData.RootStreamer
-	fmt.Println(root)
+	//fmt.Println(root)
 
-	// TODO: find the streaming group with root in the DHT and update it
+	// Find the streaming group with root in the DHT and update it
 	streamers, _ := sHandler.dht.Get(root)
 	// Choose the last streamer to start the election
 	parentName := streamers[len(streamers)-1].SuperNodeIp
-	// TODO: Send "streaming_join" to one of the streamers
+	// Send "streaming_join" to one of the streamers to start the election
 	sHandler.mp.Send(MP.NewMessage("", parentName, "streaming_join", msg.Data))
+	// Update the dht, append the guy into dht
+	sHandler.dht.Append(root, DHT.MemberShipInfo{SuperNodeIp:controlData.SrcName})
 }

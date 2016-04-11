@@ -192,6 +192,9 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 
+		fmt.Println("Receiving data!")
+		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
+
 		_, exists := mp.Messages[msg.Kind]
 
 		if exists == false {
@@ -210,12 +213,12 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 
-	fmt.Println("Sending out data!")
-	fmt.Println(msg)
+	//fmt.Println("Sending out data!")
+	//fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 
 	dest := msg.DestName
 
-	fmt.Println(mp.connections.clients)
+	//fmt.Println(mp.connections.clients)
 
 	if _, ok := mp.connections.clients[dest]; ok == false {
 		dest = msg.Dest

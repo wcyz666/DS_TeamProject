@@ -70,14 +70,15 @@ func (dhtService *DHTService)Start() int{
 				if (status != SUCCESS){
 					return  DHT_API_FAILURE
 				}
-				break;
+				return DHT_API_SUCCESS;
 			}
 		}
 	}
 }
 
 func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		return dht.DhtNode.getData(streamingGroupID)
@@ -92,14 +93,13 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 			status, data := dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 			return data, status
 		}
-
-		return make([]MemberShipInfo, 0), FAILURE
 	}
 }
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
@@ -123,7 +123,8 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 
 func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
-	var dataOperationReq DataOperationRequest
+	var dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                        OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
@@ -143,7 +144,8 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 
 func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
 	status := SUCCESS
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status =  dht.DhtNode.appendData(streamingGroupID, data)
@@ -151,6 +153,7 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Add = true
 		dataOperationReq.Remove = false
+		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -165,7 +168,8 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 
 func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
 	status := SUCCESS
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.removeData(streamingGroupID, data)
@@ -173,6 +177,7 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Add = false
 		dataOperationReq.Remove = true
+		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
