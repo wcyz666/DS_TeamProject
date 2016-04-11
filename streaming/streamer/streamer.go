@@ -122,6 +122,7 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 	// Clear
 	streamer.StreamingParent = streamer.nodeContext.LocalName
 	streamer.Streamingchildren = []string{}
+	streamer.STATE = IDEAL
 
 	//TODO: Clear all the data stored in the channels
 }
