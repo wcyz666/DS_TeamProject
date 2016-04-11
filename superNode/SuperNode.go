@@ -14,6 +14,9 @@ import (
 	"time"
 
 	"strconv"
+	"bufio"
+	"os"
+	"strings"
 )
 
 const (
@@ -77,15 +80,13 @@ func Start() {
 		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
 		"dht_ring_repair_res":			dhtNode.HandleRingRepairResponse,
 
-		/* Data operation handlers */
+		/* DHT Data operation handlers */
+		/* Having separate channels will allow concurrent access to hash map.
+		 * Need to update hash table to be a concurrent map */
 		"create_entry_req":		dhtNode.HandleDataOperationRequest,
 		"update_entry_req":		dhtNode.HandleDataOperationRequest,
 		"delete_entry_req":		dhtNode.HandleDataOperationRequest,
 		"get_data_req":			dhtNode.HandleDataOperationRequest,
-
-		/* Having separate channels will allow concurrent access to hash map.
-		 * Need to update hash table to be a concurrent map */
-		"dht_data_operation_req":	dhtNode.HandleDataOperationRequest,
 
 		/* Here goes the handlers related to streaming process */
 		"stream_start": streamHandler.StreamStart,
@@ -115,6 +116,8 @@ func Start() {
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
 
+	/* Start a CLI to handle user interaction */
+	go DhtCLIInterface(dhtService)
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)
 }
@@ -155,4 +158,82 @@ func newChild(msg *MP.Message)  {
 	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
 	mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "ack", MP.EncodeData("this is an ACK message")))
 	superNodeContext.AddNode(msg.SrcName, msg.Src)
+}
+
+func printHelp(){
+	fmt.Println("Enter C Key MemberShipInfo to create an Streaming Group")
+	fmt.Println("      D Key to delete a Streaming Group")
+	fmt.Println("      A Key MemberShipInfo to add a member")
+	fmt.Println("      R Key MemberShipInfo to delete a member")
+	fmt.Println("      G Key to retrieve contents of a streaming group")
+	fmt.Println("      H for help")
+	fmt.Println("      Q to quit")
+	fmt.Println(" For membership info, please pass the IP address (of parent super node)")
+}
+
+func DhtCLIInterface(dhtService *Dht.DHTService){
+	printHelp()
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if ((line == "Q") || (line == "q")) {
+			os.Exit(0)
+		} else if ((line == "H") || (line == "h")){
+			printHelp()
+		} else {
+			inputList := strings.Split(line," ")
+			switch inputList[0] {
+			case "C", "c":
+				if (len(inputList) !=3){
+					fmt.Println("Invalid format")
+					printHelp()
+				} else {
+					status := dhtService.Create(inputList[1], Dht.MemberShipInfo{inputList[2]})
+					fmt.Println("Create API called and return status is "+strconv.Itoa(status))
+				}
+			case "D","d":
+				if (len(inputList) !=2){
+					fmt.Println("Invalid format")
+					printHelp()
+				} else {
+					status := dhtService.Delete(inputList[1])
+					fmt.Println("Delete API called and return status is "+ strconv.Itoa(status))
+				}
+			case "A","a":
+				if (len(inputList) !=3){
+					fmt.Println("Invalid format")
+					printHelp()
+				} else {
+					status := dhtService.Append(inputList[1], Dht.MemberShipInfo{inputList[2]})
+					fmt.Println("Append API called and return status is "+strconv.Itoa(status))
+				}
+			case "R","r":
+				if (len(inputList) !=3){
+					fmt.Println("Invalid format")
+					printHelp()
+				} else {
+					status := dhtService.Remove(inputList[1], Dht.MemberShipInfo{inputList[2]})
+					fmt.Println("Remove API called and return status is "+strconv.Itoa(status))
+				}
+			case "G","g":
+				if (len(inputList) !=2){
+					fmt.Println("Invalid format")
+					printHelp()
+				} else {
+					memberShipInfo, status := dhtService.Get(inputList[1])
+					fmt.Println("Get API called and return status is "+strconv.Itoa(status))
+					fmt.Println("Members of streaming group are ")
+					for _,member := range memberShipInfo{
+						fmt.Println("	"+member.SuperNodeIp)
+					}
+				}
+			default:
+				fmt.Println("Unexpected option")
+				printHelp()
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+	}
 }

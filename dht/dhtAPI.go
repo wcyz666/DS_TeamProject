@@ -92,8 +92,6 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 			status, data := dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
 			return data, status
 		}
-
-		return make([]MemberShipInfo, 0), FAILURE
 	}
 }
 
