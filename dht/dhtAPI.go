@@ -70,7 +70,7 @@ func (dhtService *DHTService)Start() int{
 				if (status != SUCCESS){
 					return  DHT_API_FAILURE
 				}
-				break;
+				return DHT_API_SUCCESS;
 			}
 		}
 	}
