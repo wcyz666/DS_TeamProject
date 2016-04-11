@@ -109,7 +109,7 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 	switch msg_type{
 
 	/* handle CreateNewEntry request */
-	case "create_entry_req":
+	case "create_new_entry_req":
 		dataOperationRes.Status = dhtNode.createEntry(dataOperationReq.Key, dataOperationReq.Data)
 		kind = "create_new_entry_res"
 
