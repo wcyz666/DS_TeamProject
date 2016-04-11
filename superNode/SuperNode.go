@@ -171,6 +171,24 @@ func printHelp(){
 	fmt.Println(" For membership info, please pass the IP address (of parent super node)")
 }
 
+func logStatus(status int) string {
+
+	var statusString string
+	switch status {
+	case Dht.SUCCESS :
+		statusString = "SUCCESS"
+	case Dht.FAILURE :
+		statusString = "FAILURE"
+	case Dht.KEY_NOT_PRESENT:
+		statusString = "KEY_NOT_PRESENT"
+	case Dht.SUCCESS_ENTRY_OVERWRITTEN:
+		statusString = "SUCCESS_ENTRY_OVERWRITTEN"
+	default:
+		statusString = strconv.Itoa(status)
+	}
+	return statusString
+}
+
 func DhtCLIInterface(dhtService *Dht.DHTService){
 	printHelp()
 	scanner := bufio.NewScanner(os.Stdin)
@@ -189,7 +207,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					printHelp()
 				} else {
 					status := dhtService.Create(inputList[1], Dht.MemberShipInfo{inputList[2]})
-					fmt.Println("Create API called and return status is "+strconv.Itoa(status))
+					fmt.Println("Create API called and return status is "+ logStatus(status))
 				}
 			case "D","d":
 				if (len(inputList) !=2){
@@ -197,7 +215,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					printHelp()
 				} else {
 					status := dhtService.Delete(inputList[1])
-					fmt.Println("Delete API called and return status is "+ strconv.Itoa(status))
+					fmt.Println("Delete API called and return status is "+ logStatus(status))
 				}
 			case "A","a":
 				if (len(inputList) !=3){
@@ -205,7 +223,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					printHelp()
 				} else {
 					status := dhtService.Append(inputList[1], Dht.MemberShipInfo{inputList[2]})
-					fmt.Println("Append API called and return status is "+strconv.Itoa(status))
+					fmt.Println("Append API called and return status is "+ logStatus(status))
 				}
 			case "R","r":
 				if (len(inputList) !=3){
@@ -213,7 +231,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					printHelp()
 				} else {
 					status := dhtService.Remove(inputList[1], Dht.MemberShipInfo{inputList[2]})
-					fmt.Println("Remove API called and return status is "+strconv.Itoa(status))
+					fmt.Println("Remove API called and return status is "+ logStatus(status))
 				}
 			case "G","g":
 				if (len(inputList) !=2){
@@ -221,10 +239,12 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					printHelp()
 				} else {
 					memberShipInfo, status := dhtService.Get(inputList[1])
-					fmt.Println("Get API called and return status is "+strconv.Itoa(status))
-					fmt.Println("Members of streaming group are ")
-					for _,member := range memberShipInfo{
-						fmt.Println("	"+member.SuperNodeIp)
+					fmt.Println("Get API called and return status is "+ logStatus(status))
+					if (Dht.SUCCESS == status){
+						fmt.Println("Members of streaming group are ")
+						for _,member := range memberShipInfo{
+							fmt.Println("	"+member.SuperNodeIp)
+						}
 					}
 				}
 			default:

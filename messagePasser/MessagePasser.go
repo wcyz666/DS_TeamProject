@@ -192,6 +192,9 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 
+		fmt.Println("Receiving data!")
+		fmt.Println(msg)
+
 		_, exists := mp.Messages[msg.Kind]
 
 		if exists == false {
