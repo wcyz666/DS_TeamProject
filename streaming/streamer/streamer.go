@@ -2,9 +2,9 @@ package streamer
 
 import (
 	MP "../../messagePasser"
-	"strconv"
 	SDataType "../"
 	NC "../../node/nodeContext"
+	"fmt"
 )
 
 const(
@@ -34,93 +34,36 @@ func NewStreamer(mp *MP.MessagePasser, nodeContext *NC.NodeContext) *Streamer{
 	streamer := Streamer{STATE:IDEAL, mp: mp, streamID:0, nodeContext:nodeContext}
 	streamer.StreamingData = make(chan string)
 	streamer.ReceivingData = make(chan string)
+	streamer.ProgramList = make(map[string]string)
 	go streamer.backgroundStreaming()
+	go streamer.testReceive()
 	return &streamer
 }
+
+/* Temp function to show the receiving data*/
+func (streamer *Streamer)testReceive(){
+	for{
+		data := <-streamer.ReceivingData
+		fmt.Println("Received: " + data)
+	}
+}
+
 
 /* This function keep distributing the data in the channel to all the recipients*/
 func (streamer *Streamer) backgroundStreaming(){
 	for{
 		data := <- streamer.StreamingData
 		for _, destName := range(streamer.Streamingchildren){
-			msg := MP.NewMessage(destName, "", "streaming_data", MP.EncodeData(data))
+			msg := MP.NewMessage("", destName, "streaming_data", MP.EncodeData(data))
+			fmt.Print("Sneding streaming data:" )
+			fmt.Println(msg)
 			go streamer.mp.Send(msg)
 		}
 	}
 }
 
 
-/*
-The control flow related functions
-*/
 
-/* The request to be the first to start a streming */
-func (streamer *Streamer) Start(title string){
-	if streamer.STATE != IDEAL{
-		return
-	}
-
-	// Update local program id
-	streamer.streamID += 1
-
-	// Construct data, to be used by updating the program
-	data := SDataType.StreamControlMsg{
-		SrcName: streamer.nodeContext.LocalName,
-		StreamID: streamer.streamID,
-		Title: title,
-	}
-
-	// Notify the parent
-	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
-	streamer.STATE = STREAMING
-}
-
-/* The streamer quit the streaming process */
-func (streamer *Streamer) Stop(){
-	if streamer.STATE != STREAMING{
-		return
-	}
-
-	// Construct data, to be used by updating the program
-	data := SDataType.StreamControlMsg{
-		SrcName: streamer.nodeContext.LocalName,
-		StreamID: streamer.streamID,
-	}
-
-	// Notify the parent
-	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_stop", MP.EncodeData(data)))
-
-	// Notify Stream Children
-	streamer.HandleStop(nil)
-
-
-	streamer.STATE = IDEAL
-}
-
-/* A node request to join a certain program */
-func (streamer *Streamer) Join(root string){
-	if streamer.STATE != IDEAL {
-		return
-	}
-
-	// Construct data, to be used by updating the program
-	data := SDataType.StreamControlMsg{
-		SrcName: streamer.nodeContext.LocalName,
-		RootStreamer: root,
-	}
-
-	// Notify the parent
-	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_join", MP.EncodeData(data)))
-
-
-	streamer.STATE = JOINING
-}
-
-
-/* Called to stream the data */
-func (streamer *Streamer) Stream(data string){
-	streamer.StreamingData <- data
-}
 
 /********************************************************************************/
 /*   When in the STATE of streaming*/
@@ -130,7 +73,7 @@ func (streamer *Streamer) Stream(data string){
 func (streamer *Streamer) HandleAssign(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-
+	fmt.Println("Handling assign! As child of " + controlData.SrcName)
 	streamer.StreamingParent = controlData.SrcName
 	streamer.STATE = STREAMING
 }
@@ -140,17 +83,27 @@ func (streamer *Streamer) HandleJoin(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 
+	fmt.Println("Handling join request of " + controlData.SrcName)
+
 	// TODO: Actually start the election below
 
 	// Fake now
 	// Construct data, to be used by updating the program
+
+
 	data := SDataType.StreamControlMsg{
 		SrcName: streamer.nodeContext.LocalName,
+		SrcIp:  streamer.nodeContext.LocalIp,
 		RootStreamer: controlData.RootStreamer,
 	}
 
+	// Store this child
+	streamer.Streamingchildren = append(streamer.Streamingchildren, controlData.SrcName)
 	// Notify the src (the one join the network first)
-	streamer.mp.Send(MP.NewMessage("", controlData.SrcName, "streaming_assign", MP.EncodeData(data)))
+
+	assignMsg := MP.NewMessage(controlData.SrcIp, controlData.SrcName, "streaming_assign", MP.EncodeData(data))
+	fmt.Println(assignMsg)
+	streamer.mp.Send(assignMsg)
 }
 
 /* Election related messgaes*/
@@ -162,27 +115,35 @@ func (streamer *Streamer) HandleElection(msg *MP.Message){
 func (streamer *Streamer) HandleStop(msg *MP.Message){
 	// Notify Stream Children
 	for _, destName := range(streamer.Streamingchildren){
-		msg := MP.NewMessage(destName, "", "streaming_stop", MP.EncodeData(""))
+		msg := MP.NewMessage("", destName, "streaming_stop", MP.EncodeData(""))
 		go streamer.mp.Send(msg)
 	}
 
 	// Clear
 	streamer.StreamingParent = streamer.nodeContext.LocalName
 	streamer.Streamingchildren = []string{}
+
+	//TODO: Clear all the data stored in the channels
 }
 
 /* A New Program is added */
 func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	streamer.ProgramList[controlData.SrcName + "[" + strconv.Itoa(controlData.StreamID) + "]"] = controlData.Title
+	streamer.ProgramList[controlData.SrcName] = controlData.Title
+	fmt.Println("New program detected! ")
+	fmt.Println("Current program list:")
+	fmt.Println(streamer.ProgramList)
 }
 
 /* A program is stoped */
 func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	delete(streamer.ProgramList, controlData.SrcName + "[" + strconv.Itoa(controlData.StreamID) + "]")
+	delete(streamer.ProgramList, controlData.SrcName)
+	fmt.Println("Program deleted! ")
+	fmt.Println("Current program list:")
+	fmt.Println(streamer.ProgramList)
 }
 
 /* Handle the receiving streaming data*/
@@ -190,6 +151,5 @@ func (streamer *Streamer) HandleStreamerData(msg *MP.Message) {
 	var data string
 	MP.DecodeData(&data, msg.Data)
 	streamer.ReceivingData <- data
+	streamer.StreamingData <- data
 }
-
-

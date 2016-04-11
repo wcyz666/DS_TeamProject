@@ -9,6 +9,9 @@ import (
 	NC "./nodeContext"
 	"time"
 	Streamer "../streaming/streamer"
+	"bufio"
+	"os"
+	"strings"
 )
 
 const (
@@ -20,6 +23,7 @@ const (
 var mp *MP.MessagePasser
 var nodeContext *NC.NodeContext
 var exitChannal chan int
+var streamer *Streamer.Streamer
 
 /**
 All internal helper functions
@@ -27,7 +31,7 @@ All internal helper functions
 func heartBeat() {
 	for {
 		time.Sleep(time.Second * 2)
-		fmt.Println("Node: send out heart beat message")
+		//fmt.Println("Node: send out heart beat message")
 		mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 	}
 }
@@ -55,24 +59,12 @@ func joinAssign(msg *MP.Message) {
 	nodeContext.ParentIP = result.ParentIP
 	nodeContext.ParentName = result.ParentName
 	fmt.Println(result)
-	go heartBeat()
+	//go heartBeat()
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n", result.ParentIP, result.ParentName)
 	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(joinMsg)
 }
 
-
-func streamAssign(msg *MP.Message) {
-
-}
-
-func programListParser(msg *MP.Message) {
-
-}
-
-func receiveReceive(msg *MP.Message) {
-
-}
 
 func errorHandler(msg *MP.Message) {
 	switch nodeContext.State {
@@ -93,8 +85,10 @@ func Start() {
 	IPs := DNS.GetAddr(bootstrap_dns)
 	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
+	nodeContext.LocalIp, _ = DNS.ExternalIP()
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
-	streamer := Streamer.NewStreamer(mp, nodeContext)
+	streamer = Streamer.NewStreamer(mp, nodeContext)
+	go app(streamer)
 
 	// We use for loop to connect with all supernode one-by-one,
 	// if a connection to one supernode fails, an error message
@@ -114,9 +108,6 @@ func Start() {
 
 	channelNames := map[string]func(*MP.Message){
 		"join_assign":     joinAssign,
-		"stream_assign":   streamAssign,
-		"program_list":    programListParser,
-		"election_stream": receiveReceive,
 		"error" : errorHandler,
 
 		// The streaming related handlers goes here
@@ -139,6 +130,7 @@ func Start() {
 	go nodeJoin(IPs)
 	exitMsg := <- mp.Messages["exit"]
 	fmt.Println(exitMsg)
+
 }
 
 /* Join the network */
@@ -168,38 +160,36 @@ func nodeJoin(IPs []string) {
 
 }
 
-/* Start Streaming */
-func StreamStart() {
 
-}
 
-/* Stop Streaming */
-func StreamStop() {
+/* Application */
+func app(streamer *Streamer.Streamer){
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("heheheh: ")
+	for {
+		text, _ := reader.ReadString('\n')
+		inputs := strings.Split(strings.TrimSpace(text), " ")
+		fmt.Println(inputs)
+		switch inputs[0] {
+		case "start":
+			if len(inputs) > 1 {
+				streamer.Start(inputs[1])
+			}
+		case "stop":
+			streamer.Stop()
+		case "join":
+			if len(inputs) > 1 {
+				streamer.Join(inputs[1])
+			}
+		case "stream":
+			if len(inputs) > 1 {
+				streamer.Stream(inputs[1])
+			}
+		case "log":
+			streamer.Log()
+		default:
+			fmt.Println("Please check the input!")
+		}
+	}
 
-}
-
-/* Join a streaming group */
-func StreamJoin(programId string) {
-
-}
-
-/* Stream Quit */
-func StreamQuit() {
-
-}
-
-/* Get the list of programs */
-// TODO: Add a return type
-func StreamGetList() {
-
-}
-
-/* Produce the stream the data */
-func StreamData(data string) {
-
-}
-
-/* Get the data from other streamers */
-func StreamReadData() string {
-	return ""
 }

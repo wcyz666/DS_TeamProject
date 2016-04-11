@@ -10,6 +10,14 @@ type SuperNodeContext struct {
     nodes map[string]*nodeInfo
 }
 
+func (sc *SuperNodeContext) GetAllChildrenName() []string {
+    names := make([]string, 0, len(sc.nodes))
+    for name := range(sc.nodes){
+        names = append(names, name)
+    }
+    return names
+}
+
 func (sc *SuperNodeContext) GetNodeCount() int {
     return len(sc.nodes)
 }
@@ -35,7 +43,7 @@ func (sc *SuperNodeContext) RemoveNodes(nodeName string)  {
 }
 
 func (sc *SuperNodeContext) SetAlive(nodeName string) {
-    fmt.Printf("Supernode Context: set alive node %s\n", nodeName)
+    //fmt.Printf("Supernode Context: set alive node %s\n", nodeName)
     sc.nodes[nodeName].isLive = true
 }
 
