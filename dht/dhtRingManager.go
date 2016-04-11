@@ -238,6 +238,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	/* Retrieve entries which are less than new node's key and create a map out of it.*/
 	nodeKey := getBigIntFromString(joinReq.Key)
 	var entryKey *big.Int
+	joinRes.HashTable = make(map[string][]MemberShipInfo)
 
 	for k,v := range dhtNode.hashTable {
 		entryKey = getBigIntFromString(k)
