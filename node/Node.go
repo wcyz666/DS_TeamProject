@@ -59,7 +59,7 @@ func joinAssign(msg *MP.Message) {
 	nodeContext.ParentIP = result.ParentIP
 	nodeContext.ParentName = result.ParentName
 	fmt.Println(result)
-	//go heartBeat()
+	go heartBeat()
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n", result.ParentIP, result.ParentName)
 	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(joinMsg)

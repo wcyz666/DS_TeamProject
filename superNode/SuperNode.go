@@ -109,7 +109,7 @@ func Start() {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
-	//stgo nodeStateWatcher()
+	go nodeStateWatcher()
 
 	status := dhtService.Start()
 	if (Dht.DHT_API_SUCCESS != status){
