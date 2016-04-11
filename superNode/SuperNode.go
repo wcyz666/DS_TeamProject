@@ -83,7 +83,7 @@ func Start() {
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.
 		 * Need to update hash table to be a concurrent map */
-		"create_entry_req":		dhtNode.HandleDataOperationRequest,
+		"create_new_entry_req":		dhtNode.HandleDataOperationRequest,
 		"update_entry_req":		dhtNode.HandleDataOperationRequest,
 		"delete_entry_req":		dhtNode.HandleDataOperationRequest,
 		"get_data_req":			dhtNode.HandleDataOperationRequest,
