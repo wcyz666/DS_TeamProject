@@ -153,6 +153,7 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Add = true
 		dataOperationReq.Remove = false
+		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -176,6 +177,7 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 		dataOperationReq.Key = streamingGroupID
 		dataOperationReq.Add = false
 		dataOperationReq.Remove = true
+		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
