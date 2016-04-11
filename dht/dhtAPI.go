@@ -77,7 +77,8 @@ func (dhtService *DHTService)Start() int{
 }
 
 func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		return dht.DhtNode.getData(streamingGroupID)
@@ -97,7 +98,8 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
 	status:= SUCCESS
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
@@ -121,7 +123,8 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 
 func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
-	var dataOperationReq DataOperationRequest
+	var dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                        OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
@@ -141,7 +144,8 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 
 func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
 	status := SUCCESS
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status =  dht.DhtNode.appendData(streamingGroupID, data)
@@ -163,7 +167,8 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 
 func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
 	status := SUCCESS
-	var dataOperationReq DataOperationRequest
+	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
+		                                         OriginName : dht.DhtNode.NodeName}
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.removeData(streamingGroupID, data)
