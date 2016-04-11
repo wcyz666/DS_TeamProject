@@ -193,7 +193,7 @@ func (mp *MessagePasser) receiveMapping() {
 		msg := <-mp.Incoming
 
 		fmt.Println("Receiving data!")
-		fmt.Println(msg)
+		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 
 		_, exists := mp.Messages[msg.Kind]
 
@@ -214,7 +214,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.Src, _ = dns.ExternalIP()
 
 	fmt.Println("Sending out data!")
-	fmt.Println(msg)
+	fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 
 	dest := msg.DestName
 
