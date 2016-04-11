@@ -55,8 +55,8 @@ func (streamer *Streamer) backgroundStreaming(){
 		data := <- streamer.StreamingData
 		for _, destName := range(streamer.Streamingchildren){
 			msg := MP.NewMessage("", destName, "streaming_data", MP.EncodeData(data))
-			fmt.Print("Sneding streaming data:" )
-			fmt.Println(msg)
+			//fmt.Print("Sending streaming data:" )
+			//fmt.Println(msg)
 			go streamer.mp.Send(msg)
 		}
 	}
@@ -102,7 +102,7 @@ func (streamer *Streamer) HandleJoin(msg *MP.Message){
 	// Notify the src (the one join the network first)
 
 	assignMsg := MP.NewMessage(controlData.SrcIp, controlData.SrcName, "streaming_assign", MP.EncodeData(data))
-	fmt.Println(assignMsg)
+	//fmt.Println(assignMsg)
 	streamer.mp.Send(assignMsg)
 }
 
@@ -132,7 +132,7 @@ func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
 	MP.DecodeData(&controlData, msg.Data)
 	streamer.ProgramList[controlData.SrcName] = controlData.Title
 	fmt.Println("New program detected! ")
-	fmt.Println("Current program list:")
+	fmt.Print(" Current program list:")
 	fmt.Println(streamer.ProgramList)
 }
 
@@ -142,7 +142,7 @@ func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 	MP.DecodeData(&controlData, msg.Data)
 	delete(streamer.ProgramList, controlData.SrcName)
 	fmt.Println("Program deleted! ")
-	fmt.Println("Current program list:")
+	fmt.Print(" Current program list:")
 	fmt.Println(streamer.ProgramList)
 }
 

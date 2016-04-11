@@ -45,7 +45,7 @@ func main() {
 
 	 clearDNS:= flag.Bool("clearDNS",false,"set if you want to clear DNS A records")
 	 //me := flag.String("class", "node", "the identity of the current node")
-	 me := flag.String("class", "supernode", "the identity of the current node")
+	 me := flag.String("class", "node", "the identity of the current node")
 	 flag.Parse()
 	 if (*clearDNS){
 	     dns.ClearAddrRecords(config.BootstrapDomainName)

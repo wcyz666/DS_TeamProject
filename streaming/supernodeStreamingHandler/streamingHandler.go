@@ -64,7 +64,7 @@ func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
 	//Notify the children the new program
 	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
 	fmt.Println("New programs detected! Sending to all children")
-	fmt.Println(childrenNames)
+	//fmt.Println(childrenNames)
 	for _, child := range(childrenNames){
 		sHandler.mp.Send(MP.NewMessage("", child, "streaming_new_program", msg.Data))
 	}
@@ -86,7 +86,7 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 	MP.DecodeData(&controlData, msg.Data)
 
 	root := controlData.RootStreamer
-	fmt.Println(root)
+	//fmt.Println(root)
 
 	// Find the streaming group with root in the DHT and update it
 	streamers, _ := sHandler.dht.Get(root)
