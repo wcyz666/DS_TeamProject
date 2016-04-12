@@ -65,6 +65,7 @@ const (
 	/* Generic Status*/
 	SUCCESS = iota
 	FAILURE
+	INVALID_INPUT_PARAMS
 
 	/*DHT Data management related status */
 	KEY_NOT_PRESENT

@@ -183,6 +183,8 @@ func logStatus(status int) string {
 		statusString = "KEY_NOT_PRESENT"
 	case Dht.SUCCESS_ENTRY_OVERWRITTEN:
 		statusString = "SUCCESS_ENTRY_OVERWRITTEN"
+	case Dht.INVALID_INPUT_PARAMS:
+		statusString = "INVALID_INPUT_PARAMS"
 	default:
 		statusString = strconv.Itoa(status)
 	}
