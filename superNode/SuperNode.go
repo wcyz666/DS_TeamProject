@@ -183,6 +183,8 @@ func logStatus(status int) string {
 		statusString = "KEY_NOT_PRESENT"
 	case Dht.SUCCESS_ENTRY_OVERWRITTEN:
 		statusString = "SUCCESS_ENTRY_OVERWRITTEN"
+	case Dht.INVALID_INPUT_PARAMS:
+		statusString = "INVALID_INPUT_PARAMS"
 	default:
 		statusString = strconv.Itoa(status)
 	}
@@ -206,7 +208,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
-					status := dhtService.Create(inputList[1], Dht.MemberShipInfo{inputList[2]})
+					status := dhtService.Create(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3]})
 					fmt.Println("Create API called and return status is "+ logStatus(status))
 				}
 			case "D","d":
@@ -222,7 +224,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
-					status := dhtService.Append(inputList[1], Dht.MemberShipInfo{inputList[2]})
+					status := dhtService.Append(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3]})
 					fmt.Println("Append API called and return status is "+ logStatus(status))
 				}
 			case "R","r":
@@ -230,7 +232,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
-					status := dhtService.Remove(inputList[1], Dht.MemberShipInfo{inputList[2]})
+					status := dhtService.Remove(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3]})
 					fmt.Println("Remove API called and return status is "+ logStatus(status))
 				}
 			case "G","g":
@@ -243,7 +245,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					if (Dht.SUCCESS == status){
 						fmt.Println("Members of streaming group are ")
 						for _,member := range memberShipInfo{
-							fmt.Println("	"+member.SuperNodeIp)
+							fmt.Println("	"+member.StreamerIp + " " + member.StreamerName)
 						}
 					}
 				}
