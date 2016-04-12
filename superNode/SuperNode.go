@@ -135,7 +135,7 @@ func errorHandler(*MP.Message)  {
 }
 
 func heartBeatHandler(msg *MP.Message)  {
-	superNodeContext.SetAlive(msg.SrcName)
+	superNodeContext.SetAlive(msg.SrcName, msg.Src)
 }
 
 func nodeStateWatcher() {
@@ -144,8 +144,6 @@ func nodeStateWatcher() {
 		hasDead, deadNodes := superNodeContext.CheckDead()
 		if hasDead {
 			for _, nodeName := range deadNodes {
-				mp.RemoveMapping(superNodeContext.GetIPByName(nodeName))
-				mp.RemoveMapping(nodeName)
 				superNodeContext.RemoveNodes(nodeName)
 			}
 		}

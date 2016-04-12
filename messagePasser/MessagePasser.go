@@ -26,10 +26,16 @@ type MessagePasser struct {
 
 type Client struct {
 	name     string
+	IP		 string
 	incoming chan *Message
 	outgoing chan *Message // Act as a sending message queue
 	reader   *bufio.Reader
 	writer   *bufio.Writer
+}
+
+type FailClientInfo struct {
+	name     string
+	IP		 string
 }
 
 /**
@@ -49,34 +55,51 @@ func (client *Client) Read(mp *MessagePasser) {
 		buffer := make([]byte, length)
 		client.reader.Read(buffer)
 
+
 		if err != nil {
-			fmt.Println("Client " + client.name + " disconneted!")
+			client.rethrowError(mp)
 			return
 		}
+
 		msg := new(Message)
 		msg.Deserialize(buffer)
 
 		err = msg.Deserialize(buffer)
-		if (err !=nil) {
+		if (err != nil) {
 			fmt.Println("err is " + err.Error())
 		}
-
-		_, exists := mp.connections.clients[msg.SrcName]
-		if exists == false {
-			// This is first message received from this src
-			// Store this connection
-			client.name = msg.SrcName
-			mp.connections.clients[msg.SrcName] = client
-		}
-		//Also save the src into the connection map
-		_, exists = mp.connections.clients[msg.Src]
-		if exists == false {
-			mp.connections.clients[msg.Src] = client
-		}
-
+		client.addToClients(msg, mp.connections.clients)
 		mp.Incoming <- msg // Since there is only one socket, directly put all the received
 		// msgs into the global receiving channel (message queue)
 	}
+}
+
+func (client *Client) addToClients(msg *Message, clients map[string]*Client)  {
+	_, exists := clients[msg.SrcName]
+
+	if exists == false {
+		client.updateClient(msg)
+		clients[msg.SrcName] = client
+	}
+	_, exists = clients[msg.Src]
+	if exists == false {
+		client.updateClient(msg)
+		clients[msg.Src] = client
+	}
+}
+
+func (client *Client) updateClient(msg *Message)  {
+	client.name = msg.SrcName
+	client.IP = msg.Src
+}
+
+func (client *Client) rethrowError(mp *MessagePasser)  {
+	fmt.Println("Client " + client.name + " disconneted!")
+	fmt.Println("Error in reading messages out in Client[" + client.name + "]")
+
+	errorMsg := NewMessage("self", mp.connections.localname, "conn_error",
+		EncodeData(FailClientInfo{IP: client.IP, name: client.name}))
+	mp.Messages["error"] <- &errorMsg
 }
 
 //go routine: Keep writing
@@ -89,11 +112,6 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
-			fmt.Println("Error in sending messages out in Client[" + client.name + "]")
-			fmt.Println("Error while sending message "+ err.Error())
-
-			errorMsg := NewMessage("self", mp.connections.localname, "conn_error", EncodeData(err.Error()))
-			mp.Messages["error"] <- &errorMsg
 			return
 		}
 		client.writer.Flush()
@@ -111,6 +129,8 @@ func NewClient(connection net.Conn, mp *MessagePasser) *Client {
 	reader := bufio.NewReader(connection)
 
 	client := &Client{
+		IP: "",
+		name: "",
 		incoming: make(chan *Message),
 		outgoing: make(chan *Message),
 		reader:   reader,
@@ -229,15 +249,15 @@ func (mp *MessagePasser) Send(msg Message)  {
 	} else {
 		// Try connecting to the peer
 
-		addr := dest
-		conn, err := net.Dial("tcp", addr + ":" + localPort)
+		conn, err := net.Dial("tcp", msg.Dest + ":" + localPort)
 		if (err != nil) {
 			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
 			mp.Messages["error"] <- &errMsg
 			return
 		}
 		client := NewClient(conn, mp)
-		client.name = dest
+		client.name = msg.DestName
+		client.IP = msg.Dest
 		mp.connections.clients[dest] = client
 		if msg.DestName != "" {
 			mp.connections.clients[msg.DestName] = client

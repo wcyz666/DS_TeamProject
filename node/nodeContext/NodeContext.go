@@ -14,6 +14,11 @@ type NodeContext struct {
     State        int
 }
 
+type FailClientInfo struct {
+    name     string
+    IP		 string
+}
+
 func NewNodeContext() *NodeContext {
     return &NodeContext{State: NodeHello}
 }
