@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"../../config"
 	DNS "../../dnsService"
+	"../../utils"
 )
 
 /**
@@ -17,10 +18,10 @@ This class takes care of
 	 2. Sync related information in the DHT and with other supernodes
 */
 type StreamingHandler struct {
-	dht *DHT.DHTService
-	mp         *MP.MessagePasser
-	superNodeContext	*SNC.SuperNodeContext
-	ProgramList map[string][]byte
+	dht              *DHT.DHTService
+	mp               *MP.MessagePasser
+	superNodeContext *SNC.SuperNodeContext
+	ProgramList      map[string][]byte
 }
 
 func NewStreamingHandler(dHashtable *DHT.DHTService, mp *MP.MessagePasser, superNodeContext *SNC.SuperNodeContext) *StreamingHandler {
@@ -30,10 +31,10 @@ func NewStreamingHandler(dHashtable *DHT.DHTService, mp *MP.MessagePasser, super
 }
 
 /* Broadcast service */
-func (sHandler *StreamingHandler) broadcast(channelName string, data []byte){
+func (sHandler *StreamingHandler) broadcast(channelName string, data []byte) {
 	// Get all the supernodes
 	IPs := DNS.GetAddr(config.BootstrapDomainName)
-	for _, ip := range(IPs) {
+	for _, ip := range (IPs) {
 		sHandler.mp.Send(MP.NewMessage(ip, "", channelName, data))
 	}
 }
@@ -47,7 +48,11 @@ func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
 	//Update DHT table
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	sHandler.dht.Create(controlData.RootStreamer, DHT.MemberShipInfo{SuperNodeIp:controlData.SrcName})
+	sHandler.dht.Create(controlData.RootStreamer,
+		DHT.MemberShipInfo{
+			StreamerName:controlData.SrcName,
+			StreamerIp: controlData.SrcIp,
+		})
 
 }
 
@@ -72,7 +77,7 @@ func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
 	//Notify the children the new program
 	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
 	fmt.Println("New programs detected! Sending to all children")
-	for _, child := range(childrenNames){
+	for _, child := range (childrenNames) {
 		sHandler.mp.Send(MP.NewMessage("", child, "streaming_new_program", msg.Data))
 	}
 }
@@ -86,7 +91,7 @@ func (sHandler *StreamingHandler) StreamProgramStop(msg *MP.Message) {
 
 	//Notify the children the new program
 	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
-	for _, child := range(childrenNames){
+	for _, child := range (childrenNames) {
 		sHandler.mp.Send(MP.NewMessage("", child, "streaming_stop_program", msg.Data))
 	}
 }
@@ -102,16 +107,21 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 
 	// Find the streaming group with root in the DHT and update it
 	streamers, _ := sHandler.dht.Get(root)
-	// Choose the last streamer to start the election
-	parentName := streamers[len(streamers)-1].SuperNodeIp
+
+	// Changed Apr.12   Use randomly selected streamer as the streaming parent
+	streamer := streamers[utils.RandomChoice(0, len(streamers))]
 	// Send "streaming_join" to one of the streamers to start the election
-	sHandler.mp.Send(MP.NewMessage("", parentName, "streaming_join", msg.Data))
+
+	sHandler.mp.Send(MP.NewMessage(streamer.StreamerIp, streamer.StreamerName, "streaming_join", msg.Data))
 	// Update the dht, append the guy into dht
-	sHandler.dht.Append(root, DHT.MemberShipInfo{SuperNodeIp:controlData.SrcName})
+	sHandler.dht.Append(root, DHT.MemberShipInfo{
+		StreamerName:controlData.SrcName,
+		StreamerIp:controlData.SrcIp,
+	})
 }
 
 func (sHandler *StreamingHandler) NewChildJoin(childIp string, childName string) {
-	for _, data:= range(sHandler.ProgramList) {
+	for _, data := range (sHandler.ProgramList) {
 		// Notify as a new program
 		sHandler.mp.Send(MP.NewMessage(childIp, childName, "streaming_new_program", data))
 	}

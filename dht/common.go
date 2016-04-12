@@ -56,7 +56,8 @@ type DHTService struct {
 
 /* TODO: Need to revisit data structures. Temporarily adding superNodeIp*/
 type MemberShipInfo struct {
-	SuperNodeIp string
+	StreamerIp string
+	StreamerName string
 }
 
 /* Looks like Go does not support enums. So have to define all status related constants here (even though it is bit ugly)*/
