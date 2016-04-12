@@ -109,7 +109,7 @@ func Start() {
 		// Bind all the functions listening on the channel
 		go listenOnChannel(channelName, handler)
 	}
-	//stgo nodeStateWatcher()
+	go nodeStateWatcher()
 
 	status := dhtService.Start()
 	if (Dht.DHT_API_SUCCESS != status){
@@ -158,6 +158,8 @@ func newChild(msg *MP.Message)  {
 	fmt.Printf("SuperNode: receive new Node, IP [%s] Name [%s]\n", msg.Src, msg.SrcName)
 	mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "ack", MP.EncodeData("this is an ACK message")))
 	superNodeContext.AddNode(msg.SrcName, msg.Src)
+	// For a newly joined child, propagate the stored program list on supernode to it
+	streamHandler.NewChildJoin(msg.Src ,msg.SrcName)
 }
 
 func printHelp(){
