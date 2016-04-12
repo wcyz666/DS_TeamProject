@@ -31,7 +31,7 @@ func heartBeat() {
 	for {
 		time.Sleep(time.Second * 5)
 		if isSendHeartBeat {
-			mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
+			mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "node_heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 		}
 		//fmt.Println("Node: send out heart beat message")
 	}
@@ -64,7 +64,7 @@ func joinAssign(msg *MP.Message) {
 	go heartBeat()
 	nodeContext.State = NC.Joined
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n", result.ParentIP, result.ParentName)
-	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "election_join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(joinMsg)
 }
 
@@ -118,7 +118,7 @@ func Start() {
 	// Then the binded handler of this channel will be called with the argument (*Message)
 
 	channelNames := map[string]func(*MP.Message){
-		"join_assign":     joinAssign,
+		"election_assign":     joinAssign,
 		"error" : errorHandler,
 
 		// The streaming related handlers goes here
@@ -150,7 +150,7 @@ func Start() {
 func nodeJoin(IPs []string) {
 	//Send hello messages until find out a working supernode
 	i := 0
-	helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+	helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(helloMsg)
 	fmt.Printf("Node: send hello message to SuperNode [%s]\n", IPs[i])
 	for {
@@ -166,7 +166,7 @@ func nodeJoin(IPs []string) {
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+			helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
 		case <- mp.Messages["super_fail"]:
 			i += 1
@@ -175,7 +175,7 @@ func nodeJoin(IPs []string) {
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+			helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
 
 		}

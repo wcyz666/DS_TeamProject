@@ -51,7 +51,7 @@ func Start() {
 
 	dhtService = Dht.NewDHTService(mp)
 	streamHandler = Streaming.NewStreamingHandler(dhtService, mp, superNodeContext)
-	jElection = JoinElection.NewJoinElection(mp)
+	jElection = JoinElection.NewJoinElection(mp, dhtService.DhtNode, superNodeContext)
 
 	dhtNode := dhtService.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
@@ -64,10 +64,7 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
-		"heartbeat": heartBeatHandler,
-		"hello":          jElection.Start,
-		"join": 			newChild,
-		"join_election": jElection.Receive,
+		"node_heartbeat": heartBeatHandler,
 		"error": errorHandler,
 
 		/* DHT call backs */
@@ -95,7 +92,10 @@ func Start() {
 		"stream_program_start": streamHandler.StreamProgramStart,  // This is sent from other supernodes
 		"stream_program_stop": streamHandler.StreamProgramStop,  // This is sent from other supernodes
 
-
+		"election_hello":          jElection.StartElection,
+		"dht_broadcast_msg_election": jElection.ForwardElection,
+		"election_complete": jElection.CompleteElection,
+		"election_join": 			newChild,
 	}
 
 	// Init and listen
@@ -140,7 +140,7 @@ func heartBeatHandler(msg *MP.Message)  {
 
 func nodeStateWatcher() {
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(1 * time.Second)
 		hasDead, deadNodes := superNodeContext.CheckDead()
 		if hasDead {
 			for _, nodeName := range deadNodes {
