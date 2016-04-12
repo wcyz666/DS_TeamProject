@@ -140,6 +140,7 @@ func Start() {
 	}
 	go nodeJoin(IPs)
 	go NodeCLIInterface(streamer)
+	webInterface(streamer)
 	exitMsg := <- mp.Messages["exit"]
 	var exitData string
 	MP.DecodeData(&exitData, exitMsg.Data)
