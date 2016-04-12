@@ -4,6 +4,7 @@ import (
 	MP "../messagePasser"
 	"time"
 	"fmt"
+	"math/big"
 )
 
 const JOIN_MAX_REATTEMPTS = 5
@@ -76,7 +77,17 @@ func (dhtService *DHTService)Start() int{
 	}
 }
 
+func IsStreamingGroupIdValid(streamingGroupID string) (bool){
+	numericKey := new(big.Int)
+	_,status := numericKey.SetString(streamingGroupID, 16)
+	return status
+}
+
 func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
+	if (false == IsStreamingGroupIdValid(streamingGroupID)) {
+		return make([]MemberShipInfo, 0),INVALID_INPUT_PARAMS
+	}
+
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
 
@@ -97,6 +108,10 @@ func (dht *DHTService) Get(streamingGroupID string) ([]MemberShipInfo, int) {
 }
 
 func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int){
+	if (false == IsStreamingGroupIdValid(streamingGroupID)) {
+		return INVALID_INPUT_PARAMS
+	}
+
 	status:= SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
@@ -122,6 +137,10 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 }
 
 func (dht *DHTService) Delete(streamingGroupID string) (int) {
+	if (false == IsStreamingGroupIdValid(streamingGroupID)) {
+		return INVALID_INPUT_PARAMS
+	}
+
 	status:= SUCCESS
 	var dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                        OriginName : dht.DhtNode.NodeName}
@@ -143,6 +162,9 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 }
 
 func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int) {
+	if (false == IsStreamingGroupIdValid(streamingGroupID)) {
+		return INVALID_INPUT_PARAMS
+	}
 	status := SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
@@ -167,6 +189,9 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 }
 
 func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int){
+	if (false == IsStreamingGroupIdValid(streamingGroupID)) {
+		return INVALID_INPUT_PARAMS
+	}
 	status := SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
