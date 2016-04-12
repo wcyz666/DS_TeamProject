@@ -96,6 +96,31 @@ func getBigIntFromString(key string) *big.Int{
 	return numericKey
 }
 
+func isKeyPresentInKeyspaceRange(numericKey *big.Int, prevNodeNumericKey *big.Int, curNodeNumericKey *big.Int) bool {
+
+	zero := getBigIntFromString("0")
+	maxKey := getBigIntFromString(MAX_KEY)
+
+	/* If curNodeKey > prevNodeKey, check if new key in (prevNodeKey, curNodeKey]
+	 * If not, check if new key is in (prevNodeKey, Maxkey) or [0, curNodeKey]
+	*/
+	if (curNodeNumericKey.Cmp(prevNodeNumericKey) > 0){
+		if ((numericKey.Cmp(prevNodeNumericKey) > 0) &&
+		(numericKey.Cmp(curNodeNumericKey) <= 0)){
+			return true
+		} else {
+			return false
+		}
+	} else {
+		if (((numericKey.Cmp(prevNodeNumericKey) > 0) && (numericKey.Cmp(maxKey) <=0)) ||
+		((numericKey.Cmp(zero)>=0) && (numericKey.Cmp(curNodeNumericKey) <=0))) {
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
 /* Given a key, function will check whether key is within key space managed by this node
  * KeyspaceRange is from (previous node's key + 1) to current node's key
 */
@@ -242,8 +267,8 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 
 	for k,v := range dhtNode.hashTable {
 		entryKey = getBigIntFromString(k)
-		/* If entry key is <= new node's key, transfer the data to new node */
-		if (entryKey.Cmp(nodeKey) <= 0){
+		/* If entry key is within new node's key space, transfer the data to new node */
+		if (false == isKeyPresentInKeyspaceRange(entryKey, nodeKey, dhtNode.curNodeNumericKey)){
 			joinRes.HashTable[k] = v
 		}
 	}
@@ -335,8 +360,8 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 
 	for k,_ := range dhtNode.hashTable {
 		entryKey = getBigIntFromString(k)
-		/* If entry key is <= new node's key, remove the entry as it is already transferred to new node */
-		if (entryKey.Cmp(newNodeKey) <= 0){
+		/* If entry key is in new node's key space, remove the entry as it is already transferred to new node */
+		if (false == isKeyPresentInKeyspaceRange(entryKey, newNodeKey, dhtNode.curNodeNumericKey)){
 			delete(dhtNode.hashTable,k)
 		}
 	}
