@@ -16,23 +16,24 @@ import (
 
 const (
 	bootstrap_dns = "p2plive.supernodes.com"
-	HeartBeatPort = 8888
 )
 
 
 var mp *MP.MessagePasser
 var nodeContext *NC.NodeContext
-var exitChannal chan int
 var streamer *Streamer.Streamer
+var isSendHeartBeat bool
 
 /**
 All internal helper functions
 */
 func heartBeat() {
 	for {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 5)
+		if isSendHeartBeat {
+			mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
+		}
 		//fmt.Println("Node: send out heart beat message")
-		mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 	}
 }
 
@@ -59,7 +60,9 @@ func joinAssign(msg *MP.Message) {
 	nodeContext.ParentIP = result.ParentIP
 	nodeContext.ParentName = result.ParentName
 	fmt.Println(result)
+	isSendHeartBeat = true
 	go heartBeat()
+	nodeContext.State = NC.Joined
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n", result.ParentIP, result.ParentName)
 	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(joinMsg)
@@ -71,9 +74,17 @@ func errorHandler(msg *MP.Message) {
 	// Re-throw it to init_fail channel
 	case NC.NodeHello:
 		msg.Kind = "init_fail"
+		mp.Messages[msg.Kind] <- msg
+	case NC.Joined:
+		failNode := MP.FailClientInfo{}
+		MP.DecodeData(&failNode, msg.Data)
+		if (failNode.IP == nodeContext.ParentIP) {
+			fmt.Println("Node: detect Supernode failure, try another supernode...")
+			msg.Kind = "super_fail"
+			mp.Messages[msg.Kind] <- msg
+		}
 	}
 
-	mp.Messages[msg.Kind] <- msg
 }
 
 
@@ -88,7 +99,7 @@ func Start() {
 	nodeContext.LocalIp, _ = DNS.ExternalIP()
 	mp = MP.NewMessagePasser(nodeContext.LocalName)
 	streamer = Streamer.NewStreamer(mp, nodeContext)
-	go app(streamer)
+
 
 	// We use for loop to connect with all supernode one-by-one,
 	// if a connection to one supernode fails, an error message
@@ -96,7 +107,7 @@ func Start() {
 	// processed in error handler.
 	// init_fail: used in hello phase
 	// exit: used when all supernode cannot be connected.
-	mp.AddMappings([]string{"exit", "init_fail", "ack"})
+	mp.AddMappings([]string{"exit", "init_fail", "super_fail", "ack"})
 
 	// Initialize all the package structs
 
@@ -128,9 +139,11 @@ func Start() {
 		go listenOnChannel(channelName, handler)
 	}
 	go nodeJoin(IPs)
+	go NodeCLIInterface(streamer)
 	exitMsg := <- mp.Messages["exit"]
-	fmt.Println(exitMsg)
-
+	var exitData string
+	MP.DecodeData(&exitData, exitMsg.Data)
+	fmt.Printf("Node: receiving force exit message [%s], node exit\n", exitData);
 }
 
 /* Join the network */
@@ -155,6 +168,16 @@ func nodeJoin(IPs []string) {
 			}
 			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
+		case <- mp.Messages["super_fail"]:
+			i += 1
+			if (i == len(IPs)) {
+				exitMsg := MP.NewMessage("self", nodeContext.LocalName, "exit", MP.EncodeData("All supernodes are down, exit"))
+				mp.Messages["exit"] <- &exitMsg
+				break;
+			}
+			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+			mp.Send(helloMsg)
+
 		}
 	}
 
@@ -162,34 +185,61 @@ func nodeJoin(IPs []string) {
 
 
 
-/* Application */
-func app(streamer *Streamer.Streamer){
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("heheheh: ")
-	for {
-		text, _ := reader.ReadString('\n')
-		inputs := strings.Split(strings.TrimSpace(text), " ")
-		fmt.Println(inputs)
-		switch inputs[0] {
-		case "start":
-			if len(inputs) > 1 {
-				streamer.Start(inputs[1])
+
+func printHelp(){
+	fmt.Println("Enter P Key to retrive Parent Info")
+	fmt.Println("	   C Key to leave from parent node")
+	fmt.Println("	   R Key to reconnect parent node")
+	fmt.Println("      S Key to start a Streaming")
+	fmt.Println("      T Key to stop a Streaming")
+	fmt.Println("      J Key to join a Streaming")
+	fmt.Println("      D Key to send streaming data")
+	fmt.Println("      L Key to print log")
+	fmt.Println("      H for help")
+	fmt.Println("      Q to quit")
+}
+
+func NodeCLIInterface(streamer *Streamer.Streamer){
+	printHelp()
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if ((line == "Q") || (line == "q")) {
+			os.Exit(0)
+		} else if ((line == "H") || (line == "h")){
+			printHelp()
+		} else {
+			inputs := strings.Split(strings.TrimSpace(line), " ")
+			switch inputs[0] {
+			case "P", "p", "Parent", "parent":
+				fmt.Printf("Node: print parent info IP: [%s], name [%s]\n", nodeContext.ParentIP, nodeContext.ParentName)
+			case "C", "c", "Leave", "leave":
+				isSendHeartBeat = false
+			case "R", "r", "Reconnect", "reconnect":
+				isSendHeartBeat = true
+			case "S","s", "start", "Start":
+				if len(inputs) > 1 {
+					streamer.Start(inputs[1])
+				}
+			case "T","t", "Stop", "stop":
+				streamer.Stop()
+			case "J","j", "Join", "join":
+				if len(inputs) > 1 {
+					streamer.Join(inputs[1])
+				}
+			case "D","d", "Stream", "stream":
+				if len(inputs) > 1 {
+					streamer.Stream(inputs[1])
+				}
+			case "L","l", "Log", "log":
+				streamer.Log()
+			default:
+				fmt.Println("Unexpected option")
+				printHelp()
 			}
-		case "stop":
-			streamer.Stop()
-		case "join":
-			if len(inputs) > 1 {
-				streamer.Join(inputs[1])
-			}
-		case "stream":
-			if len(inputs) > 1 {
-				streamer.Stream(inputs[1])
-			}
-		case "log":
-			streamer.Log()
-		default:
-			fmt.Println("Please check the input!")
 		}
 	}
-
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+	}
 }

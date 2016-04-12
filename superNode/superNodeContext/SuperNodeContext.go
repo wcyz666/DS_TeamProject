@@ -42,8 +42,12 @@ func (sc *SuperNodeContext) RemoveNodes(nodeName string)  {
     delete(sc.nodes, nodeName)
 }
 
-func (sc *SuperNodeContext) SetAlive(nodeName string) {
+func (sc *SuperNodeContext) SetAlive(nodeName string, nodeIP string) {
     //fmt.Printf("Supernode Context: set alive node %s\n", nodeName)
+    _, exists := sc.nodes[nodeName]
+    if (exists == false) {
+        sc.AddNode(nodeName, nodeIP)
+    }
     sc.nodes[nodeName].isLive = true
 }
 
