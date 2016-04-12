@@ -235,7 +235,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 
-	if (msg.Kind != "dht_neighbourhood_discovery"){
+	if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat"){
 		fmt.Println("Sending out data!")
 		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 	}
