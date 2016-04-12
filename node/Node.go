@@ -29,7 +29,7 @@ All internal helper functions
 */
 func heartBeat() {
 	for {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 5)
 		if isSendHeartBeat {
 			mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 		}
@@ -189,6 +189,7 @@ func nodeJoin(IPs []string) {
 func printHelp(){
 	fmt.Println("Enter P Key to retrive Parent Info")
 	fmt.Println("	   C Key to leave from parent node")
+	fmt.Println("	   R Key to reconnect parent node")
 	fmt.Println("      S Key to start a Streaming")
 	fmt.Println("      T Key to stop a Streaming")
 	fmt.Println("      J Key to join a Streaming")
@@ -210,27 +211,27 @@ func NodeCLIInterface(streamer *Streamer.Streamer){
 		} else {
 			inputs := strings.Split(strings.TrimSpace(line), " ")
 			switch inputs[0] {
-			case "P", "p":
+			case "P", "p", "Parent", "parent":
 				fmt.Printf("Node: print parent info IP: [%s], name [%s]\n", nodeContext.ParentIP, nodeContext.ParentName)
-			case "C", "c":
+			case "C", "c", "Leave", "leave":
 				isSendHeartBeat = false
-			case "R", "r":
+			case "R", "r", "Reconnect", "reconnect":
 				isSendHeartBeat = true
-			case "S","s":
+			case "S","s", "start", "Start":
 				if len(inputs) > 1 {
 					streamer.Start(inputs[1])
 				}
-			case "T","t":
+			case "T","t", "Stop", "stop":
 				streamer.Stop()
-			case "J","j":
+			case "J","j", "Join", "join":
 				if len(inputs) > 1 {
 					streamer.Join(inputs[1])
 				}
-			case "D","d":
+			case "D","d", "Stream", "stream":
 				if len(inputs) > 1 {
 					streamer.Stream(inputs[1])
 				}
-			case "L","l":
+			case "L","l", "Log", "log":
 				streamer.Log()
 			default:
 				fmt.Println("Unexpected option")
