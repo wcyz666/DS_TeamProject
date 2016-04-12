@@ -192,8 +192,10 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 
-		fmt.Println("Receiving data!")
-		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
+		if (msg.Kind != "dht_neighbourhood_discovery"){
+			fmt.Println("Receiving data!")
+			fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
+		}
 
 		_, exists := mp.Messages[msg.Kind]
 
@@ -213,8 +215,10 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 
-	fmt.Println("Sending out data!")
-	fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
+	if (msg.Kind != "dht_neighbourhood_discovery"){
+		fmt.Println("Sending out data!")
+		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
+	}
 
 	dest := msg.DestName
 
