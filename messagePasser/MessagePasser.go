@@ -34,8 +34,8 @@ type Client struct {
 }
 
 type FailClientInfo struct {
-	name     string
-	IP		 string
+	Name string
+	IP   string
 }
 
 /**
@@ -98,7 +98,7 @@ func (client *Client) rethrowError(mp *MessagePasser)  {
 	fmt.Println("Error in reading messages out in Client[" + client.name + "]")
 
 	errorMsg := NewMessage("self", mp.connections.localname, "conn_error",
-		EncodeData(FailClientInfo{IP: client.IP, name: client.name}))
+		EncodeData(FailClientInfo{IP: client.IP, Name: client.name}))
 	mp.Messages["error"] <- &errorMsg
 }
 

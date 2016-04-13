@@ -20,6 +20,7 @@ type Streamer struct{
 	STATE int
 	StreamingParent string
 	Streamingchildren []string
+	CurrentProgram string
 	ProgramList map[string]string
 	// TODO: Change to []byte and handle video data
 	StreamingData chan string
@@ -76,6 +77,7 @@ func (streamer *Streamer) HandleAssign(msg *MP.Message){
 	fmt.Println("Handling assign! As child of " + controlData.SrcName)
 	streamer.StreamingParent = controlData.SrcName
 	streamer.STATE = STREAMING
+	streamer.CurrentProgram = controlData.RootStreamer
 }
 
 /* Being selected in the DHT and handle the join request*/
@@ -120,7 +122,7 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 	}
 
 	// Clear
-	streamer.StreamingParent = streamer.nodeContext.LocalName
+	streamer.StreamingParent = nil
 	streamer.Streamingchildren = []string{}
 	streamer.STATE = IDEAL
 
@@ -147,10 +149,68 @@ func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 	fmt.Println(streamer.ProgramList)
 }
 
+
+func (streamer *Streamer) HandleChildQuit(msg *MP.Message) {
+	var controlData SDataType.StreamControlMsg
+	MP.DecodeData(&controlData, msg.Data)
+
+	for index, child := range(streamer.Streamingchildren){
+		// If is a children in the streaming group
+		if child == controlData.SrcName{
+			fmt.Println("[streaming] Children node " + controlData.SrcName + " quit!")
+			// Delete this node in the children array
+			length := len(streamer.Streamingchildren)
+			streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
+			streamer.Streamingchildren[length-1] = nil
+			streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
+			break
+		}
+	}
+
+}
+
+
 /* Handle the receiving streaming data*/
 func (streamer *Streamer) HandleStreamerData(msg *MP.Message) {
 	var data string
 	MP.DecodeData(&data, msg.Data)
 	streamer.ReceivingData <- data
 	streamer.StreamingData <- data
+}
+
+
+
+
+/********************************************************************************/
+/*  Error handling related functions:
+/* 	1. Parent/child quit streaming
+/*	2. Parent/child accidentally failed
+/********************************************************************************/
+
+/* Take care of the tcp connection error message */
+func (streamer *Streamer) HandleErrorMsg(msg *MP.Message) {
+	failNode := MP.FailClientInfo{}
+	MP.DecodeData(&failNode, msg.Data)
+
+	// We use name as identifier for streaming parents/ children
+	// Streaming parent fails
+	if failNode.Name == streamer.StreamingParent{
+		// Rejoin the streaming process
+		fmt.Println("[streaming] Parent node " + failNode.Name + " failed!")
+		streamer.STATE = IDEAL
+		streamer.Join(streamer.CurrentProgram)
+	}else{
+		for index, child := range(streamer.Streamingchildren){
+			// If is a children in the streaming group
+			if child == failNode.Name{
+				fmt.Println("[streaming] Children node " + failNode.Name + " failed!")
+				// Delete this node in the children array
+				length := len(streamer.Streamingchildren)
+				streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
+				streamer.Streamingchildren[length-1] = nil
+				streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
+				break
+			}
+		}
+	}
 }

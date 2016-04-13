@@ -57,6 +57,10 @@ func (streamer *Streamer) Stop(){
 	// Notify Stream Children
 	streamer.HandleStop(nil)
 
+	// Notify Stream Parent
+	if streamer.StreamingParent != nil{
+		streamer.mp.Send(MP.NewMessage("", streamer.StreamingParent, "streaming_quit", MP.EncodeData(data)))
+	}
 
 	streamer.STATE = IDEAL
 }
