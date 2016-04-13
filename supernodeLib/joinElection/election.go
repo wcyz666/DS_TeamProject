@@ -67,12 +67,9 @@ func (j *JoinElection) ForwardElection(msg *MP.Message) {
 }
 
 
-// The node who owns less child win.
-// nodeName is used to break the tie
+
 func (j *JoinElection) compareAndUpdatePayload(eBMsg *ElectionBroadcastMessage) *ElectionBroadcastMessage {
-	if (eBMsg.ChildCount > j.superNodeContext.GetNodeCount() ||
-		(eBMsg.ChildCount == j.superNodeContext.GetNodeCount() &&
-		 strings.Compare(eBMsg.Name, j.superNodeContext.LocalName) > 0)) {
+	if (eBMsg.ChildCount > j.superNodeContext.GetNodeCount()) {
 		eBMsg.Name = j.superNodeContext.LocalName
 		eBMsg.IP = j.superNodeContext.IP
 		eBMsg.ChildCount = j.superNodeContext.GetNodeCount()
