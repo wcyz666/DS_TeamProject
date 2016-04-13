@@ -34,7 +34,7 @@ func (j *JoinElection) StartElection(msg *MP.Message) {
 	//Generate payload. This will be transmitted over the DHT ring
 	childNodeAddr := msg.Src
 	childName := msg.SrcName
-	kind := "election_assign"
+	kind := "election"
 	myIP, _ := DNS.ExternalIP()
 	eBMsgPayload := ElectionBroadcastMessage{IP: myIP, Name: LNS.GetLocalName(), ChildCount: j.superNodeContext.GetNodeCount()}
 	payload := MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(eBMsgPayload))
@@ -68,6 +68,7 @@ func (j *JoinElection) CompleteElection(msg *MP.Message) {
 	// Deal with the received messages
 	result := transferEbmToResult(msg)
 	msg.Data = MP.EncodeData(result)
+	msg.Kind = "election_assign"
 	j.mp.Send(*msg)
 }
 
