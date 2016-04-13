@@ -7,7 +7,6 @@ import (
 	"fmt"
 	DHT "../../dht"
 	SC "../../superNode/superNodeContext"
-	"strings"
 )
 
 /**
