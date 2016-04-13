@@ -10,3 +10,4 @@ type ElectionBroadcastMessage struct {
     Name string
     ChildCount int
 }
+

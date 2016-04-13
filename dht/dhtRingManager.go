@@ -383,7 +383,7 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 	MP.DecodeData(&broadcastMsg,msg.Data)
 
 	fmt.Println("Received broadcast message from " + msg.Src)
-	if (dhtNode.IsBroadcastOver(broadcastMsg)) {
+	if (dhtNode.IsBroadcastOver(&broadcastMsg)) {
 		/* Token returned back to us. Don't forward */
 		fmt.Println("Nodes in the ring are ")
 		for _, val := range broadcastMsg.TraversedNodesList {
@@ -393,11 +393,17 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 		/* Add current node details into the list. Currently we use this for debugging
 		 * to understand the structure of the ring */
 		dhtNode.AppendSelfToBroadcastTrack(&broadcastMsg)
-		dhtNode.PassBroadcastMessage(broadcastMsg, nil)
+		dhtNode.PassBroadcastMessage(&broadcastMsg, nil)
 	}
 }
 
-func (dhtNode *DHTNode) IsBroadcastOver(broadcastMsg BroadcastMessage) bool {
+func (dhtNode *DHTNode) GetBroadcastMessage(msg *MP.Message) *BroadcastMessage {
+	var broadcastMsg BroadcastMessage
+	MP.DecodeData(&broadcastMsg,msg.Data)
+	return &broadcastMsg
+}
+
+func (dhtNode *DHTNode) IsBroadcastOver(broadcastMsg *BroadcastMessage) bool {
 	return broadcastMsg.OriginIpAddress == dhtNode.IpAddress
 }
 
@@ -407,7 +413,7 @@ func (dhtNode *DHTNode) AppendSelfToBroadcastTrack(broadcastMsg *BroadcastMessag
 }
 
 
-func (dhtNode *DHTNode) PassBroadcastMessage(broadcastMsg BroadcastMessage, payload *MP.Message)  {
+func (dhtNode *DHTNode) PassBroadcastMessage(broadcastMsg *BroadcastMessage, payload *MP.Message)  {
 
 	nextNode := dhtNode.leafTable.nextNode
 	fmt.Println("Forwarding Broadcast message to " + nextNode.IpAddress)
@@ -425,7 +431,7 @@ func (dhtNode *DHTNode) PassBroadcastMessage(broadcastMsg BroadcastMessage, payl
 /*TODO add a parameter to take suitable payload for broadcast. For e.g. we can have type which
   describes about streaming group being newly launched */
 func (dhtNode *DHTNode) CreateBroadcastMessage(){
-	broadcastMsg := dhtNode.NewBroadcastMessage(nil)
+	broadcastMsg := dhtNode.NewBroadcastMessage()
 
 	nextNode := dhtNode.leafTable.nextNode
 	if (nextNode == nil){
@@ -441,15 +447,13 @@ func (dhtNode *DHTNode) CreateBroadcastMessage(){
 		MP.EncodeData(broadcastMsg)))
 }
 
-func (dhtNode *DHTNode) NewBroadcastMessage(payload *MP.Message) BroadcastMessage {
+func (dhtNode *DHTNode) NewBroadcastMessage() BroadcastMessage {
 	var broadcastMsg BroadcastMessage
 	broadcastMsg.OriginIpAddress = dhtNode.IpAddress
 	broadcastMsg.OriginName = dhtNode.NodeName
 	node:= Node{broadcastMsg.OriginIpAddress,broadcastMsg.OriginName,dhtNode.NodeKey}
 	broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
-	if (payload != nil) {
-		broadcastMsg.Payload = MP.EncodeData(payload)
-	}
+
 	return broadcastMsg
 }
 

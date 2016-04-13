@@ -34,27 +34,66 @@ func (j *JoinElection) StartElection(msg *MP.Message) {
 	//Generate payload. This will be transmitted over the DHT ring
 	childNodeAddr := msg.Src
 	childName := msg.SrcName
-	kind := "election_assign"
+	kind := "election"
 	myIP, _ := DNS.ExternalIP()
-	eBMsg := ElectionBroadcastMessage{IP: myIP, Name: LNS.GetLocalName(), ChildCount: j.superNodeContext.GetNodeCount()}
-	payload := MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(eBMsg))
+	eBMsgPayload := ElectionBroadcastMessage{IP: myIP, Name: LNS.GetLocalName(), ChildCount: j.superNodeContext.GetNodeCount()}
+	payload := MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(eBMsgPayload))
 
 	//If only me, then election is completed: send my info back
 	if j.dht.AmITheOnlyNodeInDHT() {
 		j.mp.Messages["election_complete"] <- &payload
+	} else {
+		eBMsg := j.dht.NewBroadcastMessage()
+		j.dht.PassBroadcastMessage(&eBMsg, &payload)
 	}
 
 }
 
 func (j *JoinElection) ForwardElection(msg *MP.Message) {
 	// Deal with the received messages
+	bMsg, payloadMsg, eBMsg := j.getPrevElectionMessage(msg)
 
+	if (j.dht.IsBroadcastOver(bMsg)) {
+		fmt.Print("Election: election over, result: ")
+		fmt.Println(eBMsg)
+		j.mp.Messages["election_complete"] <- payloadMsg
+	} else {
+		payloadMsg.Data = MP.EncodeData(j.compareAndUpdatePayload(eBMsg))
+		j.dht.AppendSelfToBroadcastTrack(bMsg)
+		j.dht.PassBroadcastMessage(bMsg, payloadMsg)
+		fmt.Println("Election: forward election message to the next supernode")
+	}
+}
+
+
+
+func (j *JoinElection) compareAndUpdatePayload(eBMsg *ElectionBroadcastMessage) *ElectionBroadcastMessage {
+	if (eBMsg.ChildCount > j.superNodeContext.GetNodeCount()) {
+		eBMsg.Name = j.superNodeContext.LocalName
+		eBMsg.IP = j.superNodeContext.IP
+		eBMsg.ChildCount = j.superNodeContext.GetNodeCount()
+		fmt.Print("Election: Better option for a parent, new parent")
+		fmt.Println(eBMsg)
+	}
+	return eBMsg
+}
+
+// de-capsulate and get ElectionBroadcastMessage back
+func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) (*DHT.BroadcastMessage, *MP.Message, *ElectionBroadcastMessage) {
+	var payloadMsg MP.Message
+	var eBMsg ElectionBroadcastMessage
+	bMsg := j.dht.GetBroadcastMessage(msg)
+	MP.DecodeData(&payloadMsg, bMsg.Payload)
+	MP.DecodeData(&eBMsg, payloadMsg.Data)
+
+	return bMsg, &payloadMsg, &eBMsg
 }
 
 func (j *JoinElection) CompleteElection(msg *MP.Message) {
 	// Deal with the received messages
 	result := transferEbmToResult(msg)
 	msg.Data = MP.EncodeData(result)
+	msg.Kind = "election_assign"
 	j.mp.Send(*msg)
 }
 
