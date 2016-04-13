@@ -397,6 +397,12 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 	}
 }
 
+func (dhtNode *DHTNode) GetPayload(msg *MP.Message) [] byte {
+	var broadcastMsg BroadcastMessage
+	MP.DecodeData(&broadcastMsg,msg.Data)
+	return broadcastMsg.Payload
+}
+
 func (dhtNode *DHTNode) IsBroadcastOver(broadcastMsg BroadcastMessage) bool {
 	return broadcastMsg.OriginIpAddress == dhtNode.IpAddress
 }
@@ -425,7 +431,7 @@ func (dhtNode *DHTNode) PassBroadcastMessage(broadcastMsg BroadcastMessage, payl
 /*TODO add a parameter to take suitable payload for broadcast. For e.g. we can have type which
   describes about streaming group being newly launched */
 func (dhtNode *DHTNode) CreateBroadcastMessage(){
-	broadcastMsg := dhtNode.NewBroadcastMessage(nil)
+	broadcastMsg := dhtNode.NewBroadcastMessage()
 
 	nextNode := dhtNode.leafTable.nextNode
 	if (nextNode == nil){
@@ -441,15 +447,13 @@ func (dhtNode *DHTNode) CreateBroadcastMessage(){
 		MP.EncodeData(broadcastMsg)))
 }
 
-func (dhtNode *DHTNode) NewBroadcastMessage(payload *MP.Message) BroadcastMessage {
+func (dhtNode *DHTNode) NewBroadcastMessage() BroadcastMessage {
 	var broadcastMsg BroadcastMessage
 	broadcastMsg.OriginIpAddress = dhtNode.IpAddress
 	broadcastMsg.OriginName = dhtNode.NodeName
 	node:= Node{broadcastMsg.OriginIpAddress,broadcastMsg.OriginName,dhtNode.NodeKey}
 	broadcastMsg.TraversedNodesList = append(broadcastMsg.TraversedNodesList,node)
-	if (payload != nil) {
-		broadcastMsg.Payload = MP.EncodeData(payload)
-	}
+
 	return broadcastMsg
 }
 

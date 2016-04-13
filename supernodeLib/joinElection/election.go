@@ -36,19 +36,32 @@ func (j *JoinElection) StartElection(msg *MP.Message) {
 	childName := msg.SrcName
 	kind := "election_assign"
 	myIP, _ := DNS.ExternalIP()
-	eBMsg := ElectionBroadcastMessage{IP: myIP, Name: LNS.GetLocalName(), ChildCount: j.superNodeContext.GetNodeCount()}
-	payload := MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(eBMsg))
+	eBMsgPayload := ElectionBroadcastMessage{IP: myIP, Name: LNS.GetLocalName(), ChildCount: j.superNodeContext.GetNodeCount()}
+	payload := MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(eBMsgPayload))
 
 	//If only me, then election is completed: send my info back
 	if j.dht.AmITheOnlyNodeInDHT() {
 		j.mp.Messages["election_complete"] <- &payload
+	} else {
+		eBMsg := j.dht.NewBroadcastMessage()
+		j.dht.PassBroadcastMessage(eBMsg, &payload)
 	}
 
 }
 
 func (j *JoinElection) ForwardElection(msg *MP.Message) {
 	// Deal with the received messages
+	fmt.Println(j.getPrevElectionMessage(msg))
+}
 
+// de-capsulate and get ElectionBroadcastMessage back
+func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) *ElectionBroadcastMessage {
+	var payloadMsg MP.Message
+	var eBMsg ElectionBroadcastMessage
+	MP.DecodeData(&payloadMsg, j.dht.GetPayload(msg))
+	MP.DecodeData(&eBMsg, payloadMsg.Data)
+
+	return &eBMsg
 }
 
 func (j *JoinElection) CompleteElection(msg *MP.Message) {
