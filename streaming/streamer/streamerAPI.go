@@ -54,14 +54,14 @@ func (streamer *Streamer) Stop(){
 	// Notify the parent
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_stop", MP.EncodeData(data)))
 
-	// Notify Stream Children
-	streamer.HandleStop(nil)
-
 	// Notify Stream Parent
 	if streamer.StreamingParent != ""{
 		streamer.mp.Send(MP.NewMessage("", streamer.StreamingParent, "streaming_quit", MP.EncodeData(data)))
 	}
 
+	// Notify Stream Children
+	streamer.HandleStop(nil)
+	
 	streamer.STATE = IDEAL
 }
 
