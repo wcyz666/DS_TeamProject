@@ -122,7 +122,7 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 	}
 
 	// Clear
-	streamer.StreamingParent = nil
+	streamer.StreamingParent = ""
 	streamer.Streamingchildren = []string{}
 	streamer.STATE = IDEAL
 
@@ -161,12 +161,11 @@ func (streamer *Streamer) HandleChildQuit(msg *MP.Message) {
 			// Delete this node in the children array
 			length := len(streamer.Streamingchildren)
 			streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
-			streamer.Streamingchildren[length-1] = nil
+			streamer.Streamingchildren[length-1] = ""
 			streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
 			break
 		}
 	}
-
 }
 
 
@@ -207,7 +206,7 @@ func (streamer *Streamer) HandleErrorMsg(msg *MP.Message) {
 				// Delete this node in the children array
 				length := len(streamer.Streamingchildren)
 				streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
-				streamer.Streamingchildren[length-1] = nil
+				streamer.Streamingchildren[length-1] = ""
 				streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
 				break
 			}
