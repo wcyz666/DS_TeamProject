@@ -130,8 +130,9 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	}
 }
 
-func errorHandler(*MP.Message)  {
-
+func errorHandler(msg *MP.Message)  {
+	// Route the error information to streaming handler running on supernode
+	streamHandler.HandleErrorMsg(msg)
 }
 
 func heartBeatHandler(msg *MP.Message)  {

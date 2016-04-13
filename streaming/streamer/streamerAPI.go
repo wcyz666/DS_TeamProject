@@ -61,7 +61,7 @@ func (streamer *Streamer) Stop(){
 
 	// Notify Stream Children
 	streamer.HandleStop(nil)
-	
+
 	streamer.STATE = IDEAL
 }
 
