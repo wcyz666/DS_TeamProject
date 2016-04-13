@@ -6,7 +6,7 @@
 #	./run supernode clear
 #	./run supernode
 git pull
-go build main.go
+go build main.go || exit;
 
 if [ "$2" != "" ]; then
 	./main -clearDNS

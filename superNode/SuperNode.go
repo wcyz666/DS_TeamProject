@@ -140,7 +140,7 @@ func heartBeatHandler(msg *MP.Message)  {
 
 func nodeStateWatcher() {
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 		hasDead, deadNodes := superNodeContext.CheckDead()
 		if hasDead {
 			for _, nodeName := range deadNodes {

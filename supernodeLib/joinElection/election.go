@@ -1,8 +1,6 @@
 package joinElection
 
 import (
-	//"fmt"
-
 	MP "../../messagePasser"
 	DNS "../../dnsService"
 	LNS "../../localNameService"
@@ -30,7 +28,7 @@ func NewJoinElection(mp *MP.MessagePasser, dht *DHT.DHTNode, snContext *SC.Super
 
 func (j *JoinElection) StartElection(msg *MP.Message) {
 	// Start the election process below
-	fmt.Println("Supernode: election start for node [%s]\n", msg.SrcName)
+	fmt.Printf("Supernode: election start for node [%s]\n", msg.SrcName)
 	// TODO: Actually implement the election algorithm
 
 	//Generate payload. This will be transmitted over the DHT ring
@@ -63,6 +61,6 @@ func (j *JoinElection) CompleteElection(msg *MP.Message) {
 // Transform an ElectionBroadcastingMessage to ElectionResult
 func transferEbmToResult(msg *MP.Message) *ElectionResult {
 	var eBMsg ElectionBroadcastMessage
-	MP.DecodeData(eBMsg, msg.Data)
+	MP.DecodeData(&eBMsg, msg.Data)
 	return &ElectionResult{ParentName: eBMsg.Name, ParentIP: eBMsg.IP}
 }
