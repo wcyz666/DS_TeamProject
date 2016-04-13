@@ -55,6 +55,14 @@ func (j *JoinElection) ForwardElection(msg *MP.Message) {
 
 func (j *JoinElection) CompleteElection(msg *MP.Message) {
 	// Deal with the received messages
-	//result := ElectionResult{ParentIP: myIP, ParentName: LNS.GetLocalName()}
+	result := transferEbmToResult(msg)
+	msg.Data = MP.EncodeData(result)
 	j.mp.Send(*msg)
+}
+
+// Transform an ElectionBroadcastingMessage to ElectionResult
+func transferEbmToResult(msg *MP.Message) *ElectionResult {
+	var eBMsg ElectionBroadcastMessage
+	MP.DecodeData(eBMsg, msg.Data)
+	return &ElectionResult{ParentName: eBMsg.Name, ParentIP: eBMsg.IP}
 }
