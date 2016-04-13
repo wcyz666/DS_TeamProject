@@ -7,6 +7,7 @@ import (
 	"fmt"
 	DHT "../../dht"
 	SC "../../superNode/superNodeContext"
+	"strings"
 )
 
 /**
@@ -44,24 +45,52 @@ func (j *JoinElection) StartElection(msg *MP.Message) {
 		j.mp.Messages["election_complete"] <- &payload
 	} else {
 		eBMsg := j.dht.NewBroadcastMessage()
-		j.dht.PassBroadcastMessage(eBMsg, &payload)
+		j.dht.PassBroadcastMessage(&eBMsg, &payload)
 	}
 
 }
 
 func (j *JoinElection) ForwardElection(msg *MP.Message) {
 	// Deal with the received messages
-	fmt.Println(j.getPrevElectionMessage(msg))
+	bMsg, payloadMsg, eBMsg := j.getPrevElectionMessage(msg)
+
+	if (j.dht.IsBroadcastOver(bMsg)) {
+		fmt.Print("Election: election over, result: ")
+		fmt.Println(eBMsg)
+		j.mp.Messages["election_complete"] <- payloadMsg
+	} else {
+		payloadMsg.Data = MP.EncodeData(j.compareAndUpdatePayload(eBMsg))
+		j.dht.AppendSelfToBroadcastTrack(bMsg)
+		j.dht.PassBroadcastMessage(bMsg, payloadMsg)
+		fmt.Println("Election: forward election message to the next supernode")
+	}
+}
+
+
+// The node who owns less child win.
+// nodeName is used to break the tie
+func (j *JoinElection) compareAndUpdatePayload(eBMsg *ElectionBroadcastMessage) *ElectionBroadcastMessage {
+	if (eBMsg.ChildCount > j.superNodeContext.GetNodeCount() ||
+		(eBMsg.ChildCount == j.superNodeContext.GetNodeCount() &&
+		 strings.Compare(eBMsg.Name, j.superNodeContext.LocalName) > 0)) {
+		eBMsg.Name = j.superNodeContext.LocalName
+		eBMsg.IP = j.superNodeContext.IP
+		eBMsg.ChildCount = j.superNodeContext.GetNodeCount()
+		fmt.Print("Election: Better option for a parent, new parent")
+		fmt.Println(eBMsg)
+	}
+	return eBMsg
 }
 
 // de-capsulate and get ElectionBroadcastMessage back
-func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) *ElectionBroadcastMessage {
+func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) (*DHT.BroadcastMessage, *MP.Message, *ElectionBroadcastMessage) {
 	var payloadMsg MP.Message
 	var eBMsg ElectionBroadcastMessage
-	MP.DecodeData(&payloadMsg, j.dht.GetPayload(msg))
+	bMsg := j.dht.GetBroadcastMessage(msg)
+	MP.DecodeData(&payloadMsg, bMsg.Payload)
 	MP.DecodeData(&eBMsg, payloadMsg.Data)
 
-	return &eBMsg
+	return bMsg, &payloadMsg, &eBMsg
 }
 
 func (j *JoinElection) CompleteElection(msg *MP.Message) {

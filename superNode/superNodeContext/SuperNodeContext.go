@@ -3,11 +3,13 @@ package superNodeContext
 import (
     "fmt"
     LNS "../../localNameService"
+    DNS "../../dnsService"
 )
 
 type SuperNodeContext struct {
     LocalName string
-    nodes map[string]*nodeInfo
+    IP        string
+    nodes     map[string]*nodeInfo
 }
 
 func (sc *SuperNodeContext) GetAllChildrenName() []string {
@@ -29,7 +31,8 @@ func (sc *SuperNodeContext) GetIPByName(nodeName string) string {
 
 func NewSuperNodeContext() (* SuperNodeContext) {
     nodes := make(map[string]*nodeInfo)
-    return &SuperNodeContext{nodes : nodes, LocalName: LNS.GetLocalName()}
+    IP, _ := DNS.ExternalIP()
+    return &SuperNodeContext{nodes : nodes, IP: IP, LocalName: LNS.GetLocalName()}
 }
 
 func (sc *SuperNodeContext) AddNode(nodeName string, msgIP string)  {
