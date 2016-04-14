@@ -155,11 +155,11 @@ func nodeJoin(IPs []string) {
 	fmt.Printf("Node: send hello message to SuperNode [%s]\n", IPs[i])
 	for {
 		select {
-		case err := <-mp.Messages["init_fail"]:
+		case msg := <-mp.Messages["init_fail"]:
 			// wait and retry the next
-			var errStr string;
-			MP.DecodeData(&errStr,err.Data)
-			fmt.Printf("Connetion to spernode failed: %s\n", errStr)
+			errInfo := MP.FailClientInfo{}
+			MP.DecodeData(&errInfo, msg.Data)
+			fmt.Printf("Connetion to spernode failed: %s\n", errInfo.ErrMsg)
 			i += 1
 			if (i == len(IPs)) {
 				exitMsg := MP.NewMessage("self", nodeContext.LocalName, "exit", MP.EncodeData("All supernodes are down, exit"))

@@ -31,7 +31,7 @@ const (
 func NewDHTService(mp *MP.MessagePasser) *DHTService {
 	dhtNode := NewDHTNode(mp)
 	var dhtService = DHTService{DhtNode: dhtNode}
-	mp.AddMappings([]string{"join_dht_res"})
+	mp.AddMappings([]string{"join_dht_res", "join_dht_conn_failed"})
 	/*TODO check if adding a global handler for receving data operation response is fine */
 	mp.AddMappings([]string{"dht_data_operation_res", "get_data_res", "delete_entry_res", "create_new_entry_res",
 							"update_entry_res"})
@@ -72,6 +72,16 @@ func (dhtService *DHTService)Start() int{
 					return  DHT_API_FAILURE
 				}
 				return DHT_API_SUCCESS;
+			}
+		case msg := <-dhtService.DhtNode.mp.Messages["join_dht_conn_failed"]:
+			var failClientInfo MP.FailClientInfo
+			MP.DecodeData(&failClientInfo,msg.Data)
+			fmt.Println("Join Attempt with " + failClientInfo.IP + " failed. Removing the entry and moving to next IP")
+			/* Remove failed node from DNS */
+			dhtService.DhtNode.RemoveFailedSuperNode(failClientInfo.IP)
+			status := dhtService.DhtNode.CreateOrJoinRing()
+			if (status == NEW_DHT_CREATED){
+				return DHT_API_SUCCESS
 			}
 		}
 	}

@@ -44,6 +44,7 @@ func getFirstNonSelfIpAddr() (string){
 		if ipAddr == extIP {
 			continue
 		} else{
+
 			return ipAddr
 		}
 	}
@@ -197,7 +198,7 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		fmt.Println("[DHT]	Joining Existing DHT. Sending Request to " + ipAddr)
+		fmt.Println("[DHT]	Attempting to Join Existing DHT. Sending Request to " + ipAddr)
 		ip,name := dhtNode.mp.GetNodeIpAndName()
 		dhtNode.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.NodeKey,ip,name})))
 		return JOINING_EXISTING_DHT
@@ -466,6 +467,11 @@ func (dhtNode *DHTNode) PerformPeriodicBroadcast(){
 	}()
 }
 
+func (dhtNode *DHTNode) RemoveFailedSuperNode(IpAddress string){
+	/* Remove failed node from DNS */
+	dns.ClearAddrRecords(config.BootstrapDomainName, IpAddress)
+}
+
 func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 	/* Previous Node failure detected. Ip Address parameter is the
 	 * Ip Address of the node that failed */
@@ -489,8 +495,8 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 				fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
 				dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
 			}()
-
-
+			/* Remove failed node from DNS */
+			dns.ClearAddrRecords(config.BootstrapDomainName, IpAddress)
 		} else {
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
 				dhtNode.leafTable.nextNode = nil

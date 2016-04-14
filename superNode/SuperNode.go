@@ -35,9 +35,7 @@ func Start() {
 	// Initialize SuperNodeContext
 	// Currently SuperNodeContext contains all info of the assigned child nodes
 	superNodeContext = SNC.NewSuperNodeContext()
-	// First register on the dnsService
-	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
-	dns.RegisterSuperNode(Config.BootstrapDomainName)
+
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
@@ -116,6 +114,9 @@ func Start() {
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
 
+	// Register as a super node in the dnsService
+	dns.RegisterSuperNode(Config.BootstrapDomainName)
+
 	/* Start a CLI to handle user interaction */
 	go DhtCLIInterface(dhtService)
 	exitMsg := <- mp.Messages["exit"]
@@ -130,8 +131,15 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	}
 }
 
-func errorHandler(*MP.Message)  {
-
+func errorHandler(msg *MP.Message)  {
+	var failClientInfo MP.FailClientInfo
+	MP.DecodeData(&failClientInfo,msg.Data)
+	switch superNodeContext.State  {
+		case SNC.DHT_JOIN_IN_PROGRESS:
+			mp.Messages["join_dht_conn_failed"] <- msg
+		case SNC.DHT_JOINED:
+			dhtService.DhtNode.NodeFailureDetected(failClientInfo.IP)
+	}
 }
 
 func heartBeatHandler(msg *MP.Message)  {
@@ -161,10 +169,10 @@ func newChild(msg *MP.Message)  {
 }
 
 func printHelp(){
-	fmt.Println("Enter C Key MemberShipInfo to create an Streaming Group")
+	fmt.Println("Enter C Key StreamerIp StreamerName to create an Streaming Group")
 	fmt.Println("      D Key to delete a Streaming Group")
-	fmt.Println("      A Key MemberShipInfo to add a member")
-	fmt.Println("      R Key MemberShipInfo to delete a member")
+	fmt.Println("      A Key StreamerIp StreamerName to add a member")
+	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
@@ -204,7 +212,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 			inputList := strings.Split(line," ")
 			switch inputList[0] {
 			case "C", "c":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
@@ -220,7 +228,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Delete API called and return status is "+ logStatus(status))
 				}
 			case "A","a":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
@@ -228,7 +236,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Append API called and return status is "+ logStatus(status))
 				}
 			case "R","r":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
