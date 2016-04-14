@@ -209,7 +209,7 @@ func (streamer *Streamer) deleteStreamingChild(childIP string, childName string)
 				FailNodeName: childName,
 			}
 			removeMsg := MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName,
-				"stream_delete_from_dht", removeData)
+				"stream_delete_from_dht", MP.EncodeData(removeData))
 			streamer.mp.Send(removeMsg)
 			break
 		}

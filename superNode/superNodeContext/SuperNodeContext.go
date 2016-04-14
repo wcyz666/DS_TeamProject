@@ -6,10 +6,16 @@ import (
     DNS "../../dnsService"
 )
 
+const (
+    DHT_JOIN_IN_PROGRESS = iota
+	DHT_JOINED
+)
+
 type SuperNodeContext struct {
     LocalName string
     IP        string
     Nodes     map[string]*nodeInfo
+    State     int
 }
 
 func (sc *SuperNodeContext) GetAllChildrenName() []string {

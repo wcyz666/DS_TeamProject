@@ -34,8 +34,9 @@ type Client struct {
 }
 
 type FailClientInfo struct {
-	Name string
-	IP   string
+	Name   string
+	IP     string
+	ErrMsg string
 }
 
 /**
@@ -98,7 +99,7 @@ func (client *Client) rethrowError(mp *MessagePasser)  {
 	fmt.Println("Error in reading messages out in Client[" + client.name + "]")
 
 	errorMsg := NewMessage("self", mp.connections.localname, "conn_error",
-		EncodeData(FailClientInfo{IP: client.IP, Name: client.name}))
+	EncodeData(FailClientInfo{IP: client.IP, Name: client.name, ErrMsg: "connection error"}))
 	mp.Messages["error"] <- &errorMsg
 }
 
@@ -255,10 +256,12 @@ func (mp *MessagePasser) Send(msg Message)  {
 
 		conn, err := net.Dial("tcp", msg.Dest + ":" + localPort)
 		if (err != nil) {
-			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
+			errMsg := NewMessage("self", mp.connections.localname, "error",
+				EncodeData(FailClientInfo{IP: msg.Dest, Name: msg.DestName, ErrMsg: err.Error()}))
 			mp.Messages["error"] <- &errMsg
 			return
 		}
+
 		client := NewClient(conn, mp)
 		client.name = msg.DestName
 		client.IP = msg.Dest
