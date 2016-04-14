@@ -194,8 +194,8 @@ func (mp *MessagePasser) listen() {
    Create new mapping & channel to the messagePasser
  */
 func (mp *MessagePasser) AddMapping(kind string) {
-	fmt.Print("Initialized the channel: ")
-	fmt.Println(kind)
+	//fmt.Print("Initialized the channel: ")
+	//fmt.Println(kind)
 	mp.Messages[kind] = make(chan *Message, 100)
 }
 

@@ -473,6 +473,8 @@ func (dhtNode *DHTNode) RemoveFailedSuperNode(IpAddress string){
 }
 
 func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
+	fmt.Println("Node failure detected for node " + IpAddress)
+	fmt.Println("Prev Node is "+ dhtNode.leafTable.prevNode.IpAddress)
 	/* Previous Node failure detected. Ip Address parameter is the
 	 * Ip Address of the node that failed */
 
@@ -482,6 +484,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 		/*Now previous node's key space becomes mine.*/
 		prevNodeList := dhtNode.leafTable.PrevNodeList
 		if (len(prevNodeList) > 1){
+			fmt.Println("prev Node list length > 1")
 			newPrevNode := dhtNode.leafTable.PrevNodeList[1]
 			dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
 			/* Send a ring repair request along with my node information */
@@ -498,12 +501,17 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 		} else {
+			fmt.Println("prev Node list length == 1")
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
 				dhtNode.leafTable.nextNode = nil
 				dhtNode.leafTable.NextNodeList = nil
 			}
 			dhtNode.leafTable.prevNode = nil
 			dhtNode.leafTable.PrevNodeList = nil
+
+			fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
+			/* Remove failed node from DNS */
+			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 		}
 	}
 }
