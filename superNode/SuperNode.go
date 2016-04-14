@@ -169,10 +169,10 @@ func newChild(msg *MP.Message)  {
 }
 
 func printHelp(){
-	fmt.Println("Enter C Key MemberShipInfo to create an Streaming Group")
+	fmt.Println("Enter C Key StreamerIp StreamerName to create an Streaming Group")
 	fmt.Println("      D Key to delete a Streaming Group")
-	fmt.Println("      A Key MemberShipInfo to add a member")
-	fmt.Println("      R Key MemberShipInfo to delete a member")
+	fmt.Println("      A Key StreamerIp StreamerName to add a member")
+	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
@@ -212,7 +212,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 			inputList := strings.Split(line," ")
 			switch inputList[0] {
 			case "C", "c":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
@@ -228,7 +228,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Delete API called and return status is "+ logStatus(status))
 				}
 			case "A","a":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
@@ -236,7 +236,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Append API called and return status is "+ logStatus(status))
 				}
 			case "R","r":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
