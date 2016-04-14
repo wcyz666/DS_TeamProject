@@ -153,19 +153,7 @@ func (streamer *Streamer) HandleStopProgram(msg *MP.Message) {
 func (streamer *Streamer) HandleChildQuit(msg *MP.Message) {
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-
-	for index, child := range(streamer.Streamingchildren){
-		// If is a children in the streaming group
-		if child == controlData.SrcName{
-			fmt.Println("[streaming] Children node " + controlData.SrcName + " quit!")
-			// Delete this node in the children array
-			length := len(streamer.Streamingchildren)
-			streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
-			streamer.Streamingchildren[length-1] = ""
-			streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
-			break
-		}
-	}
+	streamer.deleteStreamingChild(controlData.SrcIp, controlData.SrcName)
 }
 
 
@@ -199,17 +187,31 @@ func (streamer *Streamer) HandleErrorMsg(msg *MP.Message) {
 		streamer.STATE = IDEAL
 		streamer.Join(streamer.CurrentProgram)
 	}else{
-		for index, child := range(streamer.Streamingchildren){
-			// If is a children in the streaming group
-			if child == failNode.Name{
-				fmt.Println("[streaming] Children node " + failNode.Name + " failed!")
-				// Delete this node in the children array
-				length := len(streamer.Streamingchildren)
-				streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
-				streamer.Streamingchildren[length-1] = ""
-				streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
-				break
+		streamer.deleteStreamingChild(failNode.IP, failNode.Name)
+	}
+}
+
+func (streamer *Streamer) deleteStreamingChild(childIP string, childName string){
+	for index, child := range(streamer.Streamingchildren){
+		// If is a children in the streaming group
+		if child == childName{
+			fmt.Println("[streaming] Children node " + childName + " quit!")
+			// Delete this node in the children array
+			length := len(streamer.Streamingchildren)
+			streamer.Streamingchildren[index] = streamer.Streamingchildren[length-1]
+			streamer.Streamingchildren[length-1] = ""
+			streamer.Streamingchildren = streamer.Streamingchildren[:length-1]
+
+			// Notify supernode to delete this child in DHT
+			removeData := SDataType.RemoveFromDht{
+				RootStreamer:streamer.CurrentProgram,
+				FailNodeIp: childIP,
+				FailNodeName: childName,
 			}
+			removeMsg := MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName,
+				"stream_delete_from_dht", removeData)
+			streamer.mp.Send(removeMsg)
+			break
 		}
 	}
 }

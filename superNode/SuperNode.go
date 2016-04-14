@@ -91,6 +91,7 @@ func Start() {
 		"stream_join":     streamHandler.StreamJoin,
 		"stream_program_start": streamHandler.StreamProgramStart,  // This is sent from other supernodes
 		"stream_program_stop": streamHandler.StreamProgramStop,  // This is sent from other supernodes
+		"stream_delete_from_dht": streamHandler.RemoveFromDht,
 
 		"election_hello":          jElection.StartElection,
 		"dht_broadcast_msg_election": jElection.ForwardElection,

@@ -103,6 +103,7 @@ func (streamer *Streamer) Log(){
 	fmt.Println("#################################")
 	fmt.Println("Local name: " + streamer.nodeContext.LocalName)
 	fmt.Println("Parent supernode: " + streamer.nodeContext.ParentName + " IP: " + streamer.nodeContext.ParentIP)
+	fmt.Println("Streaming State: " + streamer.STATE)
 	fmt.Println("Streaming parent: " + streamer.StreamingParent)
 	fmt.Print("Streaming children: ")
 	fmt.Println(streamer.Streamingchildren)
