@@ -35,9 +35,7 @@ func Start() {
 	// Initialize SuperNodeContext
 	// Currently SuperNodeContext contains all info of the assigned child nodes
 	superNodeContext = SNC.NewSuperNodeContext()
-	// First register on the dnsService
-	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
-	dns.RegisterSuperNode(Config.BootstrapDomainName)
+
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
@@ -116,6 +114,9 @@ func Start() {
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
 
+	// Register as a super node in the dnsService
+	dns.RegisterSuperNode(Config.BootstrapDomainName)
+
 	/* Start a CLI to handle user interaction */
 	go DhtCLIInterface(dhtService)
 	exitMsg := <- mp.Messages["exit"]
@@ -130,8 +131,15 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	}
 }
 
-func errorHandler(*MP.Message)  {
-
+func errorHandler(msg *MP.Message)  {
+	var failClientInfo MP.FailClientInfo
+	MP.DecodeData(&failClientInfo,msg.Data)
+	switch superNodeContext.State  {
+		case SNC.DHT_JOIN_IN_PROGRESS:
+			mp.Messages["join_dht_conn_failed"] <- msg
+		case SNC.DHT_JOINED:
+			dhtService.DhtNode.NodeFailureDetected(failClientInfo.IP)
+	}
 }
 
 func heartBeatHandler(msg *MP.Message)  {

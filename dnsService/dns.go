@@ -185,7 +185,7 @@ func deleteAddrRecord(id float64) {
 	}
 }
 
-func ClearAddrRecords(name string) {
+func ClearAddrRecords(name string, ipAddress string) {
 
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
 
@@ -216,8 +216,10 @@ func ClearAddrRecords(name string) {
 	for i := 0; i < len(decData.records); i++ {
 		entry = decData.records[i]["record"]
 		if (entry.record_type == "A") && (entry.name == name) {
-			fmt.Println( "name is " + entry.name + " id is " + strconv.FormatFloat(entry.id, 'f', -1, 64))
-			deleteAddrRecord(entry.id)
+			if (ipAddress == "" || ipAddress == entry.content){
+				fmt.Println( "name is " + entry.name + " id is " + strconv.FormatFloat(entry.id, 'f', -1, 64))
+				deleteAddrRecord(entry.id)
+			}
 		}
 	}
 }

@@ -5,9 +5,15 @@ import (
     LNS "../../localNameService"
 )
 
+const (
+    DHT_JOIN_IN_PROGRESS = iota
+	DHT_JOINED
+)
+
 type SuperNodeContext struct {
     LocalName string
     nodes map[string]*nodeInfo
+	State int
 }
 
 func (sc *SuperNodeContext) GetAllChildrenName() []string {

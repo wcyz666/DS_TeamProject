@@ -48,7 +48,7 @@ func main() {
 	 me := flag.String("class", "node", "the identity of the current node")
 	 flag.Parse()
 	 if (*clearDNS){
-	     dns.ClearAddrRecords(config.BootstrapDomainName)
+	     dns.ClearAddrRecords(config.BootstrapDomainName, "")
 	 } else {
 	     start(me)
 	 }
