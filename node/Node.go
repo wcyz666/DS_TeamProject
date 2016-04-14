@@ -148,6 +148,13 @@ func Start() {
 
 /* Join the network */
 func nodeJoin(IPs []string) {
+	/* If there are no running super nodes, exit program */
+	if (len(IPs) == 0){
+		exitMsg := MP.NewMessage("self", nodeContext.LocalName, "exit", MP.EncodeData("All supernodes are down, exit"))
+		mp.Messages["exit"] <- &exitMsg
+		return
+	}
+
 	//Send hello messages until find out a working supernode
 	i := 0
 	helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))

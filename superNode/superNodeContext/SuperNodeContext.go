@@ -6,16 +6,10 @@ import (
     DNS "../../dnsService"
 )
 
-const (
-    DHT_JOIN_IN_PROGRESS = iota
-	DHT_JOINED
-)
-
 type SuperNodeContext struct {
     LocalName string
     IP        string
     nodes     map[string]*nodeInfo
-    State     int
 }
 
 func (sc *SuperNodeContext) GetAllChildrenName() []string {
@@ -78,6 +72,16 @@ func (sc *SuperNodeContext) CheckDead() (hasDead bool, deadNodes []string) {
     }
 
     return hasDead, deadNodes
+}
+
+func (sc *SuperNodeContext) IsFailedNodeMyChildNode(IpAddress string) (bool){
+	names := sc.GetAllChildrenName()
+	for _,name := range names {
+		if (sc.GetIPByName(name) == IpAddress){
+			return  true
+		}
+	}
+	return false
 }
 
 type nodeInfo struct {

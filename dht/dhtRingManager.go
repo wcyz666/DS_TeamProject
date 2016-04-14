@@ -250,7 +250,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 	}
 
 
-	if (true == dhtNode.isRingUpdateInProgress){
+	if (true == dhtNode.IsRingUpdateInProgress){
 		fmt.Println("[DHT] Join In Progress. Retry later")
 		joinRes.Status = JOIN_IN_PROGRESS_RETRY_LATER
 		dhtNode.mp.Send(MP.NewMessage(joinReq.OriginIpAddress,
@@ -260,7 +260,7 @@ func (dhtNode *DHTNode) HandleJoinReq(msg *MP.Message) {
 
 	/* Since we are transferring a portion of our hashtable to new node and the process is still in progress
 	 * set this flag */
-	dhtNode.isRingUpdateInProgress = true
+	dhtNode.IsRingUpdateInProgress = true
 	/* Retrieve entries which are less than new node's key and create a map out of it.*/
 	nodeKey := getBigIntFromString(joinReq.Key)
 	var entryKey *big.Int
@@ -367,7 +367,7 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 		}
 	}
 
-	dhtNode.isRingUpdateInProgress = false
+	dhtNode.IsRingUpdateInProgress = false
 }
 
 func (dhtNode *DHTNode) HandleJoinNotify(msg *MP.Message) {
@@ -467,6 +467,24 @@ func (dhtNode *DHTNode) PerformPeriodicBroadcast(){
 	}()
 }
 
+func (dhtNode *DHTNode)CommunicationFailureHandler(msg *MP.Message){
+	var failClientInfo MP.FailClientInfo
+	MP.DecodeData(&failClientInfo,msg.Data)
+
+	switch dhtNode.State  {
+	case DHT_JOIN_IN_PROGRESS:
+		dhtNode.mp.Messages["join_dht_conn_failed"] <- msg
+	case DHT_JOINED:
+		dhtNode.NodeFailureDetected(failClientInfo.IP)
+	case DHT_RING_REPAIR_IN_PROGRESS:
+		if (len(dhtNode.leafTable.PrevNodeList)>1){
+			if ((dhtNode.leafTable.PrevNodeList[1].IpAddress) == failClientInfo.IP){
+				dhtNode.mp.Messages["dht_ring_repair_req_conn_failed"]	<- msg
+			}
+		}
+	}
+}
+
 func (dhtNode *DHTNode) RemoveFailedSuperNode(IpAddress string){
 	/* Remove failed node from DNS */
 	dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
@@ -491,18 +509,24 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 		if (len(prevNodeList) > 1){
 			fmt.Println("prev Node list length > 1")
 			newPrevNode := dhtNode.leafTable.PrevNodeList[1]
-			dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
+
 			/* Send a ring repair request along with my node information */
 			dhtNode.mp.Send(MP.NewMessage(newPrevNode.IpAddress, newPrevNode.Name, "dht_ring_repair_req",
 								MP.EncodeData(RingRepairRequest{dhtNode.NodeKey})))
-			dhtNode.isRingUpdateInProgress = true
-			/* Start a timer to detect ring repair failure and move to next node */
-			timer1 := time.NewTimer(time.Second * RING_REPAIR_REQUEST_FAILURE_TIMER)
-			go func(){
-				<-timer1.C
-				fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
-				dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
-			}()
+			dhtNode.IsRingUpdateInProgress = true
+			for {
+				select {
+				case ring_repair_res := <- dhtNode.mp.Messages["dht_ring_repair_res"]:
+					dhtNode.HandleRingRepairResponse(ring_repair_res)
+					dhtNode.State = DHT_JOINED
+					break;
+				case  _ = <- dhtNode.mp.Messages["dht_ring_repair_req_conn_failed"]:
+					fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
+					dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
+					dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
+					break;
+				}
+			}
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 		} else {
@@ -517,6 +541,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
+			dhtNode.State = DHT_JOINED
 		}
 	}
 }
@@ -538,7 +563,7 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairRes.Key,true)
-	dhtNode.isRingUpdateInProgress = false
+	dhtNode.IsRingUpdateInProgress = false
 }
 
 func logNodeList(nodeList []Node){

@@ -7,6 +7,14 @@ import (
 	"math/big"
 )
 
+const (
+	DHT_JOIN_IN_PROGRESS = iota
+	DHT_JOINED
+	DHT_JOIN_FAILED_MAX_ATTEMPTS
+	DHT_JOIN_FAILED
+	DHT_RING_REPAIR_IN_PROGRESS
+)
+
 /* Planning to use MD5 to generate the Hash. Hence 128 bit */
 const HASH_KEY_SIZE = 128
 const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
@@ -46,7 +54,8 @@ type DHTNode struct {
 	 * of its hash table as part of new node joining, flag is set. This is to avoid
 	 * multiple join operations happening at same super node at the same time which
 	 * may result in incorrect splitting of hash table among the super nodes in the ring */
-	isRingUpdateInProgress bool
+	IsRingUpdateInProgress bool
+	State                  int
 }
 
 type DHTService struct {

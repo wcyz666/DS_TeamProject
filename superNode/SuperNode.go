@@ -96,7 +96,6 @@ func Start() {
 		"election_join": 			newChild,
 	}
 
-	superNodeContext.State = SNC.DHT_JOIN_IN_PROGRESS
 	// Init and listen
 	for channelName, _ := range channelNames {
 		// Init all the channels listening on
@@ -114,8 +113,6 @@ func Start() {
 	if (Dht.DHT_API_SUCCESS != status){
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
-
-	superNodeContext.State = SNC.DHT_JOINED
 
 	// Register as a super node in the dnsService
 	dns.RegisterSuperNode(Config.BootstrapDomainName)
@@ -136,13 +133,14 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 
 func errorHandler(msg *MP.Message)  {
 	fmt.Println("Error handler Invoked ")
+
 	var failClientInfo MP.FailClientInfo
 	MP.DecodeData(&failClientInfo,msg.Data)
-	switch superNodeContext.State  {
-		case SNC.DHT_JOIN_IN_PROGRESS:
-			mp.Messages["join_dht_conn_failed"] <- msg
-		case SNC.DHT_JOINED:
-			dhtService.DhtNode.NodeFailureDetected(failClientInfo.IP)
+
+	if (superNodeContext.IsFailedNodeMyChildNode(failClientInfo.IP)){
+
+	} else {
+		dhtService.DhtNode.CommunicationFailureHandler(msg)
 	}
 }
 
@@ -178,6 +176,7 @@ func printHelp(){
 	fmt.Println("      A Key StreamerIp StreamerName to add a member")
 	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
+	fmt.Println("      B Trigger a broadcast message")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
 	fmt.Println(" For membership info, please pass the IP address (of parent super node)")
