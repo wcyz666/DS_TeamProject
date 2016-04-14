@@ -92,11 +92,11 @@ if IP to be added is already present in one of the A records in the DNS system
 */
 func AddAddr(name string, ipAddr string) error {
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
-	fmt.Println("URL:>", url)
+	//fmt.Println("URL:>", url)
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 	var reqBody string = `{ "record": { "name": "` + name + `", "record_type": "A", "ttl": 3600, "prio": 10, "content": "` + ipAddr + `"}}`
-	fmt.Println("reqBody is " + reqBody)
+	//fmt.Println("reqBody is " + reqBody)
 	var jsonStr = []byte(reqBody)
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
@@ -111,8 +111,8 @@ func AddAddr(name string, ipAddr string) error {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
+	//fmt.Println("response Status:", resp.Status)
+	//fmt.Println("response Headers:", resp.Header)
 
 	if resp.StatusCode != 201 {
 		return fmt.Errorf("Request to add A record failed with code %d", resp.StatusCode)
@@ -152,8 +152,8 @@ func GetAddr(name string) []string {
 	for i := 0; i < len(decData.records); i++ {
 		entry = decData.records[i]["record"]
 		if (entry.record_type == "A") && (entry.name == name) {
-			fmt.Println("record type is " + entry.record_type + " name is " + entry.name + " content is " +
-				entry.content)
+			//fmt.Println("record type is " + entry.record_type + " name is " + entry.name + " content is " +
+			//	entry.content)
 			addrList = append(addrList, entry.content)
 		}
 
@@ -164,7 +164,7 @@ func GetAddr(name string) []string {
 func deleteAddrRecord(id float64) {
 	client := getHttpClient()
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records/" + strconv.FormatFloat(id, 'f', -1, 64)
-	fmt.Println("URL:>", url)
+	//fmt.Println("URL:>", url)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		panic(err)
@@ -217,7 +217,7 @@ func ClearAddrRecords(name string, ipAddress string) {
 		entry = decData.records[i]["record"]
 		if (entry.record_type == "A") && (entry.name == name) {
 			if (ipAddress == "" || ipAddress == entry.content){
-				fmt.Println( "name is " + entry.name + " id is " + strconv.FormatFloat(entry.id, 'f', -1, 64))
+				//fmt.Println( "name is " + entry.name + " id is " + strconv.FormatFloat(entry.id, 'f', -1, 64))
 				deleteAddrRecord(entry.id)
 			}
 		}

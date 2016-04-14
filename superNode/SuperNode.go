@@ -96,6 +96,7 @@ func Start() {
 		"election_join": 			newChild,
 	}
 
+	superNodeContext.State = SNC.DHT_JOIN_IN_PROGRESS
 	// Init and listen
 	for channelName, _ := range channelNames {
 		// Init all the channels listening on
@@ -113,6 +114,8 @@ func Start() {
 	if (Dht.DHT_API_SUCCESS != status){
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
+
+	superNodeContext.State = SNC.DHT_JOINED
 
 	// Register as a super node in the dnsService
 	dns.RegisterSuperNode(Config.BootstrapDomainName)
