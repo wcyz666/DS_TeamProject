@@ -76,6 +76,7 @@ func (dhtService *DHTService)Start() int{
 		case msg := <-dhtService.DhtNode.mp.Messages["join_dht_conn_failed"]:
 			var failClientInfo MP.FailClientInfo
 			MP.DecodeData(&failClientInfo,msg.Data)
+			fmt.Println("Join Attempt with " + failClientInfo.IP + "failed. Removing the entry and moving to next IP")
 			/* Remove failed node from DNS */
 			dhtService.DhtNode.RemoveFailedSuperNode(failClientInfo.IP)
 			status := dhtService.DhtNode.CreateOrJoinRing()

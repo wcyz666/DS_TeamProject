@@ -198,7 +198,7 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		/* Send a message to one of the super nodes requesting to provide successor node's information
 		 * based on key provided
 		 */
-		fmt.Println("[DHT]	Joining Existing DHT. Sending Request to " + ipAddr)
+		fmt.Println("[DHT]	Attempting to Join Existing DHT. Sending Request to " + ipAddr)
 		ip,name := dhtNode.mp.GetNodeIpAndName()
 		dhtNode.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.NodeKey,ip,name})))
 		return JOINING_EXISTING_DHT
