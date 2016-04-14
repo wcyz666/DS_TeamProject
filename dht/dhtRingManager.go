@@ -469,7 +469,7 @@ func (dhtNode *DHTNode) PerformPeriodicBroadcast(){
 
 func (dhtNode *DHTNode) RemoveFailedSuperNode(IpAddress string){
 	/* Remove failed node from DNS */
-	dns.ClearAddrRecords(config.BootstrapDomainName, IpAddress)
+	dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 }
 
 func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
@@ -496,7 +496,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 				dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
 			}()
 			/* Remove failed node from DNS */
-			dns.ClearAddrRecords(config.BootstrapDomainName, IpAddress)
+			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 		} else {
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
 				dhtNode.leafTable.nextNode = nil
