@@ -474,6 +474,11 @@ func (dhtNode *DHTNode) RemoveFailedSuperNode(IpAddress string){
 
 func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 	fmt.Println("Node failure detected for node " + IpAddress)
+
+	if (dhtNode.leafTable.prevNode == nil){
+		return
+	}
+
 	fmt.Println("Prev Node is "+ dhtNode.leafTable.prevNode.IpAddress)
 	/* Previous Node failure detected. Ip Address parameter is the
 	 * Ip Address of the node that failed */
