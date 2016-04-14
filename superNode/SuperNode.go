@@ -261,6 +261,8 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 						}
 					}
 				}
+			case "B","b":
+				dhtService.TriggerBroadcastMessage()
 			default:
 				fmt.Println("Unexpected option")
 				printHelp()

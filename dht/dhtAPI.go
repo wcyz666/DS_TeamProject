@@ -225,3 +225,6 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 	return status
 }
 
+func (dht *DHTService)  TriggerBroadcastMessage(){
+	dht.DhtNode.CreateBroadcastMessage()
+}
