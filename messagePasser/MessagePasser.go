@@ -216,7 +216,7 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 
-		if (msg.Kind != "dht_neighbourhood_discovery"){
+		if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat" && msg.Kind != "node_heartbeat"){
 			fmt.Println("Receiving data!")
 			fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 		}
@@ -239,7 +239,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 
-	if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat"){
+	if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat" && msg.Kind != "node_heartbeat"){
 		fmt.Println("Sending out data!")
 		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 	}
@@ -270,6 +270,8 @@ func (mp *MessagePasser) Send(msg Message)  {
 		client.IP = msg.Dest
 		mp.connections.clients[dest] = client
 		if msg.DestName != "" {
+			//fmt.Println("=======Find new clients!")
+			//fmt.Println(msg)
 			mp.connections.clients[msg.DestName] = client
 		}
 		client.outgoing <- &msg
