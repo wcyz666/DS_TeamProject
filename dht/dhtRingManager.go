@@ -428,6 +428,12 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 		dhtNode.AppendSelfToBroadcastTrack(&broadcastMsg)
 		dhtNode.PassBroadcastMessage(&broadcastMsg, nil)
 	}
+
+	fmt.Println("[DHT] Lead Table contents")
+	fmt.Println("[DHT]	Previous Node List")
+	logNodeList(dhtNode.leafTable.PrevNodeList)
+	fmt.Println("[DHT]	Next Node List")
+	logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
 func (dhtNode *DHTNode) GetBroadcastMessage(msg *MP.Message) *BroadcastMessage {
