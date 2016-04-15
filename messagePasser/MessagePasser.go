@@ -98,6 +98,10 @@ func (client *Client) rethrowError(mp *MessagePasser)  {
 	fmt.Println("Client " + client.name + " disconneted!")
 	fmt.Println("Error in reading messages out in Client[" + client.name + "]")
 
+	// Added: Remove this client from the message passer
+	delete(mp.connections.clients, client.IP)
+	delete(mp.connections.clients, client.name)
+
 	errorMsg := NewMessage("self", mp.connections.localname, "conn_error",
 	EncodeData(FailClientInfo{IP: client.IP, Name: client.name, ErrMsg: "connection error"}))
 	mp.Messages["error"] <- &errorMsg
