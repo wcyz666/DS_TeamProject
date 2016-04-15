@@ -598,7 +598,6 @@ func (dhtNode *DHTNode) HandleRingRepairRequest(msg *MP.Message){
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairReq.Key,false)
 	dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "dht_ring_repair_res",
 		MP.EncodeData(RingRepairResponse{SUCCESS, dhtNode.NodeKey})))
-	dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
 }
 
 func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
@@ -610,6 +609,8 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairRes.Key,true)
 	dhtNode.IsRingUpdateInProgress = false
 
+	dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
+	
 	fmt.Println("HandleRingRepairResponse: prev Node list is ")
 	logNodeList(dhtNode.leafTable.PrevNodeList)
 	fmt.Println("HandleRingRepairResponse: next Node list is ")
