@@ -610,7 +610,7 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 	dhtNode.IsRingUpdateInProgress = false
 
 	dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
-	
+
 	fmt.Println("HandleRingRepairResponse: prev Node list is ")
 	logNodeList(dhtNode.leafTable.PrevNodeList)
 	fmt.Println("HandleRingRepairResponse: next Node list is ")

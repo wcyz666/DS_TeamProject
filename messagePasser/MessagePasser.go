@@ -115,6 +115,7 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
+			fmt.Println("Error while sending message "+ msg.Kind)
 			return
 		}
 		client.writer.Flush()
