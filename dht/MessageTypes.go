@@ -43,6 +43,7 @@ type BroadcastMessage struct {
 	TraversedNodesList [] Node
 	OriginIpAddress string
 	OriginName      string
+	Payload			[] byte
 }
 
 type DataOperationResponse struct {
@@ -67,3 +68,4 @@ type RingRepairResponse struct {
 	Status int
 	Key    string
 }
+

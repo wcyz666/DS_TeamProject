@@ -34,6 +34,7 @@ func (streamer *Streamer) Start(title string){
 	fmt.Println(" to the supernode " + streamer.nodeContext.ParentName)
 	// Notify the parent
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_start", MP.EncodeData(data)))
+	streamer.CurrentProgram = streamer.nodeContext.LocalName
 	streamer.STATE = STREAMING
 }
 
@@ -54,9 +55,13 @@ func (streamer *Streamer) Stop(){
 	// Notify the parent
 	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_stop", MP.EncodeData(data)))
 
+	// Notify Stream Parent
+	if streamer.StreamingParent != ""{
+		streamer.mp.Send(MP.NewMessage("", streamer.StreamingParent, "streaming_quit", MP.EncodeData(data)))
+	}
+
 	// Notify Stream Children
 	streamer.HandleStop(nil)
-
 
 	streamer.STATE = IDEAL
 }
@@ -99,6 +104,8 @@ func (streamer *Streamer) Log(){
 	fmt.Println("#################################")
 	fmt.Println("Local name: " + streamer.nodeContext.LocalName)
 	fmt.Println("Parent supernode: " + streamer.nodeContext.ParentName + " IP: " + streamer.nodeContext.ParentIP)
+	fmt.Print("Streaming State: ")
+	fmt.Println(streamer.STATE)
 	fmt.Println("Streaming parent: " + streamer.StreamingParent)
 	fmt.Print("Streaming children: ")
 	fmt.Println(streamer.Streamingchildren)

@@ -31,7 +31,7 @@ func heartBeat() {
 	for {
 		time.Sleep(time.Second * 5)
 		if isSendHeartBeat {
-			mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
+			mp.Send(MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "node_heartbeat", MP.EncodeData("Hello, this is a heartbeat message.")))
 		}
 		//fmt.Println("Node: send out heart beat message")
 	}
@@ -64,7 +64,7 @@ func joinAssign(msg *MP.Message) {
 	go heartBeat()
 	nodeContext.State = NC.Joined
 	fmt.Printf("Be assigned to parent! IP [%s], Name [%s]\n", result.ParentIP, result.ParentName)
-	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+	joinMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "election_join", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(joinMsg)
 }
 
@@ -82,10 +82,16 @@ func errorHandler(msg *MP.Message) {
 			fmt.Println("Node: detect Supernode failure, try another supernode...")
 			msg.Kind = "super_fail"
 			mp.Messages[msg.Kind] <- msg
+		}else{
+			streamer.HandleErrorMsg(msg)
 		}
+
 	}
 
 }
+
+
+
 
 
 /**
@@ -118,7 +124,7 @@ func Start() {
 	// Then the binded handler of this channel will be called with the argument (*Message)
 
 	channelNames := map[string]func(*MP.Message){
-		"join_assign":     joinAssign,
+		"election_assign":     joinAssign,
 		"error" : errorHandler,
 
 		// The streaming related handlers goes here
@@ -129,6 +135,7 @@ func Start() {
 		"streaming_assign": streamer.HandleAssign,
 		"streaming_new_program": streamer.HandleNewProgram,
 		"streaming_stop_program": streamer.HandleStopProgram,
+		"streaming_quit": streamer.HandleChildQuit,
 	}
 
 	// Init and listen
@@ -151,23 +158,23 @@ func Start() {
 func nodeJoin(IPs []string) {
 	//Send hello messages until find out a working supernode
 	i := 0
-	helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+	helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 	mp.Send(helloMsg)
 	fmt.Printf("Node: send hello message to SuperNode [%s]\n", IPs[i])
 	for {
 		select {
-		case err := <-mp.Messages["init_fail"]:
+		case msg := <-mp.Messages["init_fail"]:
 			// wait and retry the next
-			var errStr string;
-			MP.DecodeData(&errStr,err.Data)
-			fmt.Printf("Connetion to spernode failed: %s\n", errStr)
+			errInfo := MP.FailClientInfo{}
+			MP.DecodeData(&errInfo, msg.Data)
+			fmt.Printf("Connetion to spernode failed: %s\n", errInfo.ErrMsg)
 			i += 1
 			if (i == len(IPs)) {
 				exitMsg := MP.NewMessage("self", nodeContext.LocalName, "exit", MP.EncodeData("All supernodes are down, exit"))
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+			helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
 		case <- mp.Messages["super_fail"]:
 			i += 1
@@ -176,9 +183,8 @@ func nodeJoin(IPs []string) {
 				mp.Messages["exit"] <- &exitMsg
 				break;
 			}
-			helloMsg := MP.NewMessage(IPs[i], "", "hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
+			helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
-
 		}
 	}
 

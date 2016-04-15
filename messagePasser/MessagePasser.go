@@ -34,8 +34,9 @@ type Client struct {
 }
 
 type FailClientInfo struct {
-	name     string
-	IP		 string
+	Name   string
+	IP     string
+	ErrMsg string
 }
 
 /**
@@ -52,14 +53,13 @@ func (client *Client) Read(mp *MessagePasser) {
 	for {
 		//line, err := client.reader.ReadBytes('\xfe')
 		length, err := binary.ReadVarint(client.reader)
-		buffer := make([]byte, length)
-		client.reader.Read(buffer)
-
 
 		if err != nil {
 			client.rethrowError(mp)
 			return
 		}
+		buffer := make([]byte, length)
+		client.reader.Read(buffer)
 
 		msg := new(Message)
 		msg.Deserialize(buffer)
@@ -97,8 +97,12 @@ func (client *Client) rethrowError(mp *MessagePasser)  {
 	fmt.Println("Client " + client.name + " disconneted!")
 	fmt.Println("Error in reading messages out in Client[" + client.name + "]")
 
+	// Added: Remove this client from the message passer
+	delete(mp.connections.clients, client.IP)
+	delete(mp.connections.clients, client.name)
+
 	errorMsg := NewMessage("self", mp.connections.localname, "conn_error",
-		EncodeData(FailClientInfo{IP: client.IP, name: client.name}))
+	EncodeData(FailClientInfo{IP: client.IP, Name: client.name, ErrMsg: "connection error"}))
 	mp.Messages["error"] <- &errorMsg
 }
 
@@ -212,7 +216,7 @@ func (mp *MessagePasser) receiveMapping() {
 	for {
 		msg := <-mp.Incoming
 
-		if (msg.Kind != "dht_neighbourhood_discovery"){
+		if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat" && msg.Kind != "node_heartbeat"){
 			fmt.Println("Receiving data!")
 			fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 		}
@@ -235,7 +239,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 	msg.SrcName = mp.connections.localname
 	msg.Src, _ = dns.ExternalIP()
 
-	if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat"){
+	if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat" && msg.Kind != "node_heartbeat"){
 		fmt.Println("Sending out data!")
 		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
 	}
@@ -255,15 +259,19 @@ func (mp *MessagePasser) Send(msg Message)  {
 
 		conn, err := net.Dial("tcp", msg.Dest + ":" + localPort)
 		if (err != nil) {
-			errMsg := NewMessage("self", mp.connections.localname, "error", EncodeData(err.Error()))
+			errMsg := NewMessage("self", mp.connections.localname, "error",
+				EncodeData(FailClientInfo{IP: msg.Dest, Name: msg.DestName, ErrMsg: err.Error()}))
 			mp.Messages["error"] <- &errMsg
 			return
 		}
+
 		client := NewClient(conn, mp)
 		client.name = msg.DestName
 		client.IP = msg.Dest
 		mp.connections.clients[dest] = client
 		if msg.DestName != "" {
+			//fmt.Println("=======Find new clients!")
+			//fmt.Println(msg)
 			mp.connections.clients[msg.DestName] = client
 		}
 		client.outgoing <- &msg

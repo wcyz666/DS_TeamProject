@@ -35,9 +35,7 @@ func Start() {
 	// Initialize SuperNodeContext
 	// Currently SuperNodeContext contains all info of the assigned child nodes
 	superNodeContext = SNC.NewSuperNodeContext()
-	// First register on the dnsService
-	// In test stage, it's actually "ec2-54-86-213-108.compute-1.amazonaws.com"
-	dns.RegisterSuperNode(Config.BootstrapDomainName)
+
 	fmt.Println("Message Passer To initialize!")
 	// Initialize the message passer
 	// Note: all the packages are using the same message passer!
@@ -51,7 +49,7 @@ func Start() {
 
 	dhtService = Dht.NewDHTService(mp)
 	streamHandler = Streaming.NewStreamingHandler(dhtService, mp, superNodeContext)
-	jElection = JoinElection.NewJoinElection(mp)
+	jElection = JoinElection.NewJoinElection(mp, dhtService.DhtNode, superNodeContext)
 
 	dhtNode := dhtService.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
@@ -64,10 +62,7 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		// "dht": dHashtable.msgHandler(messaage),
 
-		"heartbeat": heartBeatHandler,
-		"hello":          jElection.Start,
-		"join": 			newChild,
-		"join_election": jElection.Receive,
+		"node_heartbeat": heartBeatHandler,
 		"error": errorHandler,
 
 		/* DHT call backs */
@@ -94,8 +89,12 @@ func Start() {
 		"stream_join":     streamHandler.StreamJoin,
 		"stream_program_start": streamHandler.StreamProgramStart,  // This is sent from other supernodes
 		"stream_program_stop": streamHandler.StreamProgramStop,  // This is sent from other supernodes
+		"stream_delete_from_dht": streamHandler.RemoveFromDht,
 
-
+		"election_hello":          jElection.StartElection,
+		"dht_broadcast_msg_election": jElection.ForwardElection,
+		"election_complete": jElection.CompleteElection,
+		"election_join": 			newChild,
 	}
 
 	// Init and listen
@@ -116,6 +115,9 @@ func Start() {
 		panic ("DHT service start failed. Error is " + strconv.Itoa(status))
 	}
 
+	// Register as a super node in the dnsService
+	dns.RegisterSuperNode(Config.BootstrapDomainName)
+
 	/* Start a CLI to handle user interaction */
 	go DhtCLIInterface(dhtService)
 	exitMsg := <- mp.Messages["exit"]
@@ -130,7 +132,19 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 	}
 }
 
-func errorHandler(*MP.Message)  {
+func errorHandler(msg *MP.Message)  {
+
+	// Route the error information to streaming handler running on supernode
+	streamHandler.HandleErrorMsg(msg)
+
+	var failClientInfo MP.FailClientInfo
+	MP.DecodeData(&failClientInfo,msg.Data)
+	switch superNodeContext.State  {
+		case SNC.DHT_JOIN_IN_PROGRESS:
+			mp.Messages["join_dht_conn_failed"] <- msg
+		case SNC.DHT_JOINED:
+			dhtService.DhtNode.NodeFailureDetected(failClientInfo.IP)
+	}
 
 }
 
@@ -161,10 +175,10 @@ func newChild(msg *MP.Message)  {
 }
 
 func printHelp(){
-	fmt.Println("Enter C Key MemberShipInfo to create an Streaming Group")
+	fmt.Println("Enter C Key StreamerIp StreamerName to create an Streaming Group")
 	fmt.Println("      D Key to delete a Streaming Group")
-	fmt.Println("      A Key MemberShipInfo to add a member")
-	fmt.Println("      R Key MemberShipInfo to delete a member")
+	fmt.Println("      A Key StreamerIp StreamerName to add a member")
+	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
@@ -204,7 +218,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 			inputList := strings.Split(line," ")
 			switch inputList[0] {
 			case "C", "c":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
@@ -220,7 +234,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Delete API called and return status is "+ logStatus(status))
 				}
 			case "A","a":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
@@ -228,7 +242,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Append API called and return status is "+ logStatus(status))
 				}
 			case "R","r":
-				if (len(inputList) !=3){
+				if (len(inputList) !=4){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {

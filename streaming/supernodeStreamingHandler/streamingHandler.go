@@ -35,6 +35,7 @@ func (sHandler *StreamingHandler) broadcast(channelName string, data []byte) {
 	// Get all the supernodes
 	IPs := DNS.GetAddr(config.BootstrapDomainName)
 	for _, ip := range (IPs) {
+		//fmt.Println("==========Broadcasting to " + ip)
 		sHandler.mp.Send(MP.NewMessage(ip, "", channelName, data))
 	}
 }
@@ -64,7 +65,8 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 	//Update DHT table
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	sHandler.dht.Delete(controlData.RootStreamer)
+	delete(sHandler.ProgramList, controlData.SrcName)
+	sHandler.dht.Delete(controlData.SrcName)
 }
 
 /* Update broadcasted from other supernodes */
@@ -75,11 +77,11 @@ func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
 	sHandler.ProgramList[controlData.SrcName] = msg.Data
 
 	//Notify the children the new program
-	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
 	fmt.Println("New programs detected! Sending to all children")
-	for _, child := range (childrenNames) {
-		sHandler.mp.Send(MP.NewMessage("", child, "streaming_new_program", msg.Data))
+	for _, child := range(sHandler.superNodeContext.Nodes){
+		sHandler.mp.Send(MP.NewMessage(child.IP, "", "streaming_new_program", msg.Data))
 	}
+
 }
 
 /* Update broadcasted from other supernodes */
@@ -90,9 +92,9 @@ func (sHandler *StreamingHandler) StreamProgramStop(msg *MP.Message) {
 	delete(sHandler.ProgramList, controlData.SrcName)
 
 	//Notify the children the new program
-	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
-	for _, child := range (childrenNames) {
-		sHandler.mp.Send(MP.NewMessage("", child, "streaming_stop_program", msg.Data))
+	fmt.Println("New programs detected! Sending to all children")
+	for _, child := range(sHandler.superNodeContext.Nodes){
+		sHandler.mp.Send(MP.NewMessage(child.IP, "", "streaming_stop_program", msg.Data))
 	}
 }
 
@@ -109,6 +111,9 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 	streamers, _ := sHandler.dht.Get(root)
 
 	// Changed Apr.12   Use randomly selected streamer as the streaming parent
+	if len(streamers) == 0{
+		return
+	}
 	streamer := streamers[utils.RandomChoice(0, len(streamers))]
 	// Send "streaming_join" to one of the streamers to start the election
 
@@ -126,3 +131,39 @@ func (sHandler *StreamingHandler) NewChildJoin(childIp string, childName string)
 		sHandler.mp.Send(MP.NewMessage(childIp, childName, "streaming_new_program", data))
 	}
 }
+
+/* Take care of attached node failure
+	If is root streamer: delete the streaming group in DHT
+*/
+func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
+	failNode := MP.FailClientInfo{}
+	MP.DecodeData(&failNode, msg.Data)
+
+	for _, node := range(sHandler.superNodeContext.Nodes){
+		// If fail node is one of the child
+		if failNode.IP == node.IP{
+			if _, ok := sHandler.ProgramList[failNode.Name]; ok{
+				sHandler.dht.Delete(failNode.Name)
+				delete(sHandler.ProgramList, failNode.Name)
+				data := SDataType.StreamControlMsg{
+					SrcName: failNode.Name,
+					SrcIp: failNode.IP,
+					RootStreamer: failNode.Name,
+				}
+				sHandler.broadcast("stream_program_stop", MP.EncodeData(data))
+			}
+		}
+	}
+}
+
+//TODO: Check here!!!!!! Have meal with wang da shen first
+func (sHandler *StreamingHandler) RemoveFromDht(msg *MP.Message) {
+	failNode := SDataType.RemoveFromDht{}
+	MP.DecodeData(&failNode, msg.Data)
+	// Update dht here
+	sHandler.dht.Remove(failNode.RootStreamer, DHT.MemberShipInfo{
+		StreamerName: failNode.FailNodeName,
+		StreamerIp: failNode.FailNodeIp,
+	})
+}
+
