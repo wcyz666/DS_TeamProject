@@ -20,7 +20,7 @@ const (
 const HASH_KEY_SIZE = 128
 const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 const NEIGHBOURHOOD_DISTANCE = 2 // Neighbourhood distance on each direction
-const PERIODIC_LEAF_TABLE_REFRESH = 60
+const PERIODIC_LEAF_TABLE_REFRESH_DURATION = 60
 
 type Node struct {
 	IpAddress string

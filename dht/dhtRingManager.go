@@ -17,6 +17,11 @@ const (
 	TRAVERSE_ANTI_CLOCK_WISE // Traverse in direction of prev node
 
 	RING_REPAIR_REQUEST_FAILURE_TIMER = 10
+
+	NODE_JOIN_TRIGGERRED_LEAF_TABLE_REFRESH
+	NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH
+	PERIODIC_LEAF_TABLE_REFRESH
+	EVENT_TRIGGERED_LEAF_TABLE_REFRESH
 )
 
 /* Constructor */
@@ -333,28 +338,32 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 	return joinRes.Status,node
 }
 
+/* Apart from periodically refreshing the table, there might be other events where we want to immediately
+*  refresh the table instead of waiting for the timer to exprire. Invoke this method during those cases */
+func (dhtNode *DHTNode) RefreshLeafTable(event int){
+	if (false == dhtNode.AmITheOnlyNodeInDHT()) {
+
+		//fmt.Println("Triggering Periodic Neighbourhood discovery")
+		var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.IpAddress, OriginName:
+			dhtNode.NodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.NodeKey, Event:event}
+
+		neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
+		dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress, dhtNode.leafTable.prevNode.Name,
+			"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
+
+		neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
+		dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress, dhtNode.leafTable.nextNode.Name,
+			"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
+	}
+}
+
 func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 	/* Schedule a trigger to query about neighbourhood details after 3 seconds */
 	timer1 := time.NewTimer(time.Second * 3)
 	go func(){
 		<-timer1.C
 		fmt.Println("Initiating periodic leaf table refresh procedure")
-
-		if (false == dhtNode.AmITheOnlyNodeInDHT()) {
-
-			//fmt.Println("Triggering Periodic Neighbourhood discovery")
-			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.IpAddress,
-				OriginName: dhtNode.NodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.NodeKey}
-
-			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
-			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress, dhtNode.leafTable.prevNode.Name,
-				"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
-
-			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_CLOCK_WISE
-			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.nextNode.IpAddress, dhtNode.leafTable.nextNode.Name,
-				"dht_neighbourhood_discovery", MP.EncodeData(neighbourhoodDiscovery)))
-		}
-
+		dhtNode.RefreshLeafTable(NODE_JOIN_TRIGGERRED_LEAF_TABLE_REFRESH)
 		dhtNode.PerformPeriodicLeafTableRefresh()
 	}()
 }
@@ -516,7 +525,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 	logNodeList(dhtNode.leafTable.PrevNodeList)
 	fmt.Println("next Node list is ")
 	logNodeList(dhtNode.leafTable.NextNodeList)
-	
+
 	/* Previous Node failure detected. Ip Address parameter is the
 	 * Ip Address of the node that failed */
 
@@ -548,6 +557,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			}
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
+			dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
 		} else {
 			fmt.Println("prev Node list length == 1")
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
@@ -645,6 +655,15 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		}
+
+		/* If leaf table refresh is due to node joining or leaving, trigger a refresh so
+		 * as to be up-to-date with your surroundings */
+		if ((discoveryMsg.Event == NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH) ||
+			(discoveryMsg.Event == NODE_JOIN_TRIGGERRED_LEAF_TABLE_REFRESH)){
+			/* TODO We can probably deduce information from the messages being exchanged instead of triggering one more
+			 * neighbourhood discovery procedure. Deferring it as it is low priority work item*/
+			dhtNode.RefreshLeafTable(EVENT_TRIGGERED_LEAF_TABLE_REFRESH)
+		}
 	}
 }
 
@@ -653,7 +672,7 @@ func (dhtNode *DHTNode) Leave(msg *MP.Message) {
 }
 
 func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
-	ticker := time.NewTicker(time.Second * PERIODIC_LEAF_TABLE_REFRESH)
+	ticker := time.NewTicker(time.Second * PERIODIC_LEAF_TABLE_REFRESH_DURATION)
 	go func() {
 		for _ = range ticker.C {
 			if (dhtNode.AmITheOnlyNodeInDHT()){
@@ -661,8 +680,8 @@ func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
 			}
 
 			//fmt.Println("Triggering Periodic Neighbourhood discovery")
-			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.IpAddress,
-				OriginName: dhtNode.NodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.NodeKey}
+			var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.IpAddress, OriginName:
+			dhtNode.NodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.NodeKey, Event: PERIODIC_LEAF_TABLE_REFRESH}
 
 			neighbourhoodDiscovery.TraversalDirection = TRAVERSE_ANTI_CLOCK_WISE
 			dhtNode.mp.Send(MP.NewMessage(dhtNode.leafTable.prevNode.IpAddress,dhtNode.leafTable.prevNode.Name,
