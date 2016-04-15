@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"encoding/binary"
+	"time"
 )
 
 
@@ -255,7 +256,8 @@ func (mp *MessagePasser) Send(msg Message)  {
 	} else {
 		// Try connecting to the peer
 
-		conn, err := net.Dial("tcp", msg.Dest + ":" + localPort)
+		/* Wait for 5 seconds for connection to be established. Otherwise, consider it as failed */
+		conn, err := net.DialTimeout("tcp", msg.Dest + ":" + localPort, time.Duration(5) * time.Second)
 		if (err != nil) {
 			errMsg := NewMessage("self", mp.connections.localname, "error",
 				EncodeData(FailClientInfo{IP: msg.Dest, Name: msg.DestName, ErrMsg: err.Error()}))
