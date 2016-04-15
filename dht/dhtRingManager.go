@@ -341,6 +341,7 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 /* Apart from periodically refreshing the table, there might be other events where we want to immediately
 *  refresh the table instead of waiting for the timer to exprire. Invoke this method during those cases */
 func (dhtNode *DHTNode) RefreshLeafTable(event int){
+	fmt.Println("Refresh Leaf Table for event " + event)
 	if (false == dhtNode.AmITheOnlyNodeInDHT()) {
 
 		//fmt.Println("Triggering Periodic Neighbourhood discovery")
