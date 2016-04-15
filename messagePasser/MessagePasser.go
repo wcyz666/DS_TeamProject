@@ -270,6 +270,8 @@ func (mp *MessagePasser) Send(msg Message)  {
 		client.IP = msg.Dest
 		mp.connections.clients[dest] = client
 		if msg.DestName != "" {
+			fmt.Println("=======Find new clients!")
+			fmt.Println(msg)
 			mp.connections.clients[msg.DestName] = client
 		}
 		client.outgoing <- &msg
