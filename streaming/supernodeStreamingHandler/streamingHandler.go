@@ -33,10 +33,10 @@ func NewStreamingHandler(dHashtable *DHT.DHTService, mp *MP.MessagePasser, super
 /* Broadcast service */
 func (sHandler *StreamingHandler) broadcast(channelName string, data []byte) {
 	// Get all the supernodes
-	IPs := DNS.GetAddr(config.BootstrapDomainName)
-	for _, ip := range (IPs) {
-		sHandler.mp.Send(MP.NewMessage(ip, "", channelName, data))
-	}
+	//IPs := DNS.GetAddr(config.BootstrapDomainName)
+	//for _, ip := range (IPs) {
+	//	sHandler.mp.Send(MP.NewMessage(ip, "", channelName, data))
+	//}
 }
 
 /* A node starts to stream messages */
