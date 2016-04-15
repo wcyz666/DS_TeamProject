@@ -20,7 +20,7 @@ const (
 	NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH
 	PERIODIC_LEAF_TABLE_REFRESH
 	EVENT_TRIGGERED_LEAF_TABLE_REFRESH
-	
+
 	RING_REPAIR_REQUEST_FAILURE_TIMER = 10
 
 
@@ -524,9 +524,9 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 
 	fmt.Println("Prev Node is "+ dhtNode.leafTable.prevNode.IpAddress)
 
-	fmt.Println("prev Node list is ")
+	fmt.Println("NodeFailureDetected : prev Node list is ")
 	logNodeList(dhtNode.leafTable.PrevNodeList)
-	fmt.Println("next Node list is ")
+	fmt.Println("NodeFailureDetected: next Node list is ")
 	logNodeList(dhtNode.leafTable.NextNodeList)
 
 	/* Previous Node failure detected. Ip Address parameter is the
@@ -597,9 +597,9 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairRes.Key,true)
 	dhtNode.IsRingUpdateInProgress = false
 
-	fmt.Println("prev Node list is ")
+	fmt.Println("HandleRingRepairResponse: prev Node list is ")
 	logNodeList(dhtNode.leafTable.PrevNodeList)
-	fmt.Println("next Node list is ")
+	fmt.Println("HandleRingRepairResponse: next Node list is ")
 	logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
@@ -630,11 +630,11 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
 
-		//fmt.Println("[DHT] Lead Table contents")
-		//fmt.Println("[DHT]	Previous Node List")
-		//logNodeList(dhtNode.leafTable.PrevNodeList)
-		//fmt.Println("[DHT]	Next Node List")
-		//logNodeList(dhtNode.leafTable.NextNodeList)
+		fmt.Println("[DHT] Lead Table contents")
+		fmt.Println("[DHT]	Previous Node List")
+		logNodeList(dhtNode.leafTable.PrevNodeList)
+		fmt.Println("[DHT]	Next Node List")
+		logNodeList(dhtNode.leafTable.NextNodeList)
 
 	} else{
 		node := Node{dhtNode.IpAddress, dhtNode.NodeName, dhtNode.NodeKey}
