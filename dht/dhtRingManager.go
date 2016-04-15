@@ -175,6 +175,13 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 	} else{
 		dhtNode.leafTable.nextNode = &node
 	}
+
+	if (dhtNode.leafTable.prevNode != nil ){
+		fmt.Println("Previous node is "+ dhtNode.leafTable.prevNode.IpAddress)
+	}
+	if (dhtNode.leafTable.nextNode != nil){
+		fmt.Println("Next node is " + dhtNode.leafTable.nextNode.IpAddress)
+	}
 }
 
 func (dhtNode *DHTNode)getPredecessorFromLeafTable()(*Node)  {
@@ -345,7 +352,7 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 func (dhtNode *DHTNode) RefreshLeafTable(event int){
 	fmt.Println("Refresh Leaf Table for event " + strconv.Itoa(event))
 	if (false == dhtNode.AmITheOnlyNodeInDHT()) {
-
+		fmt.Println("Refresh leaf table: More than 1 node in the DHT")
 		//fmt.Println("Triggering Periodic Neighbourhood discovery")
 		var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.IpAddress, OriginName:
 			dhtNode.NodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.NodeKey, Event:event}
