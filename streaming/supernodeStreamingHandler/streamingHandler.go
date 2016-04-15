@@ -94,7 +94,7 @@ func (sHandler *StreamingHandler) StreamProgramStop(msg *MP.Message) {
 	//Notify the children the new program
 	fmt.Println("New programs detected! Sending to all children")
 	for _, child := range(sHandler.superNodeContext.Nodes){
-		sHandler.mp.Send(MP.NewMessage(child.IP, "", "streaming_new_program", msg.Data))
+		sHandler.mp.Send(MP.NewMessage(child.IP, "", "streaming_stop_program", msg.Data))
 	}
 }
 
