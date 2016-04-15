@@ -82,10 +82,16 @@ func errorHandler(msg *MP.Message) {
 			fmt.Println("Node: detect Supernode failure, try another supernode...")
 			msg.Kind = "super_fail"
 			mp.Messages[msg.Kind] <- msg
+		}else{
+			streamer.HandleErrorMsg(msg)
 		}
+
 	}
 
 }
+
+
+
 
 
 /**
@@ -129,6 +135,7 @@ func Start() {
 		"streaming_assign": streamer.HandleAssign,
 		"streaming_new_program": streamer.HandleNewProgram,
 		"streaming_stop_program": streamer.HandleStopProgram,
+		"streaming_quit": streamer.HandleChildQuit,
 	}
 
 	// Init and listen
@@ -177,7 +184,6 @@ func nodeJoin(IPs []string) {
 			}
 			helloMsg := MP.NewMessage(IPs[i], "", "election_hello", MP.EncodeData("hello, my name is Bay Max, you personal healthcare companion"))
 			mp.Send(helloMsg)
-
 		}
 	}
 

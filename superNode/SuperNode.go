@@ -89,6 +89,7 @@ func Start() {
 		"stream_join":     streamHandler.StreamJoin,
 		"stream_program_start": streamHandler.StreamProgramStart,  // This is sent from other supernodes
 		"stream_program_stop": streamHandler.StreamProgramStop,  // This is sent from other supernodes
+		"stream_delete_from_dht": streamHandler.RemoveFromDht,
 
 		"election_hello":          jElection.StartElection,
 		"dht_broadcast_msg_election": jElection.ForwardElection,
@@ -132,6 +133,10 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 }
 
 func errorHandler(msg *MP.Message)  {
+
+	// Route the error information to streaming handler running on supernode
+	streamHandler.HandleErrorMsg(msg)
+
 	var failClientInfo MP.FailClientInfo
 	MP.DecodeData(&failClientInfo,msg.Data)
 	switch superNodeContext.State  {
@@ -140,6 +145,7 @@ func errorHandler(msg *MP.Message)  {
 		case SNC.DHT_JOINED:
 			dhtService.DhtNode.NodeFailureDetected(failClientInfo.IP)
 	}
+
 }
 
 func heartBeatHandler(msg *MP.Message)  {

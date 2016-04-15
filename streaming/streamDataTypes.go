@@ -13,3 +13,8 @@ type StreamControlMsg struct {
 }
 
 
+type RemoveFromDht struct {
+	RootStreamer string
+	FailNodeIp string
+	FailNodeName string
+}

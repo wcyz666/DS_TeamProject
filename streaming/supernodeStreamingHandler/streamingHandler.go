@@ -64,7 +64,7 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 	//Update DHT table
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	sHandler.dht.Delete(controlData.RootStreamer)
+	sHandler.dht.Delete(controlData.SrcName)
 }
 
 /* Update broadcasted from other supernodes */
@@ -126,3 +126,32 @@ func (sHandler *StreamingHandler) NewChildJoin(childIp string, childName string)
 		sHandler.mp.Send(MP.NewMessage(childIp, childName, "streaming_new_program", data))
 	}
 }
+
+/* Take care of attached node failure
+	1. If is root streamer: delete the streaming group in DHT
+	2. If not, delete the node from any group containing this node
+*/
+func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
+	failNode := MP.FailClientInfo{}
+	MP.DecodeData(&failNode, msg.Data)
+
+	for _, node := range(sHandler.superNodeContext.Nodes){
+		// If fail node is one of the child
+		if failNode.IP == node.IP{
+			sHandler.dht.Delete(failNode.Name)
+
+		}
+	}
+}
+
+//TODO: Check here!!!!!! Have meal with wang da shen first
+func (sHandler *StreamingHandler) RemoveFromDht(msg *MP.Message) {
+	failNode := SDataType.RemoveFromDht{}
+	MP.DecodeData(&failNode, msg.Data)
+	// Update dht here
+	sHandler.dht.Remove(failNode.RootStreamer, DHT.MemberShipInfo{
+		StreamerName: failNode.FailNodeName,
+		StreamerIp: failNode.FailNodeIp,
+	})
+}
+
