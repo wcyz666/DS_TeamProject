@@ -148,7 +148,8 @@ func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
 					SrcIp: failNode.IP,
 					RootStreamer: failNode.Name,
 				}
-				_ := MP.NewMessage("", "", "", MP.EncodeData(data))
+				msg := MP.NewMessage("", "", "", MP.EncodeData(data))
+				fmt.Println(msg)
 				//sHandler.StreamStop(&msg)
 			}
 		}
