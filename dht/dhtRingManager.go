@@ -201,6 +201,19 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		fmt.Println("[DHT]	Attempting to Join Existing DHT. Sending Request to " + ipAddr)
 		ip,name := dhtNode.mp.GetNodeIpAndName()
 		dhtNode.mp.Send(MP.NewMessage(ipAddr, "", "join_dht_req", MP.EncodeData(JoinRequest{dhtNode.NodeKey,ip,name})))
+		/* Ip address of the peer in DNS might be allocated to another EC2 instance that no longer runs super node.
+		 * Wait for join response from the peer for 2 seconds afterwhich move to new node */
+		timer1 := time.NewTimer(time.Second * 2)
+		go func(){
+			<-timer1.C
+			if (dhtNode.State == DHT_WAIT_FOR_JOIN_RESPONSE){
+				fmt.Println("No response from peer")
+				msg := MP.NewMessage(dhtNode.IpAddress, "self", "join_dht_conn_failed",
+						MP.EncodeData(MP.FailClientInfo{"",ipAddr,"No Response received from peer"}))
+				dhtNode.mp.Messages["join_dht_conn_failed"] <- &msg
+			}
+		}()
+		dhtNode.State = DHT_WAIT_FOR_JOIN_RESPONSE
 		return JOINING_EXISTING_DHT
 	}
 }

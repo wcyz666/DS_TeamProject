@@ -53,6 +53,7 @@ func (dhtService *DHTService)Start() int{
 	for {
 		select {
 		case joinRes := <-dhtService.DhtNode.mp.Messages["join_dht_res"]:
+			dhtService.DhtNode.State = DHT_JOIN_IN_PROGRESS
 			status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
 			if (JOIN_IN_PROGRESS_RETRY_LATER == status){
 				numOfAttempts--
