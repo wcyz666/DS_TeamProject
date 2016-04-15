@@ -75,3 +75,5 @@ _testmain.go
 
 # Executive binary
 main
+
+WebUI/.idea/*
