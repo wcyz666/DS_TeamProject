@@ -140,8 +140,17 @@ func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
 	for _, node := range(sHandler.superNodeContext.Nodes){
 		// If fail node is one of the child
 		if failNode.IP == node.IP{
-			sHandler.dht.Delete(failNode.Name)
-			delete(sHandler.ProgramList, failNode.Name)
+			if _, ok := sHandler.ProgramList[failNode.Name]; ok{
+				sHandler.dht.Delete(failNode.Name)
+				delete(sHandler.ProgramList, failNode.Name)
+				data := SDataType.StreamControlMsg{
+					SrcName: failNode.Name,
+					SrcIp: failNode.IP,
+					RootStreamer: failNode.Name,
+				}
+				msg := MP.NewMessage("", "", "", MP.EncodeData(data))
+				sHandler.StreamStop(&msg)
+			}
 		}
 	}
 }
