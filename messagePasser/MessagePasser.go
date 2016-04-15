@@ -53,14 +53,13 @@ func (client *Client) Read(mp *MessagePasser) {
 	for {
 		//line, err := client.reader.ReadBytes('\xfe')
 		length, err := binary.ReadVarint(client.reader)
-		buffer := make([]byte, length)
-		client.reader.Read(buffer)
-
 
 		if err != nil {
 			client.rethrowError(mp)
 			return
 		}
+		buffer := make([]byte, length)
+		client.reader.Read(buffer)
 
 		msg := new(Message)
 		msg.Deserialize(buffer)
