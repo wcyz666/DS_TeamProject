@@ -64,6 +64,7 @@ func (sHandler *StreamingHandler) StreamStop(msg *MP.Message) {
 	//Update DHT table
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
+	delete(sHandler.ProgramList, controlData.SrcName)
 	sHandler.dht.Delete(controlData.SrcName)
 }
 
@@ -148,9 +149,7 @@ func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
 					SrcIp: failNode.IP,
 					RootStreamer: failNode.Name,
 				}
-				msg := MP.NewMessage("", "", "", MP.EncodeData(data))
-				fmt.Println(msg)
-				//sHandler.StreamStop(&msg)
+				sHandler.broadcast("stream_program_stop", MP.EncodeData(data))
 			}
 		}
 	}
