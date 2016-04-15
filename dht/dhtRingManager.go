@@ -206,6 +206,7 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		timer1 := time.NewTimer(time.Second * 2)
 		go func(){
 			<-timer1.C
+			fmt.Println("Timer for join request failed")
 			if (dhtNode.State == DHT_WAIT_FOR_JOIN_RESPONSE){
 				fmt.Println("No response from peer")
 				msg := MP.NewMessage(dhtNode.IpAddress, "self", "join_dht_conn_failed",
