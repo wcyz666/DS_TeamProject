@@ -77,11 +77,11 @@ func (sHandler *StreamingHandler) StreamProgramStart(msg *MP.Message) {
 	sHandler.ProgramList[controlData.SrcName] = msg.Data
 
 	//Notify the children the new program
-	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
 	fmt.Println("New programs detected! Sending to all children")
-	for _, child := range (childrenNames) {
-		sHandler.mp.Send(MP.NewMessage("", child, "streaming_new_program", msg.Data))
+	for _, child := range(sHandler.superNodeContext.Nodes){
+		sHandler.mp.Send(MP.NewMessage(child.IP, "", "streaming_new_program", msg.Data))
 	}
+
 }
 
 /* Update broadcasted from other supernodes */
@@ -92,9 +92,9 @@ func (sHandler *StreamingHandler) StreamProgramStop(msg *MP.Message) {
 	delete(sHandler.ProgramList, controlData.SrcName)
 
 	//Notify the children the new program
-	childrenNames := sHandler.superNodeContext.GetAllChildrenName()
-	for _, child := range (childrenNames) {
-		sHandler.mp.Send(MP.NewMessage("", child, "streaming_stop_program", msg.Data))
+	fmt.Println("New programs detected! Sending to all children")
+	for _, child := range(sHandler.superNodeContext.Nodes){
+		sHandler.mp.Send(MP.NewMessage(child.IP, "", "streaming_new_program", msg.Data))
 	}
 }
 
