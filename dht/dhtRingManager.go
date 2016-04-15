@@ -573,7 +573,6 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			}
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
-			dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
 		} else {
 			fmt.Println("prev Node list length == 1")
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
@@ -599,6 +598,7 @@ func (dhtNode *DHTNode) HandleRingRepairRequest(msg *MP.Message){
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairReq.Key,false)
 	dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName, "dht_ring_repair_res",
 		MP.EncodeData(RingRepairResponse{SUCCESS, dhtNode.NodeKey})))
+	dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
 }
 
 func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
