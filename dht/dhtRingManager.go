@@ -206,7 +206,6 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		timer1 := time.NewTimer(time.Second * 2)
 		go func(){
 			<-timer1.C
-			fmt.Println("Timer for join request failed")
 			if (dhtNode.State == DHT_WAIT_FOR_JOIN_RESPONSE){
 				fmt.Println("No response from peer")
 				msg := MP.NewMessage(dhtNode.IpAddress, "self", "join_dht_conn_failed",
@@ -578,6 +577,11 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, ringRepairRes.Key,true)
 	dhtNode.IsRingUpdateInProgress = false
+
+	fmt.Println("prev Node list is ")
+	logNodeList(dhtNode.leafTable.PrevNodeList)
+	fmt.Println("next Node list is ")
+	logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
 func logNodeList(nodeList []Node){
