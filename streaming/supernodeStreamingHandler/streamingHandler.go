@@ -35,7 +35,7 @@ func (sHandler *StreamingHandler) broadcast(channelName string, data []byte) {
 	// Get all the supernodes
 	IPs := DNS.GetAddr(config.BootstrapDomainName)
 	for _, ip := range (IPs) {
-		fmt.Println("==========Broadcasting to " + ip)
+		//fmt.Println("==========Broadcasting to " + ip)
 		sHandler.mp.Send(MP.NewMessage(ip, "", channelName, data))
 	}
 }
