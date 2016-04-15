@@ -53,14 +53,13 @@ func (client *Client) Read(mp *MessagePasser) {
 	for {
 		//line, err := client.reader.ReadBytes('\xfe')
 		length, err := binary.ReadVarint(client.reader)
-		buffer := make([]byte, length)
-		client.reader.Read(buffer)
-
 
 		if err != nil {
 			client.rethrowError(mp)
 			return
 		}
+		buffer := make([]byte, length)
+		client.reader.Read(buffer)
 
 		msg := new(Message)
 		msg.Deserialize(buffer)
@@ -97,6 +96,10 @@ func (client *Client) updateClient(msg *Message)  {
 func (client *Client) rethrowError(mp *MessagePasser)  {
 	fmt.Println("Client " + client.name + " disconneted!")
 	fmt.Println("Error in reading messages out in Client[" + client.name + "]")
+
+	// Added: Remove this client from the message passer
+	delete(mp.connections.clients, client.IP)
+	delete(mp.connections.clients, client.name)
 
 	errorMsg := NewMessage("self", mp.connections.localname, "conn_error",
 	EncodeData(FailClientInfo{IP: client.IP, Name: client.name, ErrMsg: "connection error"}))

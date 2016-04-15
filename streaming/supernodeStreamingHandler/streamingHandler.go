@@ -109,6 +109,9 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 	streamers, _ := sHandler.dht.Get(root)
 
 	// Changed Apr.12   Use randomly selected streamer as the streaming parent
+	if len(streamers) == 0{
+		return
+	}
 	streamer := streamers[utils.RandomChoice(0, len(streamers))]
 	// Send "streaming_join" to one of the streamers to start the election
 
@@ -128,8 +131,7 @@ func (sHandler *StreamingHandler) NewChildJoin(childIp string, childName string)
 }
 
 /* Take care of attached node failure
-	1. If is root streamer: delete the streaming group in DHT
-	2. If not, delete the node from any group containing this node
+	If is root streamer: delete the streaming group in DHT
 */
 func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
 	failNode := MP.FailClientInfo{}
@@ -138,8 +140,18 @@ func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
 	for _, node := range(sHandler.superNodeContext.Nodes){
 		// If fail node is one of the child
 		if failNode.IP == node.IP{
-			sHandler.dht.Delete(failNode.Name)
-
+			if _, ok := sHandler.ProgramList[failNode.Name]; ok{
+				sHandler.dht.Delete(failNode.Name)
+				delete(sHandler.ProgramList, failNode.Name)
+				data := SDataType.StreamControlMsg{
+					SrcName: failNode.Name,
+					SrcIp: failNode.IP,
+					RootStreamer: failNode.Name,
+				}
+				msg := MP.NewMessage("", "", "", MP.EncodeData(data))
+				fmt.Println(msg)
+				//sHandler.StreamStop(&msg)
+			}
 		}
 	}
 }
