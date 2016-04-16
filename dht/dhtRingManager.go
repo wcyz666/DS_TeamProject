@@ -561,11 +561,11 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			for {
 				select {
 				case ring_repair_res := <- dhtNode.mp.Messages["dht_ring_repair_res"]:
-					dhtNode.HandleRingRepairResponse(ring_repair_res)
-					dhtNode.State = DHT_JOINED
 					fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
 					/* Remove failed node from DNS */
 					dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
+					dhtNode.State = DHT_JOINED
+					dhtNode.HandleRingRepairResponse(ring_repair_res)
 					return
 				case  _ = <- dhtNode.mp.Messages["dht_ring_repair_req_conn_failed"]:
 					fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
