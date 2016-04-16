@@ -563,12 +563,18 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 				case ring_repair_res := <- dhtNode.mp.Messages["dht_ring_repair_res"]:
 					dhtNode.HandleRingRepairResponse(ring_repair_res)
 					dhtNode.State = DHT_JOINED
-					break;
+					fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
+					/* Remove failed node from DNS */
+					dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
+					return
 				case  _ = <- dhtNode.mp.Messages["dht_ring_repair_req_conn_failed"]:
 					fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
 					dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
 					dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
-					break;
+					fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
+					/* Remove failed node from DNS */
+					dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
+					return
 				}
 			}
 		} else {
@@ -579,14 +585,11 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			}
 			dhtNode.leafTable.prevNode = nil
 			dhtNode.leafTable.PrevNodeList = nil
-
+			dhtNode.State = DHT_JOINED
 			fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
-			dhtNode.State = DHT_JOINED
 		}
-		/* Remove failed node from DNS */
-		dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 	}
 }
 func (dhtNode *DHTNode) HandleRingRepairRequest(msg *MP.Message){
