@@ -571,8 +571,6 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 					break;
 				}
 			}
-			/* Remove failed node from DNS */
-			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 		} else {
 			fmt.Println("prev Node list length == 1")
 			if (dhtNode.leafTable.prevNode.IpAddress == dhtNode.leafTable.nextNode.IpAddress){
@@ -587,6 +585,8 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 			dhtNode.State = DHT_JOINED
 		}
+		/* Remove failed node from DNS */
+		dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 	}
 }
 func (dhtNode *DHTNode) HandleRingRepairRequest(msg *MP.Message){
