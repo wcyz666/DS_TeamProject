@@ -656,8 +656,8 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 
 		discoveryMsg.ResidualHopCount--
 		if (discoveryMsg.ResidualHopCount == 0){
-			fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
-			logNodeList(discoveryMsg.NodeList)
+			//fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
+			//logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(discoveryMsg.OriginIpAddress, discoveryMsg.OriginName,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		} else {
@@ -667,8 +667,8 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			} else {
 				nodeToForward = dhtNode.leafTable.nextNode
 			}
-			fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
-			logNodeList(discoveryMsg.NodeList)
+			//fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
+			//logNodeList(discoveryMsg.NodeList)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 				"dht_neighbourhood_discovery", MP.EncodeData(discoveryMsg)))
 		}
