@@ -61,6 +61,7 @@ func (client *Client) Read(mp *MessagePasser) {
 		if err != nil {
 			client.rethrowError(mp)
 			mp.RemoveMapping(client.IP)
+			mp.RemoveMapping(client.name)
 			return
 		}
 
