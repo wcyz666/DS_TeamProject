@@ -206,7 +206,7 @@ func (dhtNode *DHTNode) CreateOrJoinRing()int{
 		dhtNode.leafTable.nextNode = nil
 		dhtNode.leafTable.prevNode = nil
 
-		//dhtNode.StartPeriodicLeafTableRefresh()
+		dhtNode.StartPeriodicLeafTableRefresh()
 		return NEW_DHT_CREATED
 	} else {
 		/* Send a message to one of the super nodes requesting to provide successor node's information
@@ -342,7 +342,7 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 		dhtNode.mp.Send(MP.NewMessage(joinRes.Predecessor.IpAddress, joinRes.Predecessor.Name, "join_dht_notify",
 			                              MP.EncodeData(JoinNotify{dhtNode.NodeKey})))
 
-		//dhtNode.StartPeriodicLeafTableRefresh()
+		dhtNode.StartPeriodicLeafTableRefresh()
 	}
 	return joinRes.Status,node
 }
@@ -374,7 +374,7 @@ func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 		<-timer1.C
 		fmt.Println("Initiating periodic leaf table refresh procedure")
 		dhtNode.RefreshLeafTable(NODE_JOIN_TRIGGERRED_LEAF_TABLE_REFRESH)
-		dhtNode.PerformPeriodicLeafTableRefresh()
+		//dhtNode.PerformPeriodicLeafTableRefresh()
 	}()
 }
 
