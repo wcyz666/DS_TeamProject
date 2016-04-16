@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"encoding/binary"
+	"time"
 )
 
 
@@ -56,6 +57,8 @@ func (client *Client) Read(mp *MessagePasser) {
 
 		if err != nil {
 			client.rethrowError(mp)
+			mp.RemoveMapping(client.IP)
+			mp.RemoveMapping(client.name)
 			return
 		}
 		buffer := make([]byte, length)
@@ -116,6 +119,7 @@ func (client *Client) Write(mp *MessagePasser) {
 
 		_, err := client.writer.Write(seri)
 		if err != nil {
+			fmt.Println("Error while sending message "+ msg.Kind)
 			return
 		}
 		client.writer.Flush()
@@ -197,8 +201,8 @@ func (mp *MessagePasser) listen() {
    Create new mapping & channel to the messagePasser
  */
 func (mp *MessagePasser) AddMapping(kind string) {
-	fmt.Print("Initialized the channel: ")
-	fmt.Println(kind)
+	//fmt.Print("Initialized the channel: ")
+	//fmt.Println(kind)
 	mp.Messages[kind] = make(chan *Message, 100)
 }
 
@@ -257,7 +261,8 @@ func (mp *MessagePasser) Send(msg Message)  {
 	} else {
 		// Try connecting to the peer
 
-		conn, err := net.Dial("tcp", msg.Dest + ":" + localPort)
+		/* Wait for 5 seconds for connection to be established. Otherwise, consider it as failed */
+		conn, err := net.DialTimeout("tcp", msg.Dest + ":" + localPort, time.Duration(5) * time.Second)
 		if (err != nil) {
 			errMsg := NewMessage("self", mp.connections.localname, "error",
 				EncodeData(FailClientInfo{IP: msg.Dest, Name: msg.DestName, ErrMsg: err.Error()}))

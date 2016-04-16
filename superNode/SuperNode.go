@@ -73,7 +73,6 @@ func Start() {
 		"dht_broadcast_msg":        	dhtNode.HandleBroadcastMessage,
 		"dht_neighbourhood_discovery":	dhtNode.HandleNeighbourhoodDiscovery,
 		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
-		"dht_ring_repair_res":			dhtNode.HandleRingRepairResponse,
 
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.
@@ -139,11 +138,11 @@ func errorHandler(msg *MP.Message)  {
 
 	var failClientInfo MP.FailClientInfo
 	MP.DecodeData(&failClientInfo,msg.Data)
-	switch superNodeContext.State  {
-		case SNC.DHT_JOIN_IN_PROGRESS:
-			mp.Messages["join_dht_conn_failed"] <- msg
-		case SNC.DHT_JOINED:
-			dhtService.DhtNode.NodeFailureDetected(failClientInfo.IP)
+
+	if (superNodeContext.IsFailedNodeMyChildNode(failClientInfo.IP)){
+
+	} else {
+		dhtService.DhtNode.CommunicationFailureHandler(msg)
 	}
 
 }
@@ -180,6 +179,7 @@ func printHelp(){
 	fmt.Println("      A Key StreamerIp StreamerName to add a member")
 	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
+	fmt.Println("      B Trigger a broadcast message")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
 	fmt.Println(" For membership info, please pass the IP address (of parent super node)")
@@ -263,6 +263,8 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 						}
 					}
 				}
+			case "B","b":
+				dhtService.TriggerBroadcastMessage()
 			default:
 				fmt.Println("Unexpected option")
 				printHelp()
