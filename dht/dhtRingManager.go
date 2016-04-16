@@ -534,12 +534,12 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 		return
 	}
 
-	fmt.Println("Prev Node is "+ dhtNode.leafTable.prevNode.IpAddress)
+	//fmt.Println("Prev Node is "+ dhtNode.leafTable.prevNode.IpAddress)
 
-	fmt.Println("NodeFailureDetected : prev Node list is ")
-	logNodeList(dhtNode.leafTable.PrevNodeList)
-	fmt.Println("NodeFailureDetected: next Node list is ")
-	logNodeList(dhtNode.leafTable.NextNodeList)
+	//fmt.Println("NodeFailureDetected : prev Node list is ")
+	//logNodeList(dhtNode.leafTable.PrevNodeList)
+	//fmt.Println("NodeFailureDetected: next Node list is ")
+	//logNodeList(dhtNode.leafTable.NextNodeList)
 
 	/* Previous Node failure detected. Ip Address parameter is the
 	 * Ip Address of the node that failed */

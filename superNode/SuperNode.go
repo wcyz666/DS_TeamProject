@@ -131,7 +131,6 @@ func listenOnChannel(channelName string, handler func(*MP.Message)) {
 }
 
 func errorHandler(msg *MP.Message)  {
-	fmt.Println("Error handler Invoked ")
 
 	var failClientInfo MP.FailClientInfo
 	MP.DecodeData(&failClientInfo,msg.Data)
