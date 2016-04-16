@@ -175,12 +175,12 @@ func (dhtNode *DHTNode)updateLeafAndPrefixTablesWithNewNode(newNodeIpAddress str
 		dhtNode.leafTable.nextNode = &node
 	}
 
-	if (dhtNode.leafTable.prevNode != nil ){
+	/*if (dhtNode.leafTable.prevNode != nil ){
 		fmt.Println("Previous node is "+ dhtNode.leafTable.prevNode.IpAddress)
 	}
 	if (dhtNode.leafTable.nextNode != nil){
 		fmt.Println("Next node is " + dhtNode.leafTable.nextNode.IpAddress)
-	}
+	}*/
 }
 
 func (dhtNode *DHTNode)getPredecessorFromLeafTable()(*Node)  {
@@ -550,7 +550,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 		/*Now previous node's key space becomes mine.*/
 		prevNodeList := dhtNode.leafTable.PrevNodeList
 		if (len(prevNodeList) > 1){
-			fmt.Println("prev Node list length > 1")
+			//fmt.Println("prev Node list length > 1")
 			newPrevNode := dhtNode.leafTable.PrevNodeList[1]
 
 			/* Send a ring repair request along with my node information */
