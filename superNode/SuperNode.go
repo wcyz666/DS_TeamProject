@@ -73,7 +73,6 @@ func Start() {
 		"dht_broadcast_msg":        	dhtNode.HandleBroadcastMessage,
 		"dht_neighbourhood_discovery":	dhtNode.HandleNeighbourhoodDiscovery,
 		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
-		"dht_ring_repair_res":			dhtNode.HandleRingRepairResponse,
 
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.
