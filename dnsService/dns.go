@@ -212,13 +212,11 @@ func ClearAddrRecords(name string, ipAddress string) {
 		panic(err)
 	}
 
-	fmt.Println( "ip address to delete is "+ ipAddress)
 	var entry DNSRecordEntry
 	for i := 0; i < len(decData.records); i++ {
 		entry = decData.records[i]["record"]
 		if (entry.record_type == "A") && (entry.name == name) {
 			if (ipAddress == "" || ipAddress == entry.content){
-				fmt.Println("IP address in record is "+ entry.content)
 				//fmt.Println( "name is " + entry.name + " id is " + strconv.FormatFloat(entry.id, 'f', -1, 64))
 				deleteAddrRecord(entry.id)
 			}

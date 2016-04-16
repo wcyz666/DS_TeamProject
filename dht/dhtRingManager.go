@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"fmt"
 	"time"
-	"strconv"
 )
 
 const (
@@ -350,9 +349,9 @@ func (dhtNode *DHTNode) HandleJoinRes(msg *MP.Message) (int,*Node) {
 /* Apart from periodically refreshing the table, there might be other events where we want to immediately
 *  refresh the table instead of waiting for the timer to exprire. Invoke this method during those cases */
 func (dhtNode *DHTNode) RefreshLeafTable(event int){
-	fmt.Println("Refresh Leaf Table for event " + strconv.Itoa(event))
+	//fmt.Println("Refresh Leaf Table for event " + strconv.Itoa(event))
 	if (false == dhtNode.AmITheOnlyNodeInDHT()) {
-		fmt.Println("Refresh leaf table: More than 1 node in the DHT")
+		//fmt.Println("Refresh leaf table: More than 1 node in the DHT")
 		//fmt.Println("Triggering Periodic Neighbourhood discovery")
 		var neighbourhoodDiscovery = NeighbourhoodDiscoveryMessage{OriginIpAddress: dhtNode.IpAddress, OriginName:
 			dhtNode.NodeName, ResidualHopCount: NEIGHBOURHOOD_DISTANCE, OriginKey: dhtNode.NodeKey, Event:event}
@@ -374,7 +373,7 @@ func (dhtNode *DHTNode) StartPeriodicLeafTableRefresh (){
 		<-timer1.C
 		fmt.Println("Initiating periodic leaf table refresh procedure")
 		dhtNode.RefreshLeafTable(NODE_JOIN_TRIGGERRED_LEAF_TABLE_REFRESH)
-		//dhtNode.PerformPeriodicLeafTableRefresh()
+		dhtNode.PerformPeriodicLeafTableRefresh()
 	}()
 }
 
@@ -429,11 +428,11 @@ func (dhtNode *DHTNode) HandleBroadcastMessage(msg *MP.Message) {
 		dhtNode.PassBroadcastMessage(&broadcastMsg, nil)
 	}
 
-	fmt.Println("[DHT] Lead Table contents")
-	fmt.Println("[DHT]	Previous Node List")
-	logNodeList(dhtNode.leafTable.PrevNodeList)
-	fmt.Println("[DHT]	Next Node List")
-	logNodeList(dhtNode.leafTable.NextNodeList)
+	//fmt.Println("[DHT] Lead Table contents")
+	//fmt.Println("[DHT]	Previous Node List")
+	//logNodeList(dhtNode.leafTable.PrevNodeList)
+	//fmt.Println("[DHT]	Next Node List")
+	//logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
 func (dhtNode *DHTNode) GetBroadcastMessage(msg *MP.Message) *BroadcastMessage {
@@ -561,7 +560,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			for {
 				select {
 				case ring_repair_res := <- dhtNode.mp.Messages["dht_ring_repair_res"]:
-					fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
+					//fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
 					/* Remove failed node from DNS */
 					dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 					dhtNode.State = DHT_JOINED
@@ -571,7 +570,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 					fmt.Println("Ring Repair request failed. Probably this node has failed too. Move to its previous node")
 					dhtNode.leafTable.PrevNodeList = dhtNode.leafTable.PrevNodeList[1:]
 					dhtNode.NodeFailureDetected(dhtNode.leafTable.prevNode.IpAddress)
-					fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
+					//fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
 					/* Remove failed node from DNS */
 					dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 					return
@@ -586,7 +585,7 @@ func (dhtNode *DHTNode) NodeFailureDetected(IpAddress string){
 			dhtNode.leafTable.prevNode = nil
 			dhtNode.leafTable.PrevNodeList = nil
 			dhtNode.State = DHT_JOINED
-			fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
+			//fmt.Println("Removing failed node with IP "+ IpAddress +" from DNS ")
 			/* Remove failed node from DNS */
 			dns.ClearAddrRecords(Config.BootstrapDomainName, IpAddress)
 		}
@@ -614,10 +613,10 @@ func (dhtNode *DHTNode) HandleRingRepairResponse(msg *MP.Message){
 
 	dhtNode.RefreshLeafTable(NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH)
 
-	fmt.Println("HandleRingRepairResponse: prev Node list is ")
-	logNodeList(dhtNode.leafTable.PrevNodeList)
-	fmt.Println("HandleRingRepairResponse: next Node list is ")
-	logNodeList(dhtNode.leafTable.NextNodeList)
+	//fmt.Println("HandleRingRepairResponse: prev Node list is ")
+	//logNodeList(dhtNode.leafTable.PrevNodeList)
+	//fmt.Println("HandleRingRepairResponse: next Node list is ")
+	//logNodeList(dhtNode.leafTable.NextNodeList)
 }
 
 func logNodeList(nodeList []Node){
@@ -647,11 +646,11 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
 		}
 
-		fmt.Println("[DHT] Lead Table contents")
-		fmt.Println("[DHT]	Previous Node List")
-		logNodeList(dhtNode.leafTable.PrevNodeList)
-		fmt.Println("[DHT]	Next Node List")
-		logNodeList(dhtNode.leafTable.NextNodeList)
+		//fmt.Println("[DHT] Lead Table contents")
+		//fmt.Println("[DHT]	Previous Node List")
+		//logNodeList(dhtNode.leafTable.PrevNodeList)
+		//fmt.Println("[DHT]	Next Node List")
+		//logNodeList(dhtNode.leafTable.NextNodeList)
 
 	} else{
 		node := Node{dhtNode.IpAddress, dhtNode.NodeName, dhtNode.NodeKey}
