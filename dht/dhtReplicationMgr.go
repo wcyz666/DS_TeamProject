@@ -4,16 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
-	"time"
 	MP "../messagePasser"
-)
-
-const (
-	REPLICA_CREATION_PENDING   = iota
-	REPLICA_CREATION_IN_PROGRESS
-	REPLICA_DELETION_PENDING
-	REPLICA_DELETION_IN_PROGRESS
-	REPLICA_PROCEDURE_NONE
 )
 
 /* Replication related functions */
@@ -47,95 +38,67 @@ func (dhtNode *DHTNode) HandleDeleteReplicaResponse(msg *MP.Message) {
 	fmt.Println("[DHT] Delete Replica Response received with status "+ strconv.Itoa(deleteReplicaResponse.Status))
 	/* TODO DO we need to synchronize access to curReplicaCount since both CreateReplicaResponse and DeleteReplicaResponse can update it */
 	dhtNode.curReplicaCount--
-	dhtNode.ReplicationState = REPLICA_PROCEDURE_NONE
 }
 
-func (dhtNode *DHTNode) CreateRequiredReplicas(failedNode *Node, depth int){
-	/* Depth is used when a sequence of nodes fail together, thereby causing replication factor to reduce by more than 1 */
-	if (depth > REPLICATION_FACTOR){
-		fmt.Println("Since failed node is more than REPLICATION_FACTOR away from us, we don't have a replica of their key space. :( ")
+func (dhtNode *DHTNode) StartReplicaSync(){
+
+	if (dhtNode.AmITheOnlyNodeInDHT()){
+		/* Replication. Really ? huh */
 		return
 	}
-	i := (REPLICATION_FACTOR -1)
-	var nodeToCreateReplica *Node
-	for (i >= 0 && depth > 0){
-//		nodeToCreateReplica = dhtNode.leafTable.NextNodeList[i]
-		var createReplicaReq CreateReplicaRequest
-		/* Retrieve entries which are less than new node's key and create a map out of it.*/
-		prevNodeNumericKey := getBigIntFromString(failedNode.Key)
-		var entryKey *big.Int
-		createReplicaReq.HashTable = make(map[string][]MemberShipInfo)
 
-		for k,v := range dhtNode.hashTable {
-			entryKey = getBigIntFromString(k)
-			/* If entry key is within failed node's key space, transfer the data to new node */
-			if (false == isKeyPresentInKeyspaceRange(entryKey, prevNodeNumericKey, dhtNode.curNodeNumericKey)){
-				createReplicaReq.HashTable[k] = v
-			}
+	var replicaSyncMsg ReplicaSyncMessage
+	/* Since I have a copy of data too, need to create only (Replica Factor -1) replicas */
+	replicaSyncMsg.ResidualHopCount = (REPLICATION_FACTOR - 1)
+	replicaSyncMsg.OriginIpAddress = dhtNode.IpAddress
+	replicaSyncMsg.OriginName = dhtNode.NodeName
+	replicaSyncMsg.HashTable = make(map[string][]MemberShipInfo)
+
+	var entryKey *big.Int
+	for k,v := range dhtNode.hashTable {
+		entryKey = getBigIntFromString(k)
+		/* If entry key is within my key space, add it to the hash table */
+		if (false == isKeyPresentInKeyspaceRange(entryKey, dhtNode.prevNodeNumericKey, dhtNode.curNodeNumericKey)){
+			replicaSyncMsg.HashTable[k] = v
 		}
-		dhtNode.mp.Send(MP.NewMessage(nodeToCreateReplica.IpAddress, nodeToCreateReplica.Name , "dht_create_replica_req",
-			MP.EncodeData(createReplicaReq)))
-		i--
-		depth--
 	}
 
-	if (depth > len(dhtNode.leafTable.NextNodeList)){
-
-	}
-
+	nodeToForward := dhtNode.leafTable.nextNode
+	dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_replica_sync",
+		MP.EncodeData(replicaSyncMsg)))
 }
 
-/* After NEIGHBOURHOOD_DISTANCE seconds (allowing for ring to be stabilized by assuming 1 second for message to travel
- * between nodes), create a new replica to bring back currentReplica count to desired value */
-func (dhtNode *DHTNode)ScheduleReplicaCreation(prevNode *Node, nodeToCreateReplica *Node){
-	if (len(dhtNode.leafTable.NextNodeList) < REPLICATION_FACTOR){
-		fmt.Println("Create more super nodes to meet the desired replication factor")
-	} else {
-		timer1 := time.NewTimer(time.Second * NEIGHBOURHOOD_DISTANCE)
-		go func(){
-			<-timer1.C
-			if (nil == nodeToCreateReplica){
-				//nodeToCreateReplica = dhtNode.leafTable.NextNodeList[REPLICATION_FACTOR - 1]
-			}
+func (dhtNode *DHTNode) HandleReplicaSyncMsg(msg *MP.Message){
+	fmt.Println("[DHT] Handle Replica Synchronization message ")
+	var replicaSyncMsg ReplicaSyncMessage
+	MP.DecodeData(&replicaSyncMsg,msg.Data)
 
-			var createReplicaReq CreateReplicaRequest
-			/* Retrieve entries which are less than new node's key and create a map out of it.*/
-			prevNodeNumericKey := getBigIntFromString(prevNode.Key)
-			var entryKey *big.Int
-			createReplicaReq.HashTable = make(map[string][]MemberShipInfo)
+	//fmt.Println("HandleReplicaSyncMsg message from "+ msg.Src + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
 
-			for k,v := range dhtNode.hashTable {
-				entryKey = getBigIntFromString(k)
-				/* If entry key is within failed node's key space, transfer the data to new node */
-				if (false == isKeyPresentInKeyspaceRange(entryKey, prevNodeNumericKey, dhtNode.curNodeNumericKey)){
-					createReplicaReq.HashTable[k] = v
-				}
-			}
-			dhtNode.mp.Send(MP.NewMessage(nodeToCreateReplica.IpAddress, nodeToCreateReplica.Name , "dht_create_replica_req",
-				MP.EncodeData(createReplicaReq)))
-		}()
+	if (replicaSyncMsg.OriginIpAddress == dhtNode.IpAddress){
+		/* If hop count is zero, it there are as many replicas as required by replication factor.
+		 * Otherwise, residual hop count will indicate how much we are are short of replication factor */
+		dhtNode.curReplicaCount = REPLICATION_FACTOR - replicaSyncMsg.ResidualHopCount
+
+	} else{
+
+		/* Update the local hash table with received values */
+		for k,v := range replicaSyncMsg.HashTable {
+			dhtNode.hashTable[k] = v
+		}
+
+		replicaSyncMsg.ResidualHopCount--
+		if (replicaSyncMsg.ResidualHopCount == 0){
+			//fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
+			dhtNode.mp.Send(MP.NewMessage(replicaSyncMsg.OriginIpAddress, replicaSyncMsg.OriginName,
+				"dht_replica_sync", MP.EncodeData(replicaSyncMsg)))
+		} else {
+			nodeToForward := dhtNode.leafTable.nextNode
+			//fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)
+			//logNodeList(discoveryMsg.NodeList)
+			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
+				"dht_replica_sync", MP.EncodeData(replicaSyncMsg)))
+		}
 	}
-}
-
-func (dhtNode *DHTNode) HandleCreateReplicaRequest(msg *MP.Message) {
-	var createReplicaRequest CreateReplicaRequest
-	MP.DecodeData(&createReplicaRequest,msg.Data)
-	fmt.Println("[DHT] Create Replica Request received")
-
-	/* Update the local hash table with received values */
-	for k,v := range createReplicaRequest.HashTable {
-		dhtNode.hashTable[k] = v
-	}
-
-	/* send create replica response */
-	dhtNode.mp.Send(MP.NewMessage(msg.Src, msg.SrcName , "dht_create_replica_res",
-		MP.EncodeData(CreateReplicaResponse{SUCCESS})))
-}
-
-func (dhtNode *DHTNode) HandleCreateReplicaResponse(msg *MP.Message) {
-	var createReplicaResponse CreateReplicaResponse
-	MP.DecodeData(&createReplicaResponse,msg.Data)
-	fmt.Println("[DHT] Create Replica Response received with status "+ strconv.Itoa(createReplicaResponse.Status))
-	dhtNode.curReplicaCount++
 }
 

@@ -74,8 +74,7 @@ func Start() {
 		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
 		"dht_delete_replica_req":	    dhtNode.HandleDeleteReplicaRequest,
 		"dht_delete_replica_res":		dhtNode.HandleDeleteReplicaResponse,
-		"dht_create_replica_req":		dhtNode.HandleCreateReplicaRequest,
-		"dht_create_replica_res":		dhtNode.HandleCreateReplicaResponse,
+		"dht_replica_sync":				dhtNode.HandleReplicaSyncMsg,
 
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.

@@ -70,18 +70,9 @@ type RingRepairResponse struct {
 	Key    string
 }
 
-type CreateReplicaRequest struct {
-	ResidualHopCount int
-	HashTable        map[string][]MemberShipInfo
-}
-
 type DeleteReplicaRequest struct {
 	StartKey   		 string
 	EndKey     		 string
-}
-
-type CreateReplicaResponse struct {
-	Status int
 }
 
 type DeleteReplicaResponse struct {
@@ -91,8 +82,6 @@ type DeleteReplicaResponse struct {
 type ReplicaSyncMessage struct {
 	ResidualHopCount 	int
 	HashTable        	map[string][]MemberShipInfo
-	TraversalDirection 	int
 	OriginIpAddress    string
 	OriginName         string
-	OriginKey          string
 }

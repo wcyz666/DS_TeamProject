@@ -381,7 +381,6 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 		nodeToForward := dhtNode.leafTable.NextNodeList[REPLICATION_FACTOR-1]
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_delete_replica_req",
 			MP.EncodeData(DeleteReplicaRequest{joinComplete.Key,dhtNode.NodeKey})))
-		dhtNode.ReplicationState = REPLICA_DELETION_IN_PROGRESS
 
 	} else {
 		fmt.Println("No need to delete existing replicas since we are yet to reach the desired replicatio factor")
@@ -399,8 +398,6 @@ func (dhtNode *DHTNode) HandleJoinNotify(msg *MP.Message) {
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinNotify.Key,false)
 }
-
-
 
 /*Failure Handling relation functions */
 
@@ -597,8 +594,8 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 
 		} else {
 			dhtNode.leafTable.NextNodeList = discoveryMsg.NodeList
-			/* Next node is up-to-date. Trigger Replica synchronization procedure*/
-//			dhtNode.PerformReplicaSync()
+			/* Next node list is up-to-date. Trigger Replica synchronization procedure*/
+			dhtNode.StartReplicaSync()
 		}
 
 		//fmt.Println("[DHT] Lead Table contents")
