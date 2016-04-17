@@ -6,10 +6,11 @@
 #	./run supernode clear
 #	./run supernode
 
-export GOPATH=$HOME/go
-go get github.com/hoisie/web
 
 git pull
+
+export GOPATH=$HOME/go
+go get github.com/hoisie/web
 go build main.go || exit;
 
 if [ "$2" != "" ]; then
