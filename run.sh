@@ -5,6 +5,10 @@
 #	./run node
 #	./run supernode clear
 #	./run supernode
+
+export GOPATH=$HOME/go
+go get github.com/hoisie/web
+
 git pull
 go build main.go || exit;
 
