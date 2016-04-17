@@ -69,10 +69,13 @@ func Start() {
 		"join_dht_req":            		dhtNode.HandleJoinReq,
 		"join_dht_complete":        	dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
 		"join_dht_notify":          	dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
-		"leave_dht_req":            	dhtNode.Leave,
 		"dht_broadcast_msg":        	dhtNode.HandleBroadcastMessage,
 		"dht_neighbourhood_discovery":	dhtNode.HandleNeighbourhoodDiscovery,
 		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
+		"dht_delete_replica_req":	    dhtNode.HandleDeleteReplicaRequest,
+		"dht_delete_replica_res":		dhtNode.HandleDeleteReplicaResponse,
+		"dht_create_replica_req":		dhtNode.HandleCreateReplicaRequest,
+		"dht_create_replica_res":		dhtNode.HandleCreateReplicaResponse,
 
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.

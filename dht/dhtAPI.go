@@ -39,12 +39,12 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 }
 
 func (dhtService *DHTService)Start() int{
-	dhtService.DhtNode.State = DHT_JOIN_IN_PROGRESS
+	dhtService.DhtNode.DhtState = DHT_JOIN_IN_PROGRESS
 	status := dhtService.DhtNode.CreateOrJoinRing()
 	if (status == NEW_DHT_CREATED){
 		/* Unit testing the ring*/
 		//dhtService.DhtNode.PerformPeriodicBroadcast()
-		dhtService.DhtNode.State = DHT_JOINED
+		dhtService.DhtNode.DhtState = DHT_JOINED
 		return DHT_API_SUCCESS
 	}
 
@@ -53,12 +53,12 @@ func (dhtService *DHTService)Start() int{
 	for {
 		select {
 		case joinRes := <-dhtService.DhtNode.mp.Messages["join_dht_res"]:
-			dhtService.DhtNode.State = DHT_JOIN_IN_PROGRESS
+			dhtService.DhtNode.DhtState = DHT_JOIN_IN_PROGRESS
 			status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
 			if (JOIN_IN_PROGRESS_RETRY_LATER == status){
 				numOfAttempts--
 				if (numOfAttempts <= 0 ){
-					dhtService.DhtNode.State = DHT_JOIN_FAILED_MAX_ATTEMPTS
+					dhtService.DhtNode.DhtState = DHT_JOIN_FAILED_MAX_ATTEMPTS
 					return DHT_API_FAILURE_MAX_ATTEMPTS_REACHED
 				}
 				/* Another instance of Join is in progress in successor Node
@@ -73,10 +73,10 @@ func (dhtService *DHTService)Start() int{
 			} else {
 				/* Join completed with error or success. Return control to caller */
 				if (status != SUCCESS){
-					dhtService.DhtNode.State = DHT_JOIN_FAILED
+					dhtService.DhtNode.DhtState = DHT_JOIN_FAILED
 					return  DHT_API_FAILURE
 				}
-				dhtService.DhtNode.State = DHT_JOINED
+				dhtService.DhtNode.DhtState = DHT_JOINED
 				return DHT_API_SUCCESS;
 			}
 		case msg := <-dhtService.DhtNode.mp.Messages["join_dht_conn_failed"]:
@@ -87,7 +87,7 @@ func (dhtService *DHTService)Start() int{
 			dhtService.DhtNode.RemoveFailedSuperNode(failClientInfo.IP)
 			status := dhtService.DhtNode.CreateOrJoinRing()
 			if (status == NEW_DHT_CREATED){
-				dhtService.DhtNode.State = DHT_JOINED
+				dhtService.DhtNode.DhtState = DHT_JOINED
 				return DHT_API_SUCCESS
 			}
 		}
