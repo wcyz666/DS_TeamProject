@@ -3,7 +3,7 @@
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>fullPage.js One Page Scroll Sites</title>
+	<title>P2P Live, Live Streaming to the World</title>
 	<meta name="author" content="Alvaro Trigo Lopez" />
 	<meta name="description" content="fullPage plugin by Alvaro Trigo. Create fullscreen pages fast and simple. One page scroll like iPhone website." />
 	<meta name="keywords"  content="fullpage,jquery,alvaro,trigo,plugin,fullscren,screen,full,iphone5,apple" />
@@ -24,15 +24,13 @@
 		$(document).ready(function() {
 			$('#fullpage').fullpage({
                 menu: '#menu',
-				sectionsColor: ['#2B2B2B', '#C63D0F', '#F6F6F6', '#E9E581'],
+				sectionsColor: ['#2B2B2B', '#C63D0F', '#F6F6F6', '#FFE200'],
 				anchors: ['firstPage', 'secondPage', '3rdPage', '4thpage'],
 				scrollingSpeed: 1000,
                 css3: true,
-                navigation: true,
-                navigationPosition: 'right',
-                navigationTooltips: ['firstPage', 'secondPage', '3rdPage', '4thpage'],
                 easingcss3: 'cubic-bezier(0.175, 0.685, 0.320, 1.275)',
-
+                slidesNavigation: true,
+                slidesNavPosition: 'bottom'
 			});
 
 		});
@@ -42,14 +40,14 @@
 <body>
 
 
-<header>
+
     <ul id="menu">
         <li data-menuanchor="firstPage"><a href="#firstPage">First slide</a></li>
         <li data-menuanchor="secondPage"><a href="#secondPage">Second slide</a></li>
         <li data-menuanchor="3rdPage"><a href="#3rdPage">Third slide</a></li>
         <li data-menuanchor="4thpage"><a href="#4thpage">Fourth slide</a></li>
     </ul>
-</header>
+
 
 
 <div id="fullpage">
@@ -59,20 +57,22 @@
         </div>
 
 		<h1>P2P Live</h1>
-		<p>Share your life ANYWHERE, ANYTIME.</p>
+		<p>Share Your Life Anywhere, Anytime.</p>
 	</div>
 	<div class="section" id="section1">
 	    <div class="slide">
-			<div class="intro">
-				<h1>Create Sliders</h1>
-				<p>Not only vertical scrolling but also horizontal scrolling. With fullPage.js you will be able to add horizontal sliders in the most simple way ever.</p>
-				<img src="../images/slider.png" alt="slider" />
+			<div class="intro container-fluid">
+				<h1 class="row">P2P Live</h1>
+				<p class="row">Share Your Moment with Best Friend</p>
+                <img src="../images/img5.png" alt="slider" class="img-responsive center-block"/>
+
 			</div>
 
 		</div>
 	    <div class="slide">
-            <h1>Videos</h1>
-            <video autoplay loop muted id="myVideo">
+            <h2 class="row">P2P Live</h2>
+            <p>Share You Discovery with the World</p>
+            <video width="60%" autoplay loop muted id="myVideo">
                 <source src="../images/flowers.mp4" type="video/mp4">
                 <source src="../images/flowers.webm" type="video/webm">
                 Your browser does not support the audio element.
@@ -80,17 +80,10 @@
 		</div>
 	    <div class="slide">
 			<div class="intro">
-				<img src="imgs/2.png" alt="Cool" />
-				<h1>Cool</h1>
-				<p>It just looks cool. Impress everybody with a simple and modern web design!</p>
-			</div>
-		</div>
-	    <div class="slide">
-			<div class="intro">
-				<img src="imgs/3.png" alt="Compatible" />
-				<h1>Compatible</h1>
-				<p>Working in modern and old browsers too! IE 8 users don't have the fault of using that horrible browser! Lets give them a chance to see your site in a proper way!</p>
-			</div>
+				<h2>Cool and Compatible</h2>
+				<p>It just looks cool. Impress everybody with a simple consistent web UI and modern distributed design!</p>
+                <img src="../images/img7.png" alt="slider"/>
+            </div>
 		</div>
 	</div>
 	<div class="section" id="section2">
@@ -101,14 +94,27 @@
 		</div>
 	</div>
 	<div class="section" id="section3">
-		<div class="intro">
-			<h1>Working On Tablets</h1>
-			<p>
-				Designed to fit to different screen sizes as well as tablet and mobile devices.
-				<br /><br /><br /><br /><br /><br />
-			</p>
-		</div>
-		<img src="imgs/tablets.png" alt="tablets" />
+        <div class="container-fluid">
+            <div class="col-md-offset-1 col-md-5">
+                <img src="../images/img6.png" class="img-responsive" />
+            </div>
+            <div class="intro col-md-6">
+                <h1>Let's begin, now.</h1>
+                <p>
+                    Choose to be a streamer or viewer.
+                </p>
+                <br /><br />
+                <div class="intro-btn-grp row">
+                    <div class="btn btn-large col-xs-6 col-sm-6">
+                        <button class="btn">Streamer</button>
+                    </div>
+                    <div class="btn btn-large col-xs-6 col-sm-6">
+                        <button class="btn">Viewer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 	</div>
 </div>
 

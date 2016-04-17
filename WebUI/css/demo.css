@@ -70,32 +70,22 @@ body{
 	margin-left: -420px;
 }
 .intro p{
-	width: 50%;
 	margin: 0 auto;
 	font-size: 1.5em;
 }
-header {
-	position:fixed;
-	height: 62px;
-	top:0px;
-	display:block;
-	width: 100%;
-	background: #ccc;
-	z-index:9;
-	text-align:left;
-	color: #f2f2f2;
-	padding: 20px 0 0 0;
-}
+
 h1{
 	font-size: 6em;
 }
+h2 {
+    font-size: 5em;
+}
 p{
-	font-size: 2em;
+	font-size: 3em;
 }
 .intro p{
-	width: 50%;
 	margin: 0 auto;
-	font-size: 1.5em;
+	font-size: 2.5em;
 }
 .section{
 	text-align:center;
@@ -104,9 +94,7 @@ p{
 	display:inline-block;
 	margin: 10px;
 	color: #000;
-	background:#ccc;
-	-webkit-border-radius: 10px;
-            border-radius: 10px;
+	background:none;
     border: solid 2px #0f0f0f;
 }
 
@@ -160,10 +148,65 @@ p{
     margin-top: 40px;
 }
 #section0-jumbo {
+    margin-top: -110px;
     background-image: url("../images/img1.jpg");
     height: 70%;
 }
 #section0 img {
     position: relative;
+    top: 50px;
     margin: auto;
+
+}
+#section1 p,
+#section1 h1 {
+    z-index: 999;
+}
+
+#section1 img {
+    display: block;
+    width: 100%;
+    position: relative;
+    z-index: -1;
+    margin: auto;
+    max-width: 1000px;
+}
+#section3 {
+    padding-top: 40px;
+}
+#section3 img {
+    display: block;
+    position: relative;
+    top:40%;
+    width: 100%;
+    margin: auto;
+
+}
+
+#section3 p{
+    width: 100%;
+    margin: 0 auto;
+    font-size: 3em;
+}
+
+.intro-btn-grp button {
+    width: 100%;
+    padding: 20px;
+    font-size: 2em;
+    margin: auto;
+    text-align: center;
+    display: block;
+    background: none;
+    border: solid 3px #0f0f0f;
+}
+
+.intro-btn-grp button:hover {
+    background: white;
+    color: #000;
+    border: solid 3px #000;
+    -webkit-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -ms-transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    transition-duration: 0.3s;;
 }
