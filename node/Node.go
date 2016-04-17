@@ -240,6 +240,8 @@ func NodeCLIInterface(streamer *Streamer.Streamer){
 				}
 			case "L","l", "Log", "log":
 				streamer.Log()
+			case "Receive", "receive":
+				fmt.Println("Received :" + streamer.Receive())
 			default:
 				fmt.Println("Unexpected option")
 				printHelp()

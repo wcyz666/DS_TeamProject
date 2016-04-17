@@ -37,7 +37,7 @@ func NewStreamer(mp *MP.MessagePasser, nodeContext *NC.NodeContext) *Streamer{
 	streamer.ReceivingData = make(chan string)
 	streamer.ProgramList = make(map[string]string)
 	go streamer.backgroundStreaming()
-	go streamer.testReceive()
+	//go streamer.testReceive()
 	return &streamer
 }
 

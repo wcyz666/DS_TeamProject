@@ -96,8 +96,22 @@ func (streamer *Streamer) Join(root string){
 
 /* Called to stream the data */
 func (streamer *Streamer) Stream(data string){
+	if streamer.STATE != STREAMING{
+		return
+	}
 	streamer.StreamingData <- data
 }
+
+/* Called to stream the data */
+func (streamer *Streamer) Receive() (data string){
+	select {
+	case data := <-streamer.ReceivingData:
+		return data
+	default:
+		return "No data"
+	}
+}
+
 
 /* Log the essential information */
 func (streamer *Streamer) Log(){
