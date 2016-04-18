@@ -4,6 +4,7 @@ import (
 	"github.com/hoisie/web"
 	Streamer "../streaming/streamer"
 	Json "encoding/json"
+	"fmt"
 )
 
 func apiHello()string{
@@ -32,9 +33,10 @@ func apiReceive() string{
 	return streamer.Receive()
 }
 
-func apiGetPrograms() string{
+func apiGetPrograms(ctx *web.Context, val string) string{
 	json, _ := Json.Marshal(streamer.ProgramList)
-	return string(json)
+	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
+	return ctx.Params["callback"] + "(" + string(json) + ")"
 
 }
 
@@ -45,6 +47,6 @@ func webInterface(streamer *Streamer.Streamer) {
 	web.Get("/join/(.*)", apiJoin)
 	web.Get("/stream/(.*)", apiStream)
 	web.Get("/receive/", apiReceive)
-	web.Get("/allPrograms/", apiGetPrograms)
+	web.Get("/allPrograms/(.*)", apiGetPrograms)
 	web.Run("0.0.0.0:9999")
 }
