@@ -33,8 +33,8 @@ Initialization
  */
 func NewStreamer(mp *MP.MessagePasser, nodeContext *NC.NodeContext) *Streamer{
 	streamer := Streamer{STATE:IDEAL, mp: mp, streamID:0, nodeContext:nodeContext}
-	streamer.StreamingData = make(chan string)
-	streamer.ReceivingData = make(chan string)
+	streamer.StreamingData = make(chan string, 1000)
+	streamer.ReceivingData = make(chan string, 1000)
 	streamer.ProgramList = make(map[string]string)
 	go streamer.backgroundStreaming()
 	//go streamer.testReceive()
