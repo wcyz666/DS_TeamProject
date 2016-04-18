@@ -121,10 +121,13 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 		go streamer.mp.Send(msg)
 	}
 
+
+
 	// Clear
 	streamer.StreamingParent = ""
 	streamer.Streamingchildren = []string{}
 	streamer.STATE = IDEAL
+	streamer.Join(streamer.CurrentProgram)
 
 	//TODO: Clear all the data stored in the channels
 }
