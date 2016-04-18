@@ -5,7 +5,10 @@ import (
 	Streamer "../streaming/streamer"
 	Json "encoding/json"
 	"fmt"
+	NodeContext "../node/nodeContext"
 )
+
+var context *NodeContext.NodeContext
 
 func apiHello()string{
 	return "Hello World!"
@@ -34,13 +37,16 @@ func apiReceive() string{
 }
 
 func apiGetPrograms(ctx *web.Context, val string) string{
-	json, _ := Json.Marshal(streamer.ProgramList)
+	programList := streamer.ProgramList
+	delete(programList, context.LocalName)
+	json, _ := Json.Marshal(programList)
 	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
 	return ctx.Params["callback"] + "(" + string(json) + ")"
 
 }
 
-func webInterface(streamer *Streamer.Streamer) {
+func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
+	context = nodeContext
 	web.Get("/", apiHello)
 	web.Get("/start/(.*)", apiStart)
 	web.Get("/stop/", apiStop)
