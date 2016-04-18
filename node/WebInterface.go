@@ -32,9 +32,9 @@ func apiReceive() string{
 	return streamer.Receive()
 }
 
-func apiGetPrograms() string{
+func apiGetPrograms(ctx *web.Context, val string) string{
 	json, _ := Json.Marshal(streamer.ProgramList)
-	return "callback(" + string(json) + ")"
+	return ctx.Params["callback"] + "(" + string(json) + ")"
 
 }
 
