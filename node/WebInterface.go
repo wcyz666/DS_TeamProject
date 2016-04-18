@@ -34,7 +34,7 @@ func apiReceive() string{
 
 func apiGetPrograms() string{
 	json, _ := Json.Marshal(streamer.ProgramList)
-	return "callback('" + string(json) + "')"
+	return "callback(" + string(json) + ")"
 
 }
 
