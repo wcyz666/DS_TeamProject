@@ -129,7 +129,8 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 		go streamer.mp.Send(msg)
 	}
 
-	if controlData.RootStreamer != streamer.CurrentProgram {
+	if controlData.RootStreamer != streamer.CurrentProgram &&
+		controlData.SrcName != streamer.nodeContext.LocalName{
 		streamer.Join(streamer.CurrentProgram)
 	}
 }
@@ -227,4 +228,16 @@ func (streamer *Streamer) deleteStreamingChild(childIP string, childName string)
 			break
 		}
 	}
+}
+
+func (streamer *Streamer) rejoin(root string){
+	// Construct data, to be used by updating the program
+	data := SDataType.StreamControlMsg{
+		SrcName: streamer.nodeContext.LocalName,
+		SrcIp: streamer.nodeContext.LocalIp,
+		RootStreamer: root,
+		Type: "rejoin",
+	}
+	streamer.mp.Send(MP.NewMessage(streamer.nodeContext.ParentIP, streamer.nodeContext.ParentName, "stream_join", MP.EncodeData(data)))
+	streamer.STATE = JOINING
 }

@@ -114,8 +114,15 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 	if len(streamers) == 0{
 		return
 	}
-	streamer := streamers[utils.RandomChoice(0, len(streamers))]
-	// Send "streaming_join" to one of the streamers to start the election
+
+	// TODO: Temp workaround here. For rejoining nodes.
+	var streamer DHT.MemberShipInfo
+	if controlData.Type == "rejoin"{
+		streamer = streamers[0]
+	}else {
+		streamer = streamers[utils.RandomChoice(0, len(streamers))]
+	}
+
 
 	sHandler.mp.Send(MP.NewMessage(streamer.StreamerIp, streamer.StreamerName, "streaming_join", msg.Data))
 	// Update the dht, append the guy into dht
@@ -165,4 +172,5 @@ func (sHandler *StreamingHandler) RemoveFromDht(msg *MP.Message) {
 		StreamerIp: failNode.FailNodeIp,
 	})
 }
+
 
