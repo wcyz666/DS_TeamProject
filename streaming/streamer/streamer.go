@@ -118,6 +118,8 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 
+
+
 	// Clear
 	streamer.StreamingParent = ""
 	streamer.Streamingchildren = []string{}

@@ -62,7 +62,8 @@ func (streamer *Streamer) Stop(){
 
 	// Notify Stream Children
 	msg := MP.NewMessage(streamer.nodeContext.LocalIp, streamer.nodeContext.LocalName, "streaming_stop", MP.EncodeData(data))
-	streamer.mp.Send(msg)
+	//streamer.mp.Send(msg)
+	streamer.HandleStop(&msg)
 	streamer.STATE = IDEAL
 }
 

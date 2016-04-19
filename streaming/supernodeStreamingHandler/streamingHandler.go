@@ -115,6 +115,8 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 		return
 	}
 
+	fmt.Print("Current Streamers: ")
+	fmt.Println(streamers)
 	// TODO: Temp workaround here. For rejoining nodes.
 	var streamer DHT.MemberShipInfo
 	if controlData.Type == "rejoin"{
