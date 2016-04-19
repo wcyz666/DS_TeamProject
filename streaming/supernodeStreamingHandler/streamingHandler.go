@@ -123,15 +123,13 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 		streamer = streamers[0]
 	}else {
 		streamer = streamers[utils.RandomChoice(0, len(streamers))]
+		// Update the dht, append the guy into dht
+		sHandler.dht.Append(root, DHT.MemberShipInfo{
+			StreamerName:controlData.SrcName,
+			StreamerIp:controlData.SrcIp,
+		})
 	}
-
-
 	sHandler.mp.Send(MP.NewMessage(streamer.StreamerIp, streamer.StreamerName, "streaming_join", msg.Data))
-	// Update the dht, append the guy into dht
-	sHandler.dht.Append(root, DHT.MemberShipInfo{
-		StreamerName:controlData.SrcName,
-		StreamerIp:controlData.SrcIp,
-	})
 }
 
 func (sHandler *StreamingHandler) NewChildJoin(childIp string, childName string) {

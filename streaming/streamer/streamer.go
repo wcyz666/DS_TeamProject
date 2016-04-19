@@ -118,18 +118,20 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
 
+	fmt.Println("Handle stop!")
+	fmt.Println(controlData)
 
+	// Notify Stream Children
+	for _, destName := range(streamer.Streamingchildren){
+		fmt.Println("Notifying " + destName)
+		msg := MP.NewMessage("", destName, "streaming_stop", msg.Data)
+		streamer.mp.Send(msg)
+	}
 
 	// Clear
 	streamer.StreamingParent = ""
 	streamer.Streamingchildren = []string{}
 	streamer.STATE = IDEAL
-
-	// Notify Stream Children
-	for _, destName := range(streamer.Streamingchildren){
-		msg := MP.NewMessage("", destName, "streaming_stop", msg.Data)
-		go streamer.mp.Send(msg)
-	}
 
 	if controlData.RootStreamer != streamer.CurrentProgram &&
 		controlData.SrcName != streamer.nodeContext.LocalName{
