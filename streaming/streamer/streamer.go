@@ -131,7 +131,7 @@ func (streamer *Streamer) HandleStop(msg *MP.Message){
 
 	if controlData.RootStreamer != streamer.CurrentProgram &&
 		controlData.SrcName != streamer.nodeContext.LocalName{
-		streamer.Join(streamer.CurrentProgram)
+		streamer.rejoin(streamer.CurrentProgram)
 	}
 }
 
@@ -197,7 +197,7 @@ func (streamer *Streamer) HandleErrorMsg(msg *MP.Message) {
 		streamer.Streamingchildren = []string{}
 		streamer.STATE = IDEAL
 		if failNode.Name != streamer.CurrentProgram{
-			streamer.Join(streamer.CurrentProgram)
+			streamer.rejoin(streamer.CurrentProgram)
 		}
 
 	}else{
