@@ -156,7 +156,6 @@ func (sHandler *StreamingHandler) HandleErrorMsg(msg *MP.Message){
 	}
 }
 
-//TODO: Check here!!!!!! Have meal with wang da shen first
 func (sHandler *StreamingHandler) RemoveFromDht(msg *MP.Message) {
 	failNode := SDataType.RemoveFromDht{}
 	MP.DecodeData(&failNode, msg.Data)

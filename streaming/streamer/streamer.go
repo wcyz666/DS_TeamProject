@@ -115,33 +115,36 @@ func (streamer *Streamer) HandleElection(msg *MP.Message){
 
 /* Program stopped */
 func (streamer *Streamer) HandleStop(msg *MP.Message){
-	// Notify Stream Children
-	for _, destName := range(streamer.Streamingchildren){
-		msg := MP.NewMessage("", destName, "streaming_stop", MP.EncodeData(""))
-		go streamer.mp.Send(msg)
-	}
-
-
+	var controlData SDataType.StreamControlMsg
+	MP.DecodeData(&controlData, msg.Data)
 
 	// Clear
 	streamer.StreamingParent = ""
 	streamer.Streamingchildren = []string{}
 	streamer.STATE = IDEAL
 
-	// TODO: To be fixed here.
-	//streamer.Join(streamer.CurrentProgram)
+	// Notify Stream Children
+	for _, destName := range(streamer.Streamingchildren){
+		msg := MP.NewMessage("", destName, "streaming_stop", msg.Data)
+		go streamer.mp.Send(msg)
+	}
 
-	//TODO: Clear all the data stored in the channels
+	if controlData.RootStreamer != streamer.CurrentProgram {
+		streamer.Join(streamer.CurrentProgram)
+	}
 }
 
 /* A New Program is added */
-func (streamer *Streamer) HandleNewProgram(msg *MP.Message){
+func (streamer *Streamer) HandleNewProgram(msg *MP.Message) {
 	var controlData SDataType.StreamControlMsg
 	MP.DecodeData(&controlData, msg.Data)
-	streamer.ProgramList[controlData.SrcName] = controlData.Title
-	fmt.Println("New program detected! ")
-	fmt.Print(" Current program list:")
-	fmt.Println(streamer.ProgramList)
+	// If this program is not started by myself
+	if controlData.SrcName != streamer.nodeContext.LocalName {
+		streamer.ProgramList[controlData.SrcName] = controlData.Title
+		fmt.Println("New program detected! ")
+		fmt.Print(" Current program list:")
+		fmt.Println(streamer.ProgramList)
+	}
 }
 
 /* A program is stoped */
@@ -189,8 +192,13 @@ func (streamer *Streamer) HandleErrorMsg(msg *MP.Message) {
 	if failNode.Name == streamer.StreamingParent{
 		// Rejoin the streaming process
 		fmt.Println("[streaming] Parent node " + failNode.Name + " failed!")
+		streamer.StreamingParent = ""
+		streamer.Streamingchildren = []string{}
 		streamer.STATE = IDEAL
-		streamer.Join(streamer.CurrentProgram)
+		if failNode.Name != streamer.CurrentProgram{
+			streamer.Join(streamer.CurrentProgram)
+		}
+
 	}else{
 		streamer.deleteStreamingChild(failNode.IP, failNode.Name)
 	}

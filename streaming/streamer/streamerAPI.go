@@ -61,8 +61,8 @@ func (streamer *Streamer) Stop(){
 	}
 
 	// Notify Stream Children
-	streamer.HandleStop(nil)
-
+	msg := MP.NewMessage(streamer.nodeContext.LocalIp, streamer.nodeContext.LocalName, "streaming_stop", MP.EncodeData(data))
+	streamer.mp.Send(msg)
 	streamer.STATE = IDEAL
 }
 
@@ -72,6 +72,11 @@ func (streamer *Streamer) Join(root string){
 
 
 	if streamer.STATE != IDEAL {
+		return
+	}
+
+	// If program is not in the list
+	if _,ok := streamer.ProgramList[root]; ok == false{
 		return
 	}
 
