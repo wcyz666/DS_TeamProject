@@ -82,36 +82,13 @@ func (dhtNode *DHTNode) getData(key string) ([]MemberShipInfo, int) {
 	return data, status
 }
 
-
-/* handler responsible for processing messages received from other nodes
- * and updating the local hash table
- */
-func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
-
-	// decode message into proper structure
-	var dataOperationReq DataOperationRequest
-	var dataOperationRes DataOperationResponse
-	MP.DecodeData(&dataOperationReq, msg.Data)
-
-	var kind string
-
-	if (false == dhtNode.isKeyPresentInMyKeyspaceRange(dataOperationReq.Key)){
-		// forward request to node closer to the super node responsible for the key
-		nextNode := dhtNode.GetNextNodeToForwardInRing(dataOperationReq.Key)
-		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, msg.Kind, MP.EncodeData(dataOperationReq))
-		dhtNode.mp.Send(msg)
-		return
-	}
-
-	/* I am responsible for this key. Do the necessary processing */
-	msg_type := msg.Kind
-
-	switch msg_type{
+func (dhtNode *DHTNode) PerformOperationOnDHT(dataOperationReq DataOperationRequest, reqType string)(dataOperationRes DataOperationResponse, resType string){
+	switch reqType{
 
 	/* handle CreateNewEntry request */
 	case "create_new_entry_req":
 		dataOperationRes.Status = dhtNode.createEntry(dataOperationReq.Key, dataOperationReq.Data)
-		kind = "create_new_entry_res"
+		resType = "create_new_entry_res"
 
 	/* handle UpdateEntry request */
 	case "update_entry_req":
@@ -123,29 +100,62 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 			// remove data
 			dataOperationRes.Status = dhtNode.removeData(dataOperationReq.Key, dataOperationReq.Data)
 		}
-		kind = "update_entry_res"
+		resType = "update_entry_res"
 
 	/* handle DeleteEntry request */
 	case "delete_entry_req":
 		// delete entry in this node
 		dataOperationRes.Status = dhtNode.deleteEntry(dataOperationReq.Key)
-		kind = "delete_entry_res"
+		resType = "delete_entry_res"
 
 	/*handle GetDate request */
 	case "get_data_req":
 		// get entry in this node
 		dataOperationRes.Data, dataOperationRes.Status = dhtNode.getData(dataOperationReq.Key)
-		kind = "get_data_res"
+		resType = "get_data_res"
 
 	/* handle unknown kind in message request*/
 	default:
 		panic("WARNING: Unknown kind in HandleRequest")
 	}
 
-	/* Send response to the origin node */
+	return dataOperationRes, resType
+}
+
+/* handler responsible for processing messages received from other nodes
+ * and updating the local hash table
+ */
+func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
+
+	// decode message into proper structure
+	var dataOperationReq DataOperationRequest
+	var dataOperationRes DataOperationResponse
+	MP.DecodeData(&dataOperationReq, msg.Data)
+
+	if (false == dhtNode.isKeyPresentInMyKeyspaceRange(dataOperationReq.Key)){
+		// forward request to node closer to the super node responsible for the key
+		nextNode := dhtNode.GetNextNodeToForwardInRing(dataOperationReq.Key)
+		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, msg.Kind, MP.EncodeData(dataOperationReq))
+		dhtNode.mp.Send(msg)
+		return
+	}
+
+	msg_type :=  msg.Kind
+	/* I am responsible for this key. Do the necessary processing */
+	dataOperationRes, resType := dhtNode.PerformOperationOnDHT(dataOperationReq,  msg.Kind)
+
+	/* preserve original origin name and IP address to send the final response to */
 	ip := dataOperationReq.OriginIpAddress
 	name := dataOperationReq.OriginName
-	responseMsg := MP.NewMessage(ip, name, kind, MP.EncodeData(dataOperationRes))
+
+	/* Reading data from DHT will not update the state. No need to contact replicas */
+	if (msg_type != "get_data_req"){
+		/* Operation updates the contents on the primary node. Send updates to replicas */
+		dataOperationRes.Status =  dhtNode.SendUpdateToReplicas(dataOperationReq, msg_type)
+	}
+
+	/* Send response to the origin node */
+	responseMsg := MP.NewMessage(ip, name, resType, MP.EncodeData(dataOperationRes))
 	dhtNode.mp.Send(responseMsg)
 }
 

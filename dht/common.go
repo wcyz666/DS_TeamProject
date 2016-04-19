@@ -21,7 +21,8 @@ const HASH_KEY_SIZE = 128
 const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 const NEIGHBOURHOOD_DISTANCE = 2 // Neighbourhood distance on each direction
 const PERIODIC_LEAF_TABLE_REFRESH_DURATION = 120
-const REPLICATION_FACTOR = NEIGHBOURHOOD_DISTANCE
+const REPLICATION_FACTOR = 2 // 1 Primary and 1 Backup
+const REPLICATION_UPDATE_RESPONSE_TIMER_EXPIRY = 6
 
 type Node struct {
 	IpAddress string
@@ -58,11 +59,7 @@ type DHTNode struct {
 	 * may result in incorrect splitting of hash table among the super nodes in the ring */
 	IsRingUpdateInProgress bool
 	DhtState               int
-	curReplicaCount        int
-	/* Replication related information */
-	ReplicationState       int
-	/* Keep track of key of failed Node. While doing replication, we need t o*/
-	failedNodeKey          int
+	curReplicaCount        int // This includes primary as well in the replica count
 }
 
 type DHTService struct {
@@ -86,6 +83,9 @@ const (
 	/*DHT Data management related status */
 	KEY_NOT_PRESENT
 	SUCCESS_ENTRY_OVERWRITTEN
+
+	/*DHT Replication Management related status*/
+	SUCCESS_REDUCED_REPLICATION  // If operation was successful only in a subset of replicas
 
 	/*Ring management related status */
 	// If successor node is already involved in another join procedure

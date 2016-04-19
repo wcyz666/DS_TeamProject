@@ -75,6 +75,7 @@ func Start() {
 		"dht_delete_replica_req":	    dhtNode.HandleDeleteReplicaRequest,
 		"dht_delete_replica_res":		dhtNode.HandleDeleteReplicaResponse,
 		"dht_replica_sync":				dhtNode.HandleReplicaSyncMsg,
+		"dht_replica_update_req":		dhtNode.HandleReplicaUpdateReqMsg,
 
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.

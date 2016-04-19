@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strconv"
 	MP "../messagePasser"
+	"time"
 )
 
 /* Replication related functions */
@@ -100,5 +101,62 @@ func (dhtNode *DHTNode) HandleReplicaSyncMsg(msg *MP.Message){
 				"dht_replica_sync", MP.EncodeData(replicaSyncMsg)))
 		}
 	}
+}
+
+func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationRequest, reqType string) (int){
+	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
+	noOfReplicasToSend :=  REPLICATION_FACTOR - 1 //  I am one of the replicas (primary). So have to reduce by 1
+	if (noOfReplicasToSend > len(dhtNode.leafTable.NextNodeList)){
+		noOfReplicasToSend = len(dhtNode.leafTable.NextNodeList)
+	}
+
+	for i := 0; i < noOfReplicasToSend; i++ {
+		nodeToForward := dhtNode.leafTable.NextNodeList[i]
+		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
+			"dht_replica_update_req", MP.EncodeData(ReplicaUpdateReq{reqType, dataOperationReq})))
+	}
+
+	updateResRcvd := 0
+
+	timer1 := time.NewTimer(time.Second * REPLICATION_UPDATE_RESPONSE_TIMER_EXPIRY)
+	go func(){
+		<-timer1.C
+		msg := MP.NewMessage(dhtNode.IpAddress, "self", "dht_replica_update_timer_expiry", MP.EncodeData(""))
+		dhtNode.mp.Messages["dht_replica_update_timer_expiry"] <- &msg
+	}()
+
+
+	for {
+		select {
+		case msg := <-dhtNode.mp.Messages["dht_replica_update_res"]:
+			var replicaUpdateRes ReplicaUpdateRes
+			MP.DecodeData(&replicaUpdateRes,msg.Data)
+
+			if (replicaUpdateRes.status == SUCCESS){
+				updateResRcvd++
+			}
+
+			if (updateResRcvd == noOfReplicasToSend){
+				return SUCCESS
+			}
+		case msg := <- dhtNode.mp.Messages["dht_replica_update_timer_expiry"]:
+			fmt.Println("Timer " + msg.Kind + " expired")
+			return SUCCESS_REDUCED_REPLICATION
+		}
+	}
+}
+
+func (dhtNode *DHTNode) HandleReplicaUpdateReqMsg(msg *MP.Message) {
+	fmt.Println("[DHT] Handle Replica Update Request message ")
+	var replicaUpdateReq ReplicaUpdateReq
+	MP.DecodeData(&replicaUpdateReq, msg.Data)
+
+	msg_type :=  replicaUpdateReq.reqType
+	/* Do necessary processing on the replica */
+	dataOperationRes, _ := dhtNode.PerformOperationOnDHT(replicaUpdateReq.dataOperationReq,  msg_type)
+
+	/* Send response to primary node */
+	responseMsg := MP.NewMessage(msg.Src, msg.SrcName, "dht_replica_update_res", MP.EncodeData(dataOperationRes))
+	dhtNode.mp.Send(responseMsg)
 }
 
