@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"fmt"
 	"time"
+	"strconv"
 )
 
 const (
@@ -547,7 +548,7 @@ func (dhtNode *DHTNode) PerformPeriodicLeafTableRefresh(){
 /* Apart from periodically refreshing the table, there might be other events where we want to immediately
 *  refresh the table instead of waiting for the timer to exprire. Invoke this method during those cases */
 func (dhtNode *DHTNode) RefreshLeafTable(event int){
-	//fmt.Println("Refresh Leaf Table for event " + strconv.Itoa(event))
+	fmt.Println("Refresh Leaf Table for event " + strconv.Itoa(event))
 	if (false == dhtNode.AmITheOnlyNodeInDHT()) {
 		//fmt.Println("Refresh leaf table: More than 1 node in the DHT")
 		//fmt.Println("Triggering Periodic Neighbourhood discovery")
@@ -584,6 +585,7 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 	if (discoveryMsg.OriginIpAddress == dhtNode.IpAddress){
 		/* Check if hop count = 0 . If so, populate it into the corresponding leaf table list.
 		   Otherwise append your IP address and append it to the list.*/
+		fmt.Println("Got back my neighbourhood discovery message")
 		if (discoveryMsg.ResidualHopCount != 0){
 			node := Node{dhtNode.IpAddress, dhtNode.NodeName, dhtNode.NodeKey}
 			discoveryMsg.NodeList = append(discoveryMsg.NodeList, node)
@@ -633,10 +635,6 @@ func (dhtNode *DHTNode) HandleNeighbourhoodDiscovery(msg *MP.Message){
 			/* TODO We can probably deduce information from the messages being exchanged instead of triggering one more
 			 * neighbourhood discovery procedure. Deferring it as it is low priority work item*/
 			dhtNode.RefreshLeafTable(EVENT_TRIGGERED_LEAF_TABLE_REFRESH)
-			if (dhtNode.curReplicaCount < REPLICATION_FACTOR){
-
-			}
-			//dhtNode.ScheduleReplicaCreation()
 		} else if (discoveryMsg.Event == NODE_FAILURE_TRIGGERED_LEAF_TABLE_REFRESH) {
 			dhtNode.RefreshLeafTable(EVENT_TRIGGERED_LEAF_TABLE_REFRESH)
 		}

@@ -42,7 +42,7 @@ func (dhtNode *DHTNode) HandleDeleteReplicaResponse(msg *MP.Message) {
 }
 
 func (dhtNode *DHTNode) StartReplicaSync(){
-
+	fmt.Println(" DHT *** StartReplicaSync")
 	if (dhtNode.AmITheOnlyNodeInDHT()){
 		/* Replication. Really ? huh */
 		return
@@ -117,7 +117,7 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 	}
 
 	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
-	
+
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
