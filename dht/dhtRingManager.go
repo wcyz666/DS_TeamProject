@@ -376,13 +376,15 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 	 * else achieves the replication factor */
 
 	/*TODO Update current replication counts accordingly*/
+
 	/*Replication count < desired replication factor, don't delete the contents*/
 	if (dhtNode.curReplicaCount == REPLICATION_FACTOR){
-		/* Send delete replica request */
-		nodeToForward := dhtNode.leafTable.NextNodeList[REPLICATION_FACTOR-1]
-		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_delete_replica_req",
-			MP.EncodeData(DeleteReplicaRequest{joinComplete.Key,dhtNode.NodeKey})))
-
+		if (REPLICATION_FACTOR > 1){ // Replication Factor = 1 means replication not enabled
+			/* Send delete replica request */
+			nodeToForward := dhtNode.leafTable.NextNodeList[REPLICATION_FACTOR-2]
+			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_delete_replica_req",
+				MP.EncodeData(DeleteReplicaRequest{joinComplete.Key,dhtNode.NodeKey})))
+		}
 	} else {
 		fmt.Println("No need to delete existing replicas since we are yet to reach the desired replicatio factor")
 	}
