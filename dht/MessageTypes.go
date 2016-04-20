@@ -87,10 +87,10 @@ type ReplicaSyncMessage struct {
 }
 
 type ReplicaUpdateReq struct {
-	reqType string
-	dataOperationReq DataOperationRequest
+	ReqType string
+	DataOperationReq DataOperationRequest
 }
 
 type ReplicaUpdateRes struct {
-	status int
+	Status int
 }
