@@ -106,7 +106,7 @@ func (dhtNode *DHTNode) HandleReplicaSyncMsg(msg *MP.Message){
 }
 
 func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationRequest, reqType string) (int){
-	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
+
 	noOfReplicasToSend :=  REPLICATION_FACTOR - 1 //  I am one of the replicas (primary). So have to reduce by 1
 	if (noOfReplicasToSend > len(dhtNode.leafTable.NextNodeList)){
 		noOfReplicasToSend = len(dhtNode.leafTable.NextNodeList)
@@ -116,6 +116,8 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 		return SUCCESS
 	}
 
+	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
+	
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
