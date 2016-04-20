@@ -145,6 +145,7 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 			}
 
 			if (updateResRcvd == noOfReplicasToSend){
+				timer1.Stop()
 				return SUCCESS
 			}
 		case msg := <- dhtNode.mp.Messages["dht_replica_update_timer_expiry"]:
