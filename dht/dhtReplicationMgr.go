@@ -113,7 +113,7 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 	}
 
 	if (noOfReplicasToSend == 0){
-		return
+		return SUCCESS
 	}
 
 	for i := 0; i < noOfReplicasToSend; i++ {
