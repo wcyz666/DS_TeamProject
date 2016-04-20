@@ -25,7 +25,7 @@ func (dhtNode *DHTNode) HandleDeleteReplicaRequest(msg *MP.Message) {
 		deleteReplicaResponse.Status = SUCCESS
 		entryKey = getBigIntFromString(k)
 		/* If entry key is in new node's key space, remove the entry as it is already transferred to new node */
-		if (false == isKeyPresentInKeyspaceRange(entryKey, startNumericKey, endNumericKey)){
+		if (true == isKeyPresentInKeyspaceRange(entryKey, startNumericKey, endNumericKey)){
 			delete(dhtNode.hashTable,k)
 		}
 	}
