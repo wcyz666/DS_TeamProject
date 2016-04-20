@@ -171,3 +171,13 @@ func (dhtNode *DHTNode) HandleDataOperationResponse(msg *MP.Message) (int, []Mem
 	return msgDataRes.Status, msgDataRes.Data
 }
 
+func (dhtNode *DHTNode) LogDictionaryContents(){
+	fmt.Println("Logging the current Hashtable contents on this machine")
+	for k,memberShipInfo := range dhtNode.hashTable {
+		fmt.Println("Key is " + k)
+		for _,member := range memberShipInfo{
+			fmt.Println("	"+member.StreamerIp + " " + member.StreamerName)
+		}
+		fmt.Println()
+	}
+}

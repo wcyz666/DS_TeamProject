@@ -183,6 +183,7 @@ func printHelp(){
 	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
 	fmt.Println("      B Trigger a broadcast message")
+	fmt.Println("      L Log local dictionary contents")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
 	fmt.Println(" For membership info, please pass the IP address (of parent super node)")
@@ -268,6 +269,8 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 				}
 			case "B","b":
 				dhtService.TriggerBroadcastMessage()
+			case "L","l":
+				dhtService.DhtNode.LogDictionaryContents()
 			default:
 				fmt.Println("Unexpected option")
 				printHelp()
