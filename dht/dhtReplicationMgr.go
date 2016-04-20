@@ -112,6 +112,10 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 		noOfReplicasToSend = len(dhtNode.leafTable.NextNodeList)
 	}
 
+	if (noOfReplicasToSend == 0){
+		return
+	}
+
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
