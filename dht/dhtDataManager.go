@@ -152,8 +152,11 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 	fmt.Println("HandleDataOperationRequest : Message type is "+ msg_type)
 	/* Reading data from DHT will not update the state. No need to contact replicas */
 	if (msg_type != "get_data_req"){
-		/* Operation updates the contents on the primary node. Send updates to replicas */
-		dataOperationRes.Status =  dhtNode.SendUpdateToReplicas(dataOperationReq, msg_type)
+		if ((dataOperationRes.Status == SUCCESS) ||
+			(dataOperationRes.Status ==SUCCESS_ENTRY_OVERWRITTEN)){
+			/* Successful update on the primary node. Send updates to replicas */
+			dataOperationRes.Status =  dhtNode.SendUpdateToReplicas(dataOperationReq, msg_type)
+		}
 	}
 
 	/* Send response to the origin node */

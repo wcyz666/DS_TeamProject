@@ -132,15 +132,19 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 	status:= SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
+	dataOperationReq.Data = data
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.createEntry(streamingGroupID, data)
+		if ((status == SUCCESS) || (status == SUCCESS_ENTRY_OVERWRITTEN)){
+			/* update replicas as well */
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "create_new_entry_req")
+		}
 
 	// send the entry to the next node
 	} else {
-		dataOperationReq.Key = streamingGroupID
-		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -161,11 +165,15 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
 	var dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                        OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
+		if (status == SUCCESS){
+			// update replicas as well
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "delete_entry_req")
+		}
 	} else {
-		dataOperationReq.Key = streamingGroupID
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "delete_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -185,14 +193,18 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 	status := SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
+	dataOperationReq.Add = true
+	dataOperationReq.Remove = false
+	dataOperationReq.Data = data
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status =  dht.DhtNode.appendData(streamingGroupID, data)
+		if (SUCCESS == status){
+			// update replicas as well
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "update_entry_req")
+		}
 	} else {
-		dataOperationReq.Key = streamingGroupID
-		dataOperationReq.Add = true
-		dataOperationReq.Remove = false
-		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -212,18 +224,22 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 	status := SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
+	dataOperationReq.Add = false
+	dataOperationReq.Remove = true
+	dataOperationReq.Data = data
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.removeData(streamingGroupID, data)
+		if (SUCCESS == status){
+			// update replicas as well
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "update_entry_req")
+		}
 	} else {
-		dataOperationReq.Key = streamingGroupID
-		dataOperationReq.Add = false
-		dataOperationReq.Remove = true
-		dataOperationReq.Data = data
+
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
-
 		select {
 		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
 			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)
