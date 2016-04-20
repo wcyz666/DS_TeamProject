@@ -202,7 +202,7 @@ func ClearAddrRecords(name string, ipAddress string) {
 
 	if resp.StatusCode != 200 {
 		fmt.Println("response Status:", resp.Status)
-		panic("Response code not OK")
+		fmt.Println("Response code not OK")
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)

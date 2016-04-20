@@ -1,5 +1,5 @@
 package config
 
 const (
-	BootstrapDomainName = "p2plive.supernodes.com"
+	BootstrapDomainName = "phani.p2plive.supernodes.com"
 )
