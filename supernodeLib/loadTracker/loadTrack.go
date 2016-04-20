@@ -30,7 +30,7 @@ func NewLoadTracker(mp *MP.MessagePasser, dht *DHT.DHTNode, snContext *SC.SuperN
 
 func (l *LoadTracker) StartLoadTrack(msg *MP.Message) {
 	// Start the election process below
-	fmt.Printf("Supernode: election start for node [%s]\n", msg.SrcName)
+	fmt.Printf("Supernode: Usage Tracking start for node [%s]\n", msg.SrcName)
 	// TODO: Actually implement the election algorithm
 
 	//Generate payload. This will be transmitted over the DHT ring

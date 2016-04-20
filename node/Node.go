@@ -102,7 +102,7 @@ func startLoadTrack() {
 
 func reveiveLoadTrackResult(msg *MP.Message) {
 
-	var loadTrackResult LT.LoadTracker
+	var loadTrackResult LT.LoadBroadcastMessage
 	MP.DecodeData(&loadTrackResult, msg.Data)
 
 	fmt.Println(loadTrackResult)
