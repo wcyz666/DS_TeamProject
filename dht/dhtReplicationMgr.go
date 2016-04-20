@@ -59,7 +59,7 @@ func (dhtNode *DHTNode) StartReplicaSync(){
 	for k,v := range dhtNode.hashTable {
 		entryKey = getBigIntFromString(k)
 		/* If entry key is within my key space, add it to the hash table */
-		if (false == isKeyPresentInKeyspaceRange(entryKey, dhtNode.prevNodeNumericKey, dhtNode.curNodeNumericKey)){
+		if (true == isKeyPresentInKeyspaceRange(entryKey, dhtNode.prevNodeNumericKey, dhtNode.curNodeNumericKey)){
 			replicaSyncMsg.HashTable[k] = v
 		}
 	}
