@@ -368,6 +368,7 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 	MP.DecodeData(&joinComplete,msg.Data)
 	fmt.Println("[DHT] Join Complete received")
 
+	prevNodeKey := dhtNode.leafTable.prevNode.Key
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinComplete.Key,true)
 
@@ -384,7 +385,7 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 			nodeToForward := dhtNode.leafTable.NextNodeList[REPLICATION_FACTOR-2]
 			fmt.Println("In Delete request, start key is "+ joinComplete.Key + " and end key is "+ dhtNode.NodeKey)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_delete_replica_req",
-				MP.EncodeData(DeleteReplicaRequest{joinComplete.Key,dhtNode.NodeKey})))
+				MP.EncodeData(DeleteReplicaRequest{prevNodeKey,joinComplete.Key})))
 		}
 	} else {
 		fmt.Println("No need to delete existing replicas since we are yet to reach the desired replicatio factor")
