@@ -1,5 +1,7 @@
 package dht
 
+import "math/big"
+
 /* Structure of messages exchanged between DHT nodes */
 
 type JoinRequest struct {
@@ -84,6 +86,8 @@ type ReplicaSyncMessage struct {
 	HashTable        	map[string][]MemberShipInfo
 	OriginIpAddress    string
 	OriginName         string
+	StartNumericKey    big.Int
+	EndNumericKey      big.Int
 }
 
 type ReplicaUpdateReq struct {

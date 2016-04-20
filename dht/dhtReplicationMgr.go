@@ -64,6 +64,10 @@ func (dhtNode *DHTNode) StartReplicaSync(){
 		}
 	}
 
+	replicaSyncMsg.StartNumericKey = *(dhtNode.prevNodeNumericKey)
+	replicaSyncMsg.EndNumericKey = *(dhtNode.curNodeNumericKey)
+
+
 	nodeToForward := dhtNode.leafTable.nextNode
 	dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_replica_sync",
 		MP.EncodeData(replicaSyncMsg)))
@@ -95,6 +99,8 @@ func (dhtNode *DHTNode) HandleReplicaSyncMsg(msg *MP.Message){
 			//fmt.Println("Forwarded message to origin: "+ discoveryMsg.OriginIpAddress)
 			dhtNode.mp.Send(MP.NewMessage(replicaSyncMsg.OriginIpAddress, replicaSyncMsg.OriginName,
 				"dht_replica_sync", MP.EncodeData(replicaSyncMsg)))
+			dhtNode.farthestMasterNodeInfo.startNumericKey = replicaSyncMsg.StartNumericKey
+			dhtNode.farthestMasterNodeInfo.endNumericKey = replicaSyncMsg.EndNumericKey
 		} else {
 			nodeToForward := dhtNode.leafTable.nextNode
 			//fmt.Println("Forwarded message to "+ nodeToForward.IpAddress)

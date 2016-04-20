@@ -40,6 +40,11 @@ type LeafTable struct {
 	NextNodeList [] Node
 }
 
+type ReplicaKeySpaceInfo struct{
+	startNumericKey big.Int
+	endNumericKey   big.Int
+}
+
 /* Initial DHT version contains details of next and previous nodes */
 type DHTNode struct {
 	/* We interpret Hash value as a hexadecimal stream so each digit is 4 bit long */
@@ -60,6 +65,10 @@ type DHTNode struct {
 	IsRingUpdateInProgress bool
 	DhtState               int
 	curReplicaCount        int // This includes primary as well in the replica count
+	/* We store key space information of farthest node of whom we are the replica. This is necessary because when
+	 * we add a new node in front of us, we need to delete the keyspace of farthest master node for whom we are a replica
+	 */
+	farthestMasterNodeInfo    ReplicaKeySpaceInfo
 }
 
 type DHTService struct {

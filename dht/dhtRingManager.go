@@ -382,11 +382,23 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 		if (REPLICATION_FACTOR > 1){ // Replication Factor = 1 means replication not enabled
 			/* Send delete replica request */
 			nodeToForward := dhtNode.leafTable.NextNodeList[REPLICATION_FACTOR-2]
+			fmt.Println("In Delete request, start key is "+ joinComplete.Key + " and end key is "+ dhtNode.NodeKey)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_delete_replica_req",
 				MP.EncodeData(DeleteReplicaRequest{joinComplete.Key,dhtNode.NodeKey})))
 		}
 	} else {
 		fmt.Println("No need to delete existing replicas since we are yet to reach the desired replicatio factor")
+	}
+
+	var entryKey *big.Int
+	/*Delete keys belonging to farthest Master node  that I am a replica of */
+	for k,_ := range dhtNode.hashTable {
+		entryKey = getBigIntFromString(k)
+		/* If entry key is within my key space, add it to the hash table */
+		if (true == isKeyPresentInKeyspaceRange(entryKey, &dhtNode.farthestMasterNodeInfo.startNumericKey,
+												&dhtNode.farthestMasterNodeInfo.endNumericKey)){
+			delete(dhtNode.hashTable,k)
+		}
 	}
 
 	dhtNode.IsRingUpdateInProgress = false
