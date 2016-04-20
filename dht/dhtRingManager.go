@@ -368,7 +368,10 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 	MP.DecodeData(&joinComplete,msg.Data)
 	fmt.Println("[DHT] Join Complete received")
 
-	prevNodeKey := dhtNode.leafTable.prevNode.Key
+	var prevNodeKey string
+	if (dhtNode.leafTable.prevNode !=nil){
+		prevNodeKey = dhtNode.leafTable.prevNode.Key
+	}
 	/* Update routing information to include this new node */
 	dhtNode.updateLeafAndPrefixTablesWithNewNode(msg.Src, msg.SrcName, joinComplete.Key,true)
 
