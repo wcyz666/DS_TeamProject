@@ -74,7 +74,7 @@ func (dhtNode *DHTNode) HandleReplicaSyncMsg(msg *MP.Message){
 	var replicaSyncMsg ReplicaSyncMessage
 	MP.DecodeData(&replicaSyncMsg,msg.Data)
 
-	//fmt.Println("HandleReplicaSyncMsg message from "+ msg.Src + "with hop "+ strconv.Itoa(discoveryMsg.ResidualHopCount))
+	fmt.Println("HandleReplicaSyncMsg message from "+ msg.Src + "with hop "+ strconv.Itoa(replicaSyncMsg.ResidualHopCount))
 
 	if (replicaSyncMsg.OriginIpAddress == dhtNode.IpAddress){
 		/* If hop count is zero, it there are as many replicas as required by replication factor.
@@ -83,8 +83,10 @@ func (dhtNode *DHTNode) HandleReplicaSyncMsg(msg *MP.Message){
 
 	} else{
 
+		fmt.Println("Coming to Replica Sync else part.")
 		/* Update the local hash table with received values */
 		for k,v := range replicaSyncMsg.HashTable {
+			fmt.Println("Adding key " + k + " to DHT")
 			dhtNode.hashTable[k] = v
 		}
 

@@ -4,6 +4,7 @@ package dht
 
 import (
 	MP "../messagePasser"
+	"fmt"
 )
 
 /* Private Methods */
@@ -148,6 +149,7 @@ func (dhtNode *DHTNode) HandleDataOperationRequest(msg *MP.Message){
 	ip := dataOperationReq.OriginIpAddress
 	name := dataOperationReq.OriginName
 
+	fmt.Println("HandleDataOperationRequest : Message type is "+ msg_type)
 	/* Reading data from DHT will not update the state. No need to contact replicas */
 	if (msg_type != "get_data_req"){
 		/* Operation updates the contents on the primary node. Send updates to replicas */
