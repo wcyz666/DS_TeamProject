@@ -134,7 +134,7 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 			var replicaUpdateRes ReplicaUpdateRes
 			MP.DecodeData(&replicaUpdateRes,msg.Data)
 
-			if (replicaUpdateRes.status == SUCCESS){
+			if (replicaUpdateRes.Status == SUCCESS){
 				updateResRcvd++
 			}
 
@@ -153,9 +153,9 @@ func (dhtNode *DHTNode) HandleReplicaUpdateReqMsg(msg *MP.Message) {
 	var replicaUpdateReq ReplicaUpdateReq
 	MP.DecodeData(&replicaUpdateReq, msg.Data)
 
-	msg_type :=  replicaUpdateReq.reqType
+	msg_type :=  replicaUpdateReq.ReqType
 	/* Do necessary processing on the replica */
-	dataOperationRes, _ := dhtNode.PerformOperationOnDHT(replicaUpdateReq.dataOperationReq,  msg_type)
+	dataOperationRes, _ := dhtNode.PerformOperationOnDHT(replicaUpdateReq.DataOperationReq,  msg_type)
 
 	/* Send response to primary node */
 	responseMsg := MP.NewMessage(msg.Src, msg.SrcName, "dht_replica_update_res", MP.EncodeData(dataOperationRes))
