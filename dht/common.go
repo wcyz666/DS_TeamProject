@@ -20,7 +20,9 @@ const (
 const HASH_KEY_SIZE = 128
 const MAX_KEY = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 const NEIGHBOURHOOD_DISTANCE = 2 // Neighbourhood distance on each direction
-const PERIODIC_LEAF_TABLE_REFRESH_DURATION = 60
+const PERIODIC_LEAF_TABLE_REFRESH_DURATION = 120
+const REPLICATION_FACTOR = 2 // 1 Primary and 1 Backup
+const REPLICATION_UPDATE_RESPONSE_TIMER_EXPIRY = 6
 
 type Node struct {
 	IpAddress string
@@ -36,6 +38,11 @@ type LeafTable struct {
 	PrevNodeList [] Node
 	/* List of next nodes in the neighbourhood */
 	NextNodeList [] Node
+}
+
+type ReplicaKeySpaceInfo struct{
+	startNumericKey big.Int
+	endNumericKey   big.Int
 }
 
 /* Initial DHT version contains details of next and previous nodes */
@@ -56,7 +63,12 @@ type DHTNode struct {
 	 * multiple join operations happening at same super node at the same time which
 	 * may result in incorrect splitting of hash table among the super nodes in the ring */
 	IsRingUpdateInProgress bool
-	State                  int
+	DhtState               int
+	curReplicaCount        int // This includes primary as well in the replica count
+	/* We store key space information of farthest node of whom we are the replica. This is necessary because when
+	 * we add a new node in front of us, we need to delete the keyspace of farthest master node for whom we are a replica
+	 */
+	farthestMasterNodeInfo    ReplicaKeySpaceInfo
 }
 
 type DHTService struct {
@@ -80,6 +92,9 @@ const (
 	/*DHT Data management related status */
 	KEY_NOT_PRESENT
 	SUCCESS_ENTRY_OVERWRITTEN
+
+	/*DHT Replication Management related status*/
+	SUCCESS_REDUCED_REPLICATION  // If operation was successful only in a subset of replicas
 
 	/*Ring management related status */
 	// If successor node is already involved in another join procedure

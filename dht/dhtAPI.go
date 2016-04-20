@@ -34,17 +34,17 @@ func NewDHTService(mp *MP.MessagePasser) *DHTService {
 	mp.AddMappings([]string{"join_dht_res", "join_dht_conn_failed", "dht_ring_repair_res"})
 	/*TODO check if adding a global handler for receving data operation response is fine */
 	mp.AddMappings([]string{"dht_data_operation_res", "get_data_res", "delete_entry_res", "create_new_entry_res",
-							"update_entry_res"})
+							"update_entry_res", "dht_replica_update_timer_expiry", "dht_replica_update_res"})
 	return &dhtService
 }
 
 func (dhtService *DHTService)Start() int{
-	dhtService.DhtNode.State = DHT_JOIN_IN_PROGRESS
+	dhtService.DhtNode.DhtState = DHT_JOIN_IN_PROGRESS
 	status := dhtService.DhtNode.CreateOrJoinRing()
 	if (status == NEW_DHT_CREATED){
 		/* Unit testing the ring*/
 		//dhtService.DhtNode.PerformPeriodicBroadcast()
-		dhtService.DhtNode.State = DHT_JOINED
+		dhtService.DhtNode.DhtState = DHT_JOINED
 		return DHT_API_SUCCESS
 	}
 
@@ -53,12 +53,12 @@ func (dhtService *DHTService)Start() int{
 	for {
 		select {
 		case joinRes := <-dhtService.DhtNode.mp.Messages["join_dht_res"]:
-			dhtService.DhtNode.State = DHT_JOIN_IN_PROGRESS
+			dhtService.DhtNode.DhtState = DHT_JOIN_IN_PROGRESS
 			status,successor := dhtService.DhtNode.HandleJoinRes(joinRes)
 			if (JOIN_IN_PROGRESS_RETRY_LATER == status){
 				numOfAttempts--
 				if (numOfAttempts <= 0 ){
-					dhtService.DhtNode.State = DHT_JOIN_FAILED_MAX_ATTEMPTS
+					dhtService.DhtNode.DhtState = DHT_JOIN_FAILED_MAX_ATTEMPTS
 					return DHT_API_FAILURE_MAX_ATTEMPTS_REACHED
 				}
 				/* Another instance of Join is in progress in successor Node
@@ -73,10 +73,10 @@ func (dhtService *DHTService)Start() int{
 			} else {
 				/* Join completed with error or success. Return control to caller */
 				if (status != SUCCESS){
-					dhtService.DhtNode.State = DHT_JOIN_FAILED
+					dhtService.DhtNode.DhtState = DHT_JOIN_FAILED
 					return  DHT_API_FAILURE
 				}
-				dhtService.DhtNode.State = DHT_JOINED
+				dhtService.DhtNode.DhtState = DHT_JOINED
 				return DHT_API_SUCCESS;
 			}
 		case msg := <-dhtService.DhtNode.mp.Messages["join_dht_conn_failed"]:
@@ -87,7 +87,7 @@ func (dhtService *DHTService)Start() int{
 			dhtService.DhtNode.RemoveFailedSuperNode(failClientInfo.IP)
 			status := dhtService.DhtNode.CreateOrJoinRing()
 			if (status == NEW_DHT_CREATED){
-				dhtService.DhtNode.State = DHT_JOINED
+				dhtService.DhtNode.DhtState = DHT_JOINED
 				return DHT_API_SUCCESS
 			}
 		}
@@ -132,15 +132,19 @@ func (dht *DHTService) Create(streamingGroupID string, data MemberShipInfo) (int
 	status:= SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
+	dataOperationReq.Data = data
 
 	// add entry to this node
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.createEntry(streamingGroupID, data)
+		if ((status == SUCCESS) || (status == SUCCESS_ENTRY_OVERWRITTEN)){
+			/* update replicas as well */
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "create_new_entry_req")
+		}
 
 	// send the entry to the next node
 	} else {
-		dataOperationReq.Key = streamingGroupID
-		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "create_new_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -161,11 +165,15 @@ func (dht *DHTService) Delete(streamingGroupID string) (int) {
 	status:= SUCCESS
 	var dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                        OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.deleteEntry(streamingGroupID)
+		if (status == SUCCESS){
+			// update replicas as well
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "delete_entry_req")
+		}
 	} else {
-		dataOperationReq.Key = streamingGroupID
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "delete_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -185,14 +193,18 @@ func (dht *DHTService) Append(streamingGroupID string, data MemberShipInfo) (int
 	status := SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
+	dataOperationReq.Add = true
+	dataOperationReq.Remove = false
+	dataOperationReq.Data = data
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status =  dht.DhtNode.appendData(streamingGroupID, data)
+		if (SUCCESS == status){
+			// update replicas as well
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "update_entry_req")
+		}
 	} else {
-		dataOperationReq.Key = streamingGroupID
-		dataOperationReq.Add = true
-		dataOperationReq.Remove = false
-		dataOperationReq.Data = data
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
@@ -212,18 +224,22 @@ func (dht *DHTService) Remove(streamingGroupID string, data MemberShipInfo) (int
 	status := SUCCESS
 	var  dataOperationReq = DataOperationRequest{OriginIpAddress: dht.DhtNode.IpAddress,
 		                                         OriginName : dht.DhtNode.NodeName}
+	dataOperationReq.Key = streamingGroupID
+	dataOperationReq.Add = false
+	dataOperationReq.Remove = true
+	dataOperationReq.Data = data
 
 	if dht.DhtNode.isKeyPresentInMyKeyspaceRange(streamingGroupID) {
 		status = dht.DhtNode.removeData(streamingGroupID, data)
+		if (SUCCESS == status){
+			// update replicas as well
+			status =  dht.DhtNode.SendUpdateToReplicas(dataOperationReq, "update_entry_req")
+		}
 	} else {
-		dataOperationReq.Key = streamingGroupID
-		dataOperationReq.Add = false
-		dataOperationReq.Remove = true
-		dataOperationReq.Data = data
+
 		nextNode := dht.DhtNode.GetNextNodeToForwardInRing(streamingGroupID)
 		msg := MP.NewMessage(nextNode.IpAddress, nextNode.Name, "update_entry_req", MP.EncodeData(dataOperationReq))
 		dht.DhtNode.mp.Send(msg)
-
 		select {
 		case getDataResMsg := <- dht.DhtNode.mp.Messages["update_entry_res"]:
 			status,_ = dht.DhtNode.HandleDataOperationResponse(getDataResMsg)

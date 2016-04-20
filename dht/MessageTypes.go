@@ -1,5 +1,7 @@
 package dht
 
+import "math/big"
+
 /* Structure of messages exchanged between DHT nodes */
 
 type JoinRequest struct {
@@ -26,12 +28,12 @@ type JoinNotify struct {
 
 
 type DataOperationRequest struct {
-	Key 		string			/* Key entry */
-	Data 		MemberShipInfo		/* Data entry, used for Update operations only */
-	Remove 		bool			/* indicate removal in Update operation */
-	Add 		bool			/* indicate append in Update operation */
-	OriginIpAddress	string			/* Source IP address, used for response message */
-	OriginName	string			/* Dest IP address, used for response message */
+	Key 						string			/* Key entry */
+	Data 						MemberShipInfo	/* Data entry, used for Update operations only */
+	Remove 						bool			/* indicate removal in Update operation */
+	Add 						bool			/* indicate append in Update operation */
+	OriginIpAddress				string			/* Source IP address, used for response message */
+	OriginName					string			/* Dest IP address, used for response message */
 }
 
 type CreateNewEntryResponse struct {
@@ -70,3 +72,29 @@ type RingRepairResponse struct {
 	Key    string
 }
 
+type DeleteReplicaRequest struct {
+	StartKey   		 string
+	EndKey     		 string
+}
+
+type DeleteReplicaResponse struct {
+	Status int
+}
+
+type ReplicaSyncMessage struct {
+	ResidualHopCount 	int
+	HashTable        	map[string][]MemberShipInfo
+	OriginIpAddress    string
+	OriginName         string
+	StartNumericKey    big.Int
+	EndNumericKey      big.Int
+}
+
+type ReplicaUpdateReq struct {
+	ReqType          string
+	DataOperationReq DataOperationRequest
+}
+
+type ReplicaUpdateRes struct {
+	Status int
+}

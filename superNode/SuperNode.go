@@ -69,10 +69,13 @@ func Start() {
 		"join_dht_req":            		dhtNode.HandleJoinReq,
 		"join_dht_complete":        	dhtNode.HandleJoinComplete,  // To indicate successor about completion of join
 		"join_dht_notify":          	dhtNode.HandleJoinNotify,    // To indicate predecessor about completion of join
-		"leave_dht_req":            	dhtNode.Leave,
 		"dht_broadcast_msg":        	dhtNode.HandleBroadcastMessage,
 		"dht_neighbourhood_discovery":	dhtNode.HandleNeighbourhoodDiscovery,
 		"dht_ring_repair_req":			dhtNode.HandleRingRepairRequest,
+		"dht_delete_replica_req":	    dhtNode.HandleDeleteReplicaRequest,
+		"dht_delete_replica_res":		dhtNode.HandleDeleteReplicaResponse,
+		"dht_replica_sync":				dhtNode.HandleReplicaSyncMsg,
+		"dht_replica_update_req":		dhtNode.HandleReplicaUpdateReqMsg,
 
 		/* DHT Data operation handlers */
 		/* Having separate channels will allow concurrent access to hash map.
@@ -180,6 +183,7 @@ func printHelp(){
 	fmt.Println("      R Key StreamerIp StreamerName to delete a member")
 	fmt.Println("      G Key to retrieve contents of a streaming group")
 	fmt.Println("      B Trigger a broadcast message")
+	fmt.Println("      L Log local dictionary contents")
 	fmt.Println("      H for help")
 	fmt.Println("      Q to quit")
 	fmt.Println(" For membership info, please pass the IP address (of parent super node)")
@@ -265,6 +269,8 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 				}
 			case "B","b":
 				dhtService.TriggerBroadcastMessage()
+			case "L","l":
+				dhtService.DhtNode.LogDictionaryContents()
 			default:
 				fmt.Println("Unexpected option")
 				printHelp()
