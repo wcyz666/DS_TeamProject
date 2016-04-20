@@ -11,6 +11,7 @@ type SuperNodeContext struct {
     IP        string
     Nodes     map[string]*nodeInfo
     State     int
+    IsLoadCacheEffective bool
 }
 
 func (sc *SuperNodeContext) GetAllChildrenName() []string {
@@ -33,7 +34,7 @@ func (sc *SuperNodeContext) GetIPByName(nodeName string) string {
 func NewSuperNodeContext() (* SuperNodeContext) {
     nodes := make(map[string]*nodeInfo)
     IP, _ := DNS.ExternalIP()
-    return &SuperNodeContext{Nodes : nodes, IP: IP, LocalName: LNS.GetLocalName()}
+    return &SuperNodeContext{Nodes : nodes, IP: IP, LocalName: LNS.GetLocalName(), IsLoadCacheEffective: false}
 }
 
 func (sc *SuperNodeContext) AddNode(nodeName string, msgIP string)  {

@@ -11,6 +11,7 @@ import (
 	SNC "./superNodeContext/"
 	JoinElection "../supernodeLib/joinElection"
 	Streaming "../streaming/supernodeStreamingHandler"
+	LT "../supernodeLib/loadTracker"
 	"time"
 
 	"strconv"
@@ -27,6 +28,7 @@ var mp *MP.MessagePasser
 var dhtService *Dht.DHTService
 var streamHandler *Streaming.StreamingHandler
 var jElection *JoinElection.JoinElection
+var loadTrack *LT.LoadTracker
 var superNodeContext *SNC.SuperNodeContext
 
 //var sElection	*streamElection.StreamElection
@@ -50,7 +52,7 @@ func Start() {
 	dhtService = Dht.NewDHTService(mp)
 	streamHandler = Streaming.NewStreamingHandler(dhtService, mp, superNodeContext)
 	jElection = JoinElection.NewJoinElection(mp, dhtService.DhtNode, superNodeContext)
-
+	loadTrack = LT.NewLoadTracker(mp, dhtService.DhtNode, superNodeContext)
 	dhtNode := dhtService.DhtNode
 	//sElection = streamElection.NewStreamElection(mp)
 
@@ -94,6 +96,11 @@ func Start() {
 		"dht_broadcast_msg_election": jElection.ForwardElection,
 		"election_complete": jElection.CompleteElection,
 		"election_join": 			newChild,
+
+		//SuperNode usage tracking
+		"loadtrack_request": loadTrack.StartLoadTrack,
+		"dht_broadcast_msg_loadtrack": loadTrack.ForwardTrack,
+		"loadtrack_complete": loadTrack.CompleteTracking,
 	}
 
 	// Init and listen

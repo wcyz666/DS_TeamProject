@@ -9,6 +9,7 @@ import (
 	NC "./nodeContext"
 	"time"
 	Streamer "../streaming/streamer"
+	LT "../supernodeLib/loadTracker"
 	"bufio"
 	"os"
 	"strings"
@@ -90,7 +91,22 @@ func errorHandler(msg *MP.Message) {
 
 }
 
+/*
+	For load tracking
+ */
 
+func startLoadTrack() {
+	lTMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "loadtrack_request", MP.EncodeData("Load track start"))
+	mp.Send(lTMsg)
+}
+
+func reveiveLoadTrackResult(msg *MP.Message) {
+
+	var loadTrackResult LT.LoadTracker
+	MP.DecodeData(&loadTrackResult, msg.Data)
+
+	fmt.Println(loadTrackResult)
+}
 
 
 
@@ -126,6 +142,8 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		"election_assign":     joinAssign,
 		"error" : errorHandler,
+
+		"loadtrack_result": reveiveLoadTrackResult,
 
 		// The streaming related handlers goes here
 		"streaming_election": streamer.HandleElection,
@@ -198,10 +216,9 @@ func nodeJoin(IPs []string) {
 }
 
 
-
-
 func printHelp(){
 	fmt.Println("Enter P Key to retrive Parent Info")
+	fmt.Println("      U Key to retrive SuperNode usage")
 	fmt.Println("	   C Key to leave from parent node")
 	fmt.Println("	   R Key to reconnect parent node")
 	fmt.Println("      S Key to start a Streaming")
@@ -227,6 +244,8 @@ func NodeCLIInterface(streamer *Streamer.Streamer){
 			switch inputs[0] {
 			case "P", "p", "Parent", "parent":
 				fmt.Printf("Node: print parent info IP: [%s], name [%s]\n", nodeContext.ParentIP, nodeContext.ParentName)
+			case "U", "u", "Usage", "usage":
+				startLoadTrack()
 			case "C", "c", "Leave", "leave":
 				isSendHeartBeat = false
 			case "R", "r", "Reconnect", "reconnect":

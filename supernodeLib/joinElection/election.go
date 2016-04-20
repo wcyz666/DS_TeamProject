@@ -2,8 +2,6 @@ package joinElection
 
 import (
 	MP "../../messagePasser"
-	DNS "../../dnsService"
-	LNS "../../localNameService"
 	"fmt"
 	DHT "../../dht"
 	SC "../../superNode/superNodeContext"
@@ -12,6 +10,7 @@ import (
 /**
 The package takes care of all the conditions a new node join the network
 */
+const E_KIND  = "election"
 
 
 type JoinElection struct {
@@ -34,10 +33,9 @@ func (j *JoinElection) StartElection(msg *MP.Message) {
 	//Generate payload. This will be transmitted over the DHT ring
 	childNodeAddr := msg.Src
 	childName := msg.SrcName
-	kind := "election"
-	myIP, _ := DNS.ExternalIP()
-	eBMsgPayload := ElectionBroadcastMessage{IP: myIP, Name: LNS.GetLocalName(), ChildCount: j.superNodeContext.GetNodeCount()}
-	payload := MP.NewMessage(childNodeAddr, childName, kind, MP.EncodeData(eBMsgPayload))
+
+	eBMsgPayload := NewElectionBroadcastMessage(j.superNodeContext.IP, j.superNodeContext.LocalName, j.superNodeContext.GetNodeCount())
+	payload := MP.NewMessage(childNodeAddr, childName, E_KIND, MP.EncodeData(eBMsgPayload))
 
 	//If only me, then election is completed: send my info back
 	if j.dht.AmITheOnlyNodeInDHT() {
@@ -52,6 +50,9 @@ func (j *JoinElection) StartElection(msg *MP.Message) {
 func (j *JoinElection) ForwardElection(msg *MP.Message) {
 	// Deal with the received messages
 	bMsg, payloadMsg, eBMsg := j.getPrevElectionMessage(msg)
+
+	//evict the cache
+	j.superNodeContext.IsLoadCacheEffective = false
 
 	if (j.dht.IsBroadcastOver(bMsg)) {
 		fmt.Print("Election: election over, result: ")
@@ -78,7 +79,7 @@ func (j *JoinElection) compareAndUpdatePayload(eBMsg *ElectionBroadcastMessage) 
 	return eBMsg
 }
 
-// de-capsulate and get ElectionBroadcastMessage back
+// decapsulate and get ElectionBroadcastMessage back
 func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) (*DHT.BroadcastMessage, *MP.Message, *ElectionBroadcastMessage) {
 	var payloadMsg MP.Message
 	var eBMsg ElectionBroadcastMessage
@@ -90,6 +91,9 @@ func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) (*DHT.BroadcastMe
 }
 
 func (j *JoinElection) CompleteElection(msg *MP.Message) {
+	//Evict cache
+	j.superNodeContext.IsLoadCacheEffective = false
+
 	// Deal with the received messages
 	result := transferEbmToResult(msg)
 	msg.Data = MP.EncodeData(result)

@@ -11,3 +11,6 @@ type ElectionBroadcastMessage struct {
     ChildCount int
 }
 
+func NewElectionBroadcastMessage(IP string, Name string, ChildCount int) ElectionBroadcastMessage {
+    return ElectionBroadcastMessage{IP: IP, Name: Name, ChildCount: ChildCount}
+}
