@@ -13,11 +13,9 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	Config "../config"
 )
 
-const (
-	bootstrap_dns = "p2plive.supernodes.com"
-)
 
 
 var mp *MP.MessagePasser
@@ -114,7 +112,7 @@ Here goes all the apis to be called by the application
 */
 
 func Start() {
-	IPs := DNS.GetAddr(bootstrap_dns)
+	IPs := DNS.GetAddr(Config.BootstrapDomainName)
 	nodeContext = NC.NewNodeContext()
 	nodeContext.SetLocalName(nameService.GetLocalName())
 	nodeContext.LocalIp, _ = DNS.ExternalIP()
@@ -172,6 +170,8 @@ func Start() {
 /* Join the network */
 func nodeJoin(IPs []string) {
 	/* If there are no running super nodes, exit program */
+	fmt.Print("Parents: ")
+	fmt.Println(IPs)
 	if (len(IPs) == 0){
 		exitMsg := MP.NewMessage("self", nodeContext.LocalName, "exit", MP.EncodeData("All supernodes are down, exit"))
 		mp.Messages["exit"] <- &exitMsg
