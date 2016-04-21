@@ -2,6 +2,7 @@ package node
 
 import (
 	"github.com/hoisie/web"
+	"net/http"
 	Streamer "../streaming/streamer"
 	Json "encoding/json"
 	"fmt"
@@ -45,8 +46,14 @@ func apiGetPrograms(ctx *web.Context, val string) string{
 
 }
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello world!")
+}
+
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
 	context = nodeContext
+
+
 	web.Get("/", apiHello)
 	web.Get("/start/(.*)", apiStart)
 	web.Get("/stop/", apiStop)
@@ -54,5 +61,8 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/stream/(.*)", apiStream)
 	web.Get("/receive/", apiReceive)
 	web.Get("/allPrograms/(.*)", apiGetPrograms)
+	
+	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
 	web.Run("0.0.0.0:9999")
+
 }
