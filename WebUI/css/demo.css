@@ -154,9 +154,9 @@ p{
 }
 #section0 img {
     position: relative;
-    top: 50px;
+    top: 20%;
     margin: auto;
-
+    height: 70%;
 }
 #section1 p,
 #section1 h1 {

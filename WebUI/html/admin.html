@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" >
+    <title>Real Time Usage Tracking</title>
+
+    <link rel="stylesheet" type="text/css" href="../css/bootstrap.min.css">
+</head>
+<body>
+<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">P2P Live Admin</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a id="username" href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="glyphicon glyphicon-user" aria-hidden="true"></span> User<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="/logout">Logout</a></li>
+                    </ul>
+                </li>
+                </li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+<br />
+<br /><br />
+
+<div class="container">
+    <div class="row">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">SuperNode Usage Tracking</h3></div>
+            <div class="panel-body">
+                <div class="container">
+                    <div class="row">
+                        <h4>Refresh Interval</h4>
+                        <div class="btn-group" data-toggle="buttons">
+                            <label class="btn btn-primary active">
+                                <input type="radio" name="options" id="option0" autocomplete="off" checked> Manual
+                            </label>
+                            <label class="btn btn-primary active">
+                                <input type="radio" name="options" id="option1" autocomplete="off"> 10s
+                            </label>
+                            <label class="btn btn-primary">
+                                <input type="radio" name="options" id="option2" autocomplete="off"> 30s
+                            </label>
+                            <label class="btn btn-primary">
+                                <input type="radio" name="options" id="option3" autocomplete="off"> 60s
+                            </label>
+                        </div>
+                        <button class="btn btn-info"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span></button>
+                    </div>
+                </div>
+                <hr>
+                <table class="table table-hover table-bordered">
+                    <thead>
+                    <tr>
+                        <th>Room #</th>
+                        <th>Room Name</th>
+                        <th>People Count</th>
+                        <th>Enter</th>
+                    </tr>
+                    </thead>
+                    <tbody id="table-body">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+<script src="../js/jquery-1.12.3.min.js"></script>
+<script src="../js/bootstrap.min.js"></script>
+<script src="../js/admin.js"></script>
+
+</html>

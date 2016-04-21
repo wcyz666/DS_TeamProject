@@ -52,7 +52,6 @@ func (j *JoinElection) ForwardElection(msg *MP.Message) {
 	bMsg, payloadMsg, eBMsg := j.getPrevElectionMessage(msg)
 
 	//evict the cache
-	j.superNodeContext.IsLoadCacheEffective = false
 
 	if (j.dht.IsBroadcastOver(bMsg)) {
 		fmt.Print("Election: election over, result: ")
@@ -91,8 +90,6 @@ func (j *JoinElection) getPrevElectionMessage(msg *MP.Message) (*DHT.BroadcastMe
 }
 
 func (j *JoinElection) CompleteElection(msg *MP.Message) {
-	//Evict cache
-	j.superNodeContext.IsLoadCacheEffective = false
 
 	// Deal with the received messages
 	result := transferEbmToResult(msg)

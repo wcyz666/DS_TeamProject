@@ -19,7 +19,6 @@ type LoadTracker struct {
 	mp               *MP.MessagePasser
 	dht              *DHT.DHTNode
 	superNodeContext *SC.SuperNodeContext
-    cache            *LoadBroadcastMessage
 }
 
 /* Constructor */
@@ -43,14 +42,9 @@ func (l *LoadTracker) StartLoadTrack(msg *MP.Message) {
 
 	//If only me, then Load tracking is completed: send my info back
 	if l.dht.AmITheOnlyNodeInDHT() {
-		l.cache = uTBMsgPayload
 		l.mp.Messages["loadtrack_complete"] <- &payload
 		fmt.Println("Load Track: Single SuperNode mode, Load track end.")
 	//If the cache is not evicted, return cache.
-	} else if l.superNodeContext.IsLoadCacheEffective {
-		payload.Data = MP.EncodeData(l.cache)
-		l.mp.Messages["loadtrack_complete"] <- &payload
-		fmt.Println("Load Track: cache hit, Load track end.")
 	} else {
 		uTBMsg := l.dht.NewBroadcastMessage()
 		l.dht.PassBroadcastMessage(&uTBMsg, &payload)
@@ -95,9 +89,7 @@ func (j *LoadTracker) getPrevElectionMessage(msg *MP.Message) (*DHT.BroadcastMes
 
 func (l *LoadTracker) CompleteTracking(msg *MP.Message) {
 	// Deal with the received messages
-	l.superNodeContext.IsLoadCacheEffective = true
 	result := transferUtbmToResult(msg)
-	l.cache = result
 	msg.Data = MP.EncodeData(result)
 	msg.Kind = "loadtrack_result"
 	l.mp.Send(*msg)
