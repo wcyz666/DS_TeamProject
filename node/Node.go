@@ -95,17 +95,16 @@ func errorHandler(msg *MP.Message) {
 	For load tracking
  */
 
-func startLoadTrack() {
+func StartLoadTrack() LT.LoadBroadcastMessage {
 	lTMsg := MP.NewMessage(nodeContext.ParentIP, nodeContext.ParentName, "loadtrack_request", MP.EncodeData("Load track start"))
 	mp.Send(lTMsg)
-}
-
-func reveiveLoadTrackResult(msg *MP.Message) {
+	msg := <- mp.Messages["loadtrack_result"]
 
 	var loadTrackResult LT.LoadBroadcastMessage
 	MP.DecodeData(&loadTrackResult, msg.Data)
 
 	fmt.Println(loadTrackResult)
+	return loadTrackResult
 }
 
 
@@ -129,7 +128,7 @@ func Start() {
 	// processed in error handler.
 	// init_fail: used in hello phase
 	// exit: used when all supernode cannot be connected.
-	mp.AddMappings([]string{"exit", "init_fail", "super_fail", "ack"})
+	mp.AddMappings([]string{"exit", "init_fail", "super_fail", "ack", "loadtrack_result"})
 
 	// Initialize all the package structs
 
@@ -142,8 +141,6 @@ func Start() {
 	channelNames := map[string]func(*MP.Message){
 		"election_assign":     joinAssign,
 		"error" : errorHandler,
-
-		"loadtrack_result": reveiveLoadTrackResult,
 
 		// The streaming related handlers goes here
 		"streaming_election": streamer.HandleElection,
@@ -245,7 +242,7 @@ func NodeCLIInterface(streamer *Streamer.Streamer){
 			case "P", "p", "Parent", "parent":
 				fmt.Printf("Node: print parent info IP: [%s], name [%s]\n", nodeContext.ParentIP, nodeContext.ParentName)
 			case "U", "u", "Usage", "usage":
-				startLoadTrack()
+				StartLoadTrack()
 			case "C", "c", "Leave", "leave":
 				isSendHeartBeat = false
 			case "R", "r", "Reconnect", "reconnect":

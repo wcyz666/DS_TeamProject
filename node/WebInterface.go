@@ -42,8 +42,16 @@ func apiGetPrograms(ctx *web.Context, val string) string{
 	json, _ := Json.Marshal(programList)
 	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
 	return ctx.Params["callback"] + "(" + string(json) + ")"
+}
+
+func apiGetLoad(ctx *web.Context, val string) string{
+	loadList := StartLoadTrack().SuperNodeUsages
+	json, _ := Json.Marshal(loadList)
+	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
+	return ctx.Params["callback"] + "(" + string(json) + ")"
 
 }
+
 
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
 	context = nodeContext
@@ -54,5 +62,6 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/stream/(.*)", apiStream)
 	web.Get("/receive/", apiReceive)
 	web.Get("/allPrograms/(.*)", apiGetPrograms)
+	web.Get("/load/(.*)", apiGetLoad)
 	web.Run("0.0.0.0:9999")
 }
