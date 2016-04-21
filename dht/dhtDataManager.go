@@ -182,6 +182,6 @@ func (dhtNode *DHTNode) LogDictionaryContents(){
 	}
 }
 
-func (dhtNode *DHTNode) GetAllData() ([]MemberShipInfo) {
+func (dhtNode *DHTNode) GetAllData() (map[string][]MemberShipInfo) {
 	return dhtNode.hashTable
 }

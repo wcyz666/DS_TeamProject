@@ -252,6 +252,6 @@ func (dht *DHTService)  TriggerBroadcastMessage(){
 	dht.DhtNode.CreateBroadcastMessage()
 }
 
-func (dht *DHTService) GetAllData() ([]MemberShipInfo){
+func (dht *DHTService) GetAllData() (map[string][]MemberShipInfo){
 	return dht.DhtNode.GetAllData()
 }
