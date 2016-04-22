@@ -42,45 +42,56 @@
         <div class="panel panel-primary">
             <div class="panel-heading">
                 <h3 class="panel-title">SuperNode Usage Tracking</h3></div>
-            <div class="panel-body">
-                <div class="container">
-                    <div class="row">
-                        <h4>Refresh Interval</h4>
-                        <div class="btn-group" data-toggle="buttons">
-                            <label class="btn btn-primary active">
-                                <input type="radio" name="options" id="option0" autocomplete="off" checked> Manual
-                            </label>
-                            <label class="btn btn-primary">
-                                <input type="radio" name="options" id="option1" autocomplete="off"> 10s
-                            </label>
-                            <label class="btn btn-primary">
-                                <input type="radio" name="options" id="option2" autocomplete="off"> 30s
-                            </label>
-                            <label class="btn btn-primary">
-                                <input type="radio" name="options" id="option3" autocomplete="off"> 60s
-                            </label>
+                <div class="panel-body">
+                    <div class="container">
+                        <div class="row">
+                            <h4>Refresh Interval</h4>
+                            <div class="btn-group" data-toggle="buttons">
+                                <label class="btn btn-primary active">
+                                    <input type="radio" name="options" id="option0" autocomplete="off" checked> Manual
+                                </label>
+                                <label class="btn btn-primary">
+                                    <input type="radio" name="options" id="option1" autocomplete="off"> 10s
+                                </label>
+                                <label class="btn btn-primary">
+                                    <input type="radio" name="options" id="option2" autocomplete="off"> 30s
+                                </label>
+                                <label class="btn btn-primary">
+                                    <input type="radio" name="options" id="option3" autocomplete="off"> 60s
+                                </label>
+                            </div>
+                            <button class="btn btn-info" id="btn-refresh"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span></button>
                         </div>
-                        <button class="btn btn-info" id="btn-refresh"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span></button>
+                    </div>
+                    <hr>
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                        <tr>
+                            <th>SuperNode IP</th>
+                            <th>SuperNode Name</th>
+                            <th>Child Count</th>
+                        </tr>
+                        </thead>
+                        <tbody id="table-body">
+
+                        </tbody>
+                    </table>
+                </div>
+        </div>
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">Notifications</h3></div>
+                <div class="panel-body">
+                    <div class="container">
+                        <div id="notif-area">
+                        </div>
                     </div>
                 </div>
-                <hr>
-                <table class="table table-hover table-bordered">
-                    <thead>
-                    <tr>
-                        <th>SuperNode IP</th>
-                        <th>SuperNode Name</th>
-                        <th>Child Count</th>
-                    </tr>
-                    </thead>
-                    <tbody id="table-body">
-
-                    </tbody>
-                </table>
-            </div>
         </div>
 
     </div>
-</div>
+
+
 
 </body>
 <script src="../js/jquery-1.12.3.min.js"></script>

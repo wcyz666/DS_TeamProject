@@ -7,6 +7,7 @@ import (
 	Json "encoding/json"
 	"fmt"
 	NodeContext "../node/nodeContext"
+	"mime"
 	"strconv"
 	"time"
 )
@@ -65,6 +66,7 @@ func apiFakeStream(ctx *web.Context, num string) {
 
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
 	context = nodeContext
+	mime.AddExtensionType(".css", "text/css")
 
 	web.Get("/start/(.*)", apiStart)
 	web.Get("/stop/", apiStop)
