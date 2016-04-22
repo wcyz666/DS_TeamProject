@@ -181,3 +181,7 @@ func (dhtNode *DHTNode) LogDictionaryContents(){
 		fmt.Println()
 	}
 }
+
+func (dhtNode *DHTNode) GetAllData() (map[string][]MemberShipInfo) {
+	return dhtNode.hashTable
+}
