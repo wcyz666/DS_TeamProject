@@ -60,7 +60,7 @@ $(document).ready(function () {
             
         }
 
-        function initFullPage() {
+        function initElements() {
             $('#fullpage').fullpage({
                 menu: '#menu',
                 sectionsColor: ['#2B2B2B', '#C63D0F', '#F6F6F6', '#FFE200'],
@@ -72,6 +72,10 @@ $(document).ready(function () {
                 slidesNavPosition: 'bottom',
                 fixedElements: '.modal'
             });
+
+            particlesJS.load('particles-js', '../assets/particle.json', function() {
+                console.log('callback - particles.js config loaded');
+            });
         }
 
 
@@ -79,7 +83,7 @@ $(document).ready(function () {
             init: function() {
                 eventBinding();
                 adjustElements();
-                initFullPage();
+                initElements();
             }
         }
     })().init();

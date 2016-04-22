@@ -73,7 +73,7 @@ func (l *LoadTracker) UpdatePayload(uTBMsg *LoadBroadcastMessage) *LoadBroadcast
 }
 
 func (l *LoadTracker) getCurLoad() SuperNodeUsage {
-	return NewUsage(l.superNodeContext.IP, l.superNodeContext.LocalName, l.superNodeContext.GetNodeCount())
+	return NewUsage(l.superNodeContext.IP, l.superNodeContext.LocalName, l.superNodeContext.GetNodeCount(), l.dht.GetAllData())
 }
 
 // de-capsulate and get ElectionBroadcastMessage back

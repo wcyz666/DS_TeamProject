@@ -1,5 +1,6 @@
 package loadTracker
 
+import DHT "../../dht"
 
 type LoadBroadcastMessage struct {
     InitNodeIP string
@@ -12,10 +13,11 @@ type SuperNodeUsage struct {
     IP string
     Name string
     ChildCount int
+    DhtContent map[string][]DHT.MemberShipInfo
 }
 
-func NewUsage(IP string, Name string, ChildCount int) SuperNodeUsage {
-    return SuperNodeUsage{IP: IP, Name: Name, ChildCount: ChildCount};
+func NewUsage(IP string, Name string, ChildCount int, content map[string][]DHT.MemberShipInfo) SuperNodeUsage {
+    return SuperNodeUsage{IP: IP, Name: Name, ChildCount: ChildCount, DhtContent: content};
 }
 
 func NewTracker(IP string, Name string, sNU SuperNodeUsage) *LoadBroadcastMessage {
