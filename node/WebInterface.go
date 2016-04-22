@@ -7,6 +7,7 @@ import (
 	Json "encoding/json"
 	"fmt"
 	NodeContext "../node/nodeContext"
+	"mime"
 )
 
 var context *NodeContext.NodeContext
@@ -56,6 +57,7 @@ func apiGetLoad(ctx *web.Context, val string) string{
 
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
 	context = nodeContext
+	mime.AddExtensionType(".css", "text/css")
 
 	web.Get("/start/(.*)", apiStart)
 	web.Get("/stop/", apiStop)
