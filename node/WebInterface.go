@@ -7,6 +7,8 @@ import (
 	Json "encoding/json"
 	"fmt"
 	NodeContext "../node/nodeContext"
+	"strconv"
+	"time"
 )
 
 var context *NodeContext.NodeContext
@@ -50,7 +52,14 @@ func apiGetLoad(ctx *web.Context, val string) string{
 	json, _ := Json.Marshal(loadList)
 	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
 	return ctx.Params["callback"] + "(" + string(json) + ")"
+}
 
+func apiFakeStream(ctx *web.Context, num string) {
+	n, _ := strconv.ParseInt(num, 10, 64)
+	for i := 0; i < int(n); i++ {
+		streamer.Stream("Gossip " + strconv.Itoa(i))
+		time.Sleep(1e8)
+	}
 }
 
 
@@ -64,6 +73,7 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/receive/", apiReceive)
 	web.Get("/allPrograms/(.*)", apiGetPrograms)
 	web.Get("/load/(.*)", apiGetLoad)
+	web.Get("/fakeStream/([0-9]+)", apiFakeStream)
 	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
 
 	web.Run("0.0.0.0:9999")
