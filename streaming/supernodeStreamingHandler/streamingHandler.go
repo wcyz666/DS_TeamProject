@@ -53,6 +53,7 @@ func (sHandler *StreamingHandler) StreamStart(msg *MP.Message) {
 		DHT.MemberShipInfo{
 			StreamerName:controlData.SrcName,
 			StreamerIp: controlData.SrcIp,
+			StreamProgramName: controlData.Title,
 		})
 
 }

@@ -80,6 +80,7 @@ type DHTService struct {
 type MemberShipInfo struct {
 	StreamerIp string
 	StreamerName string
+	StreamProgramName string
 }
 
 /* Looks like Go does not support enums. So have to define all status related constants here (even though it is bit ugly)*/
