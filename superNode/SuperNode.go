@@ -233,7 +233,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
-					status := dhtService.Create(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3]})
+					status := dhtService.Create(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3], ""})
 					fmt.Println("Create API called and return status is "+ logStatus(status))
 				}
 			case "D","d":
@@ -249,7 +249,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
-					status := dhtService.Append(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3]})
+					status := dhtService.Append(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3], ""})
 					fmt.Println("Append API called and return status is "+ logStatus(status))
 				}
 			case "R","r":
@@ -257,7 +257,7 @@ func DhtCLIInterface(dhtService *Dht.DHTService){
 					fmt.Println("Invalid format")
 					printHelp()
 				} else {
-					status := dhtService.Remove(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3]})
+					status := dhtService.Remove(inputList[1], Dht.MemberShipInfo{inputList[2], inputList[3], ""})
 					fmt.Println("Remove API called and return status is "+ logStatus(status))
 				}
 			case "G","g":
