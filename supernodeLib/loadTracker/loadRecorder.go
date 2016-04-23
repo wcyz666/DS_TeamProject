@@ -13,10 +13,10 @@ type SuperNodeUsage struct {
     IP string
     Name string
     ChildCount int
-    DhtContent map[string][]DHT.MemberShipInfo
+    DhtContent []DHT.MemberShipInfo
 }
 
-func NewUsage(IP string, Name string, ChildCount int, content map[string][]DHT.MemberShipInfo) SuperNodeUsage {
+func NewUsage(IP string, Name string, ChildCount int, content []DHT.MemberShipInfo) SuperNodeUsage {
     return SuperNodeUsage{IP: IP, Name: Name, ChildCount: ChildCount, DhtContent: content};
 }
 

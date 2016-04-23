@@ -182,6 +182,14 @@ func (dhtNode *DHTNode) LogDictionaryContents(){
 	}
 }
 
-func (dhtNode *DHTNode) GetAllData() (map[string][]MemberShipInfo) {
-	return dhtNode.hashTable
+func (dhtNode *DHTNode) GetAllData() ([]MemberShipInfo) {
+	members := make([]MemberShipInfo, len(dhtNode.hashTable))
+	i := 0;
+	for _, values := range dhtNode.hashTable {
+		for _, value := range values {
+			members[i] = value
+			i += 1
+		}
+	}
+	return members
 }

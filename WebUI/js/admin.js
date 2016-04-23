@@ -37,6 +37,9 @@ $(document).ready(function () {
                             + data[i].ChildCount + "</td><td>"
                             + '<button class="btn btn-sm btn-info"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span>' +
                             '</button></td></tr>';
+                        if (data[i].DhtContent.length > 0) {
+                            
+                        }
                     }
                     $("#table-body").html(html);
                     isChanged = utils.generateNotifications(data, utils.showNotifications);
