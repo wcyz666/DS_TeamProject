@@ -63,6 +63,10 @@ func apiFakeStream(ctx *web.Context, num string) {
 	}
 }
 
+func apiGetLocalName() string{
+	return streamer.CurrentProgram
+}
+
 
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
 	context = nodeContext
@@ -76,14 +80,8 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/allPrograms/(.*)", apiGetPrograms)
 	web.Get("/load/(.*)", apiGetLoad)
 	web.Get("/fakeStream/([0-9]+)", apiFakeStream)
+	web.Get("/getLocalName/", apiGetLocalName)
 	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
-	//web.Get("/WebUI/css/",  http.FileServer(http.Dir("WebUI/css")))
-	web.Get("/WebUI/css/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, r.URL.Path[1:])
-	})
-	//web.Get("/WebUI/fonts/",  http.FileServer(http.Dir("./WebUI/fonts")))
-	//web.Get("/WebUI/js/",  http.FileServer(http.Dir("./WebUI/js")))
-	//web.Get("/WebUI/images/",  http.FileServer(http.Dir("./WebUI/images")))
 
 	web.Run("0.0.0.0:9999")
 
