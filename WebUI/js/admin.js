@@ -30,18 +30,36 @@ $(document).ready(function () {
                 }).success(function (data) {
 
                     var html = "",
-                        i = 0;
+                        i = 0,
+                        j,
+                        len,
+                        detail,
+                        content,
+                        tableBody = $("#table-body");
+
+                    tableBody.empty();
+
                     for (; i < data.length; i++) {
-                        html += "<tr><td>" + data[i].IP + "</td><td>"
+                        html = $("<tr><td>" + data[i].IP + "</td><td>"
                             + data[i].Name + "</td><td>"
                             + data[i].ChildCount + "</td><td>"
                             + '<button class="btn btn-sm btn-info"><span class="glyphicon glyphicon-minus" aria-hidden="true"></span>' +
-                            '</button></td></tr>';
-                        if (data[i].DhtContent.length > 0) {
-                            
+                            '</button></td></tr>');
+
+                        tableBody.append(html);
+
+                        if (data[i].DhtContent) {
+                            detail = "";
+                            content = data[i].DhtContent;
+                            for (j = 0, len = content.length; j < len; j++) {
+                                detail += "<tr><td>" + content[j].StreamerIp + "</td><td>" + content[j].StreamerName + "</td><td>" +
+                                    content[j].StreamProgramName + "</td></tr>"
+                            }
+                            utils.getDetailsTemplate().find('tbody').append($(detail)).end().appendTo(tableBody);
+                        } else {
+                            html.find('button').addClass('disabled');
                         }
                     }
-                    $("#table-body").html(html);
                     isChanged = utils.generateNotifications(data, utils.showNotifications);
                     refreshButton.removeClass("disabled");
 
@@ -162,6 +180,10 @@ $(document).ready(function () {
                     });
                 }
 
+            },
+
+            getDetailsTemplate: function () {
+                return $('<tr><td colspan="4" class="detail-container"><div class="collapsePart"><table class="table table-responsive table-detail"><thead><tr><th>Streamer IP</th><th>Program ID</th><th>Program Title</th></tr></thead><tbody></tbody></table></div></td></tr>');
             },
 
             getCoordinates: function (edgeLength, order, edgeCount) {
