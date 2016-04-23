@@ -118,16 +118,23 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 		noOfReplicasToSend = len(dhtNode.leafTable.NextNodeList)
 	}
 
-	if (noOfReplicasToSend == 0){
-		return SUCCESS
-	}
+
 
 	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
+	fmt.Println("noOfReplicasToSend: " + strconv.Itoa(noOfReplicasToSend))
 
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
+		if  nodeToForward.IpAddress == dhtNode.IpAddress {
+			//noOfReplicasToSend--;
+			//continue;
+		}
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 			"dht_replica_update_req", MP.EncodeData(ReplicaUpdateReq{reqType, dataOperationReq})))
+	}
+
+	if (noOfReplicasToSend == 0){
+		return SUCCESS
 	}
 
 	updateResRcvd := 0
@@ -149,6 +156,9 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 			if (replicaUpdateRes.Status == SUCCESS){
 				updateResRcvd++
 			}
+
+			fmt.Println(" updateResRcvd is " + strconv.Itoa(updateResRcvd))
+			fmt.Println(" noOfReplicasToSend " + strconv.Itoa(noOfReplicasToSend))
 
 			if (updateResRcvd == noOfReplicasToSend){
 				timer1.Stop()
