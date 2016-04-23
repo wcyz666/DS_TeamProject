@@ -389,20 +389,21 @@ func (dhtNode *DHTNode) HandleJoinComplete(msg *MP.Message) {
 			fmt.Println("In Delete request, start key is "+ joinComplete.Key + " and end key is "+ dhtNode.NodeKey)
 			dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name , "dht_delete_replica_req",
 				MP.EncodeData(DeleteReplicaRequest{prevNodeKey,joinComplete.Key})))
+
+			/* Delete it only if we have reached the desired replication factor */
+			var entryKey *big.Int
+			/*Delete keys belonging to farthest Master node  that I am a replica of */
+			for k,_ := range dhtNode.hashTable {
+				entryKey = getBigIntFromString(k)
+				/* Delete keys belonging to the range corresponding to farthest master node */
+				if (true == isKeyPresentInKeyspaceRange(entryKey, &dhtNode.farthestMasterNodeInfo.startNumericKey,
+					&dhtNode.farthestMasterNodeInfo.endNumericKey)){
+					delete(dhtNode.hashTable,k)
+				}
+			}
 		}
 	} else {
 		fmt.Println("No need to delete existing replicas since we are yet to reach the desired replicatio factor")
-	}
-
-	var entryKey *big.Int
-	/*Delete keys belonging to farthest Master node  that I am a replica of */
-	for k,_ := range dhtNode.hashTable {
-		entryKey = getBigIntFromString(k)
-		/* If entry key is within my key space, add it to the hash table */
-		if (true == isKeyPresentInKeyspaceRange(entryKey, &dhtNode.farthestMasterNodeInfo.startNumericKey,
-												&dhtNode.farthestMasterNodeInfo.endNumericKey)){
-			delete(dhtNode.hashTable,k)
-		}
 	}
 
 	dhtNode.IsRingUpdateInProgress = false
