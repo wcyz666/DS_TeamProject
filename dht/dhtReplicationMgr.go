@@ -153,7 +153,8 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 			var replicaUpdateRes ReplicaUpdateRes
 			MP.DecodeData(&replicaUpdateRes,msg.Data)
 
-			if (replicaUpdateRes.Status == SUCCESS){
+			if ((replicaUpdateRes.Status == SUCCESS) ||
+			    (replicaUpdateRes.Status == SUCCESS_ENTRY_OVERWRITTEN)){
 				updateResRcvd++
 			}
 
