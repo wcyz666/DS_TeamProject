@@ -126,8 +126,9 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
 		if  nodeToForward.IpAddress == dhtNode.IpAddress {
-			//noOfReplicasToSend--;
-			//continue;
+			// If it is the same node as mine, no need to send it
+			noOfReplicasToSend--;
+			continue;
 		}
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 			"dht_replica_update_req", MP.EncodeData(ReplicaUpdateReq{reqType, dataOperationReq})))
