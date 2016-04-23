@@ -118,16 +118,23 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 		noOfReplicasToSend = len(dhtNode.leafTable.NextNodeList)
 	}
 
-	if (noOfReplicasToSend == 0){
-		return SUCCESS
-	}
+
 
 	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
 
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
+		if  nodeToForward.IpAddress == dhtNode.IpAddress {
+			// If it is the same node as mine, no need to send it
+			noOfReplicasToSend--;
+			continue;
+		}
 		dhtNode.mp.Send(MP.NewMessage(nodeToForward.IpAddress, nodeToForward.Name,
 			"dht_replica_update_req", MP.EncodeData(ReplicaUpdateReq{reqType, dataOperationReq})))
+	}
+
+	if (noOfReplicasToSend == 0){
+		return SUCCESS
 	}
 
 	updateResRcvd := 0
@@ -146,10 +153,11 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 			var replicaUpdateRes ReplicaUpdateRes
 			MP.DecodeData(&replicaUpdateRes,msg.Data)
 
-			if (replicaUpdateRes.Status == SUCCESS){
+			if ((replicaUpdateRes.Status == SUCCESS) ||
+			    (replicaUpdateRes.Status == SUCCESS_ENTRY_OVERWRITTEN)){
 				updateResRcvd++
 			}
-
+		
 			if (updateResRcvd == noOfReplicasToSend){
 				timer1.Stop()
 				return SUCCESS
