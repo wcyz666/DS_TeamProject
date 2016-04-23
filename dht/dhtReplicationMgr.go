@@ -121,7 +121,6 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 
 
 	fmt.Println("[DHT] Sending updates to replicas for operation  "+ reqType)
-	fmt.Println("noOfReplicasToSend: " + strconv.Itoa(noOfReplicasToSend))
 
 	for i := 0; i < noOfReplicasToSend; i++ {
 		nodeToForward := dhtNode.leafTable.NextNodeList[i]
@@ -158,10 +157,7 @@ func (dhtNode *DHTNode) SendUpdateToReplicas(dataOperationReq DataOperationReque
 			    (replicaUpdateRes.Status == SUCCESS_ENTRY_OVERWRITTEN)){
 				updateResRcvd++
 			}
-
-			fmt.Println(" updateResRcvd is " + strconv.Itoa(updateResRcvd))
-			fmt.Println(" noOfReplicasToSend " + strconv.Itoa(noOfReplicasToSend))
-
+		
 			if (updateResRcvd == noOfReplicasToSend){
 				timer1.Stop()
 				return SUCCESS
