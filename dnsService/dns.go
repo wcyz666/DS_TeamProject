@@ -92,7 +92,7 @@ if IP to be added is already present in one of the A records in the DNS system
 */
 func AddAddr(name string, ipAddr string) error {
 	url := "https://api.dnsimple.com/v1/domains/phani.me/records"
-	//fmt.Println("URL:>", url)
+	fmt.Println("URL:>", url)
 
 	//var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
 	var reqBody string = `{ "record": { "name": "` + name + `", "record_type": "A", "ttl": 3600, "prio": 10, "content": "` + ipAddr + `"}}`
@@ -152,8 +152,8 @@ func GetAddr(name string) []string {
 	for i := 0; i < len(decData.records); i++ {
 		entry = decData.records[i]["record"]
 		if (entry.record_type == "A") && (entry.name == name) {
-			//fmt.Println("record type is " + entry.record_type + " name is " + entry.name + " content is " +
-			//	entry.content)
+			fmt.Println("record type is " + entry.record_type + " name is " + entry.name + " content is " +
+				entry.content)
 			addrList = append(addrList, entry.content)
 		}
 
