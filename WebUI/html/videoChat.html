@@ -52,6 +52,7 @@
             $.ajax({
                 url: CONST.GET_LOCAL_NAME_URL
             }).success(function (data) {
+                console.log(data);
                 var group = data;
                 var frame = document.getElementById("iframe");
                 frame.contentWindow.postMessage({command: 'start', groupid: group}, '*');
