@@ -3,7 +3,11 @@
  */
 $(document).ready(function() {
 
-    var content = $('#chatroom-content'),
+    var CONST = {
+            NODE_URL : "http://localhost:9999",
+            IS_STREAMER_URL : "/isStreamer/"
+        },
+        content = $('#chatroom-content'),
         text = $('#chatroom-text'),
         unviewMsg = 0,
         pageIsFocus = true;
@@ -42,54 +46,68 @@ $(document).ready(function() {
 
     (function (){
 
+        function eventBinding() {
 
-        $(document).keydown(function(event){
-            if (event.keyCode == 13 || event.keyCode == 108) {
-                if (event.shiftKey) {
-                    $('#sendMsg').click();
-                    return false;
-                }
-            }
-        });
-        $("#game").on('click', function(event){
-            event.stopPropagation();
-
-            switch (event.target.id){
-                case "sendVideo-span":
-                case "sendVideo":
-                    break;
-                case "sendMsg":
-                case "sendMsg-span":
-                    var myWords = myLib.getWordsTemplate(text.val());
-
-                    if (text.val().trim() === "")
+            $(document).keydown(function(event){
+                if (event.keyCode == 13 || event.keyCode == 108) {
+                    if (event.shiftKey) {
+                        $('#sendMsg').click();
                         return false;
+                    }
+                }
+            });
+            $("#game").on('click', function(event){
+                event.stopPropagation();
 
-                    text.val("");
-                    content.append(myWords).animate(
-                        {
+                switch (event.target.id){
+                    case "sendVideo-span":
+                    case "sendVideo":
+                        break;
+                    case "sendMsg":
+                    case "sendMsg-span":
+                        var myWords = myLib.getWordsTemplate(text.val());
+
+                        if (text.val().trim() === "")
+                            return false;
+
+                        text.val("");
+                        content.append(myWords).animate({
                             scrollTop:content[0].scrollHeight
                         }, 500);
-                    myLib.msgCallback();
-                    break;
-            }
-        });
+                        myLib.msgCallback();
+                        break;
+                }
+            });
 
 
-        $(window).focus(function(){
-            unviewMsg = 0;
-            pageIsFocus = true;
-            document.title = "Live Streaming";
-        });
+            $(window).focus(function(){
+                unviewMsg = 0;
+                pageIsFocus = true;
+                document.title = "Live Streaming";
+            });
 
-        $(window).blur(function(){
-            pageIsFocus = false;
-        });
+            $(window).blur(function(){
+                pageIsFocus = false;
+            });
+        }
 
+        function initElement() {
+            text.height($('#sendMsg').height());
+            $.ajax({
+                url: CONST.NODE_URL + CONST.IS_STREAMER_URL,
+                jsonp: "callback",
+                dataType: "jsonp"
+            }).success(function (data) {
+                if (data.isStreamer) {
+                    $('.panel-footer').removeClass("hidden");
+                }
+            });
+        }
 
         return {
             init : function () {
-                text.height($('#sendMsg').height());
+                eventBinding();
+                initElement();
             }
         };
     })().init();

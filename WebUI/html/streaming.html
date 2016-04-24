@@ -10,7 +10,8 @@
         background-color: #f5f5f5;
     }
     .chatroom-body {
-        height: 80%;
+        max-height: 500px;
+        padding-bottom:40%;
         overflow-y: scroll;
         overflow-x: hidden;
     }
@@ -99,15 +100,13 @@
             <div class="media chatroom-body" id="chatroom-content">
             </div>
         </div>
-        <div class="panel-footer">
+        <div class="panel-footer hidden">
 
             <div class="input-group">
                 <textarea id="chatroom-text" class="form-control"></textarea>
                 <div class="input-group-btn">
-                    <button type="button" class="btn btn-default"  id="sendMsg"><span id="sendMsg-span" class="glyphicon glyphicon-send" aria-hidden="true">
-                                    </span></button>
-                    <button type="button" class="btn btn-default" id="sendVideo"><span id="sendVideo-span" class="glyphicon glyphicon-facetime-video" aria-hidden="true">
-                                    </span></button>
+                    <button type="button" class="btn btn-default"  id="sendMsg"><span id="sendMsg-span" class="glyphicon glyphicon-send" aria-hidden="true"></span></button>
+                    <button type="button" class="btn btn-default" id="sendVideo"><span id="sendVideo-span" class="glyphicon glyphicon-facetime-video" aria-hidden="true"></span></button>
                 </div>
             </div>
         </div>

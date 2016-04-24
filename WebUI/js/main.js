@@ -7,9 +7,10 @@
 $(document).ready(function () {
 
     var CONST = {
-        SUPERNODE_URL : "http://52.90.181.29:9999",
+        NODE_URL : "http://127.0.0.1:9999",
         GET_LIVE_LIST_URL : "/allPrograms/",
-        JOIN_LIVE_URL : "/join/"
+        JOIN_LIVE_URL : "/join/",
+        STREAMING_PAGE : "/WebUI/html/streaming.html"
     };
 
     (function () {
@@ -17,23 +18,25 @@ $(document).ready(function () {
         function eventBinding(){
             $('#streamer, #viewer').on("click", function (event) {
                 $("#" + event.target.id + "-Modal").modal();
-                $(this).disable();
+                $(this).addClass("disabled");
             });
 
             $('#streamer-Modal, #viewer-Modal').on('hidden.bs.modal', function (e) {
-                $("#" + $(this).id.split("-")[0]).enable();
+                $("#" + $(this).id.split("-")[0]).removeClass("disabled");
             });
 
             $("#new-live").on('submit', function (event) {
                 event.preventDefault();
                 var url = $(this).attr("action") + $('#live-title').val();
-                window.location.href = url;
+                $.get(url).success(function () {
+                    window.location.href = CONST.NODE_URL + CONST.STREAMING_PAGE;
+                });
                 return false;
             });
 
             $("#viewer").on('click', function () {
                 $.ajax({
-                    url: CONST.SUPERNODE_URL + CONST.GET_LIVE_LIST_URL,
+                    url: CONST.NODE_URL + CONST.GET_LIVE_LIST_URL,
                     jsonp: "callback",
                     dataType: "jsonp"
                 }).success(function (data) {
@@ -49,9 +52,11 @@ $(document).ready(function () {
 
             $("#live-join").on('submit', function (event) {
                 event.preventDefault();
-                var url = CONST.SUPERNODE_URL + CONST.JOIN_LIVE_URL
+                var url = CONST.NODE_URL + CONST.JOIN_LIVE_URL
                     + $(this).find("select option:selected").val();
-                window.location.href = url;
+                $.get(url).success(function () {
+                    window.location.href = CONST.NODE_URL + CONST.STREAMING_PAGE;
+                });
                 return false;
             });
         }
@@ -76,6 +81,7 @@ $(document).ready(function () {
             particlesJS.load('particles-js', '../assets/particle.json', function() {
                 console.log('callback - particles.js config loaded');
             });
+            
         }
 
 

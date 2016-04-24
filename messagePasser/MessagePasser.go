@@ -246,6 +246,7 @@ func (mp *MessagePasser) Send(msg Message)  {
 	if (msg.Kind != "dht_neighbourhood_discovery" && msg.Kind != "heartbeat" && msg.Kind != "node_heartbeat"){
 		fmt.Println("Sending out data!")
 		fmt.Println("Src: " + msg.Src + " Dest: "+ msg.Dest + " kind: "+ msg.Kind)
+		fmt.Println("Src: " + msg.SrcName + " Dest: "+ msg.DestName + " kind: "+ msg.Kind)
 	}
 
 	dest := msg.DestName
