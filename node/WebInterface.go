@@ -73,9 +73,9 @@ func apiGetLocalName() string{
 }
 
 func apiIsStreamer(ctx *web.Context)string{
-	data := map[string]string{"isStreamer":"false"}
+	data := map[string]bool{"isStreamer":false}
 	if streamer.CurrentProgram == nodeContext.LocalName {
-		data["isStreamer"] = "true"
+		data["isStreamer"] = true
 	}
 	json, _ := Json.Marshal(data)
 	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
