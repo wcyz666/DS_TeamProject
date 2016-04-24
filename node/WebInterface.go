@@ -72,7 +72,7 @@ func apiGetLocalName() string{
 	return streamer.CurrentProgram
 }
 
-func apiIsStreamer(ctx *web.Context)string{
+func apiIsStreamer(ctx *web.Context, val string) string {
 	data := map[string]bool{"isStreamer":false}
 	if streamer.CurrentProgram == nodeContext.LocalName {
 		data["isStreamer"] = true

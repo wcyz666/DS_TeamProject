@@ -93,6 +93,7 @@ func (j *JoinElection) CompleteElection(msg *MP.Message) {
 
 	// Deal with the received messages
 	result := transferEbmToResult(msg)
+	fmt.Printf("election result Message: IP[%s], Name[%s]\n", msg.Dest, msg.DestName)
 	msg.Data = MP.EncodeData(result)
 	msg.Kind = "election_assign"
 	j.mp.Send(*msg)

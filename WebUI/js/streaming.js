@@ -92,7 +92,6 @@ $(document).ready(function() {
         }
 
         function initElement() {
-            text.height($('#sendMsg').height());
             $.ajax({
                 url: CONST.NODE_URL + CONST.IS_STREAMER_URL,
                 jsonp: "callback",
@@ -100,8 +99,11 @@ $(document).ready(function() {
             }).success(function (data) {
                 if (data.isStreamer) {
                     $('.panel-footer').removeClass("hidden");
+                    text.height($('#sendMsg').height());
                 }
-            });
+            }).error(function (e) {
+                console.log(e);
+            })
         }
 
         return {
