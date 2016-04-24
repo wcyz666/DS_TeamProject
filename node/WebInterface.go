@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+type ServerData struct{
+	isStreamer bool
+}
+
 var context *NodeContext.NodeContext
 
 func apiHello()string{
@@ -30,6 +34,7 @@ func apiStop(){
 func apiJoin(programId string){
 	streamer.Stop()
 	streamer.Join(programId)
+
 }
 
 func apiStream(data string){
@@ -67,6 +72,13 @@ func apiGetLocalName() string{
 	return streamer.CurrentProgram
 }
 
+func apiIsStreamer()string{
+	if streamer.CurrentProgram == nodeContext.LocalName{
+		return "true"
+	}else{
+		return "false"
+	}
+}
 
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
 	context = nodeContext
@@ -81,8 +93,9 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/load/(.*)", apiGetLoad)
 	web.Get("/fakeStream/([0-9]+)", apiFakeStream)
 	web.Get("/getLocalName/", apiGetLocalName)
-	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
+	web.Get("/isStreamer/", apiIsStreamer)
 
+	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
 	web.Run("0.0.0.0:9999")
 
 }
