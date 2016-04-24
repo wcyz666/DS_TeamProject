@@ -86,6 +86,7 @@ func (streamer *Streamer) Join(root string){
 		SrcName: streamer.nodeContext.LocalName,
 		SrcIp: streamer.nodeContext.LocalIp,
 		RootStreamer: root,
+		Title: streamer.ProgramList[root],
 	}
 
 

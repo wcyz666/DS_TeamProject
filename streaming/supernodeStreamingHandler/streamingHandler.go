@@ -128,6 +128,7 @@ func (sHandler *StreamingHandler) StreamJoin(msg *MP.Message) {
 		sHandler.dht.Append(root, DHT.MemberShipInfo{
 			StreamerName:controlData.SrcName,
 			StreamerIp:controlData.SrcIp,
+			StreamProgramName: controlData.Title,
 		})
 	}
 	sHandler.mp.Send(MP.NewMessage(streamer.StreamerIp, streamer.StreamerName, "streaming_join", msg.Data))
