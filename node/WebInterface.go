@@ -72,12 +72,14 @@ func apiGetLocalName() string{
 	return streamer.CurrentProgram
 }
 
-func apiIsStreamer()string{
-	if streamer.CurrentProgram == nodeContext.LocalName{
-		return "true"
-	}else{
-		return "false"
+func apiIsStreamer(ctx *web.Context)string{
+	data := map[string]string{"isStreamer":"false"}
+	if streamer.CurrentProgram == nodeContext.LocalName {
+		data["isStreamer"] = "true"
 	}
+	json, _ := Json.Marshal(data)
+	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
+	return ctx.Params["callback"] + "(" + string(json) + ")"
 }
 
 func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeContext) {
