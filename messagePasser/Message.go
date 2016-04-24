@@ -39,6 +39,10 @@ func (d *Message) GobEncode() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = encoder.Encode(d.DestName)
+	if err != nil {
+		return nil, err
+	}
 	err = encoder.Encode(d.Kind)
 	if err != nil {
 		return nil, err
@@ -63,6 +67,10 @@ func (d *Message) GobDecode(buf []byte) error {
 		return err
 	}
 	err = decoder.Decode(&d.SrcName)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&d.DestName)
 	if err != nil {
 		return err
 	}
