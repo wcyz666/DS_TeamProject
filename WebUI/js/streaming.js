@@ -4,12 +4,15 @@
 $(document).ready(function() {
 
     var CONST = {
-            NODE_URL : "http://localhost:9999",
-            IS_STREAMER_URL : "/isStreamer/"
+            NODE_URL : "",
+            IS_STREAMER_URL : "/isStreamer/",
+            RECEIVE_URL: "/receive/"
         },
         content = $('#chatroom-content'),
         text = $('#chatroom-text'),
+        toggle = $('#streaming-toggle'),
         unviewMsg = 0,
+        user = null,
         pageIsFocus = true;
 
     var myLib = (function(){
@@ -32,17 +35,77 @@ $(document).ready(function() {
                 return wordsToHtml + '<div class="pull-right"><img class="media-object" width="48" src="/avatar/' + userID + '.png" alt="avatar">'+
                     '</div><div class="media-body word-content pull-right"><p class="bubble-self words col-xs-12">' + words.replace(/\n/g, "<br>") +
                     '</p></div><div class="clearfix"></div>';
-            },
-
-
-            msgCallback: function() {
-                if (!pageIsFocus) {
-                    ++unviewMsg;
-                    document.title = unviewMsg + " messages - Live Streaming";
-                }
             }
+
         };
     })();
+
+
+    function User() {}
+
+
+    User.prototype.updateUnread = function (msg) {
+
+        content.append(msg).animate({
+            scrollTop:content[0].scrollHeight
+        }, 500);
+        if (!pageIsFocus) {
+            ++unviewMsg;
+            document.title = unviewMsg + " messages - Live Streaming";
+        }
+    };
+
+    function Sender() {
+    }
+
+    Sender.prototype = new User();
+
+    Sender.prototype.show = function () {
+        var myWords = myLib.getWordsTemplate(text.val());
+
+        if (text.val().trim() === "")
+            return false;
+
+        text.val("");
+        this.updateUnread(myWords);
+    };
+
+    function Receiver(interval) {
+        this.interval = interval;
+        this.intervalHanler = null;
+    }
+
+    Receiver.prototype = new User();
+
+    Receiver.prototype.show = function (msg) {
+        this.updateUnread(msg);
+
+    };
+    
+    Receiver.prototype.start = function () {
+        this.intervalHanler = setInterval(function () {
+            $.ajax({
+                url: CONST.NODE_URL + CONST.RECEIVE_URL,
+                jsonp: "callback",
+                dataType: "jsonp"
+            }).success(function (data) {
+                if (data.msg.length > 0) {
+                    user.show();
+                }
+            }).error(function (data) {
+                console.log(data);
+            });
+
+        }, this.interval);
+    };
+
+    Receiver.prototype.stop = function () {
+        if (this.intervalHanler) {
+            clearInterval(this.intervalHanler);
+        }
+        this.intervalHanler = null;
+    };
+
 
     (function (){
 
@@ -65,16 +128,7 @@ $(document).ready(function() {
                         break;
                     case "sendMsg":
                     case "sendMsg-span":
-                        var myWords = myLib.getWordsTemplate(text.val());
 
-                        if (text.val().trim() === "")
-                            return false;
-
-                        text.val("");
-                        content.append(myWords).animate({
-                            scrollTop:content[0].scrollHeight
-                        }, 500);
-                        myLib.msgCallback();
                         break;
                 }
             });
@@ -98,8 +152,13 @@ $(document).ready(function() {
                 dataType: "jsonp"
             }).success(function (data) {
                 if (data.isStreamer) {
+                    user = new Sender();
                     $('.panel-footer').removeClass("hidden");
                     text.height($('#sendMsg').height());
+                } else {
+                    user = new Receiver(1000);
+                    toggle.removeClass('hidden');
+                    user.start();
                 }
             }).error(function (e) {
                 console.log(e);

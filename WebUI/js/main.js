@@ -7,7 +7,7 @@
 $(document).ready(function () {
 
     var CONST = {
-        NODE_URL : "http://127.0.0.1:9999",
+        NODE_URL : "",
         GET_LIVE_LIST_URL : "/allPrograms/",
         JOIN_LIVE_URL : "/join/",
         STREAMING_PAGE : "/WebUI/html/streaming.html"

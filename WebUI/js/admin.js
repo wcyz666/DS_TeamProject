@@ -7,7 +7,7 @@
 $(document).ready(function () {
 
     var CONST = {
-            NODE_URL : "http://localhost:9999",
+            NODE_URL : "",
             TRACK_LOAD_URL : "/load/",
             TOPO_EDGE_LENGTH : 2
         },
