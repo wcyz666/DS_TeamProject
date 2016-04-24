@@ -115,7 +115,7 @@ func (streamer *Streamer) Receive() (data string){
 	case data := <-streamer.ReceivingData:
 		return data
 	default:
-		return "No data"
+		return ""
 	}
 }
 

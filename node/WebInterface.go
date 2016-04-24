@@ -41,8 +41,11 @@ func apiStream(data string){
 	streamer.Stream(data)
 }
 
-func apiReceive() string{
-	return streamer.Receive()
+func apiReceive(ctx *web.Context) string{
+	data := map[string]string{"msg":streamer.Receive()}
+	json, _ := Json.Marshal(data)
+	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
+	return ctx.Params["callback"] + "(" + string(json) + ")"
 }
 
 func apiGetPrograms(ctx *web.Context, val string) string{
