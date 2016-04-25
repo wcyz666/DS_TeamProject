@@ -22,7 +22,7 @@ $(document).ready(function () {
             });
 
             $('#streamer-Modal, #viewer-Modal').on('hidden.bs.modal', function (e) {
-                $("#" + $(this).id.split("-")[0]).removeClass("disabled");
+                $("#" + $(this).attr('id').split("-")[0]).removeClass("disabled");
             });
 
             $("#new-live").on('submit', function (event) {

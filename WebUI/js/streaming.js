@@ -17,8 +17,7 @@ $(document).ready(function() {
 
     var myLib = (function(){
 
-        var lastTime = new Date(),
-            width = $("#game").width() * 0.3;
+        var lastTime = new Date();
 
         return {
             getTime: function() {
@@ -30,13 +29,12 @@ $(document).ready(function() {
                 lastTime = now;
                 return wordsToHtml;
             },
-            getWordsTemplate : function (words){
+            getOtherWordsTemplate : function (words){
                 var wordsToHtml = myLib.getTime();
-                return wordsToHtml + '<div class="pull-right"><img class="media-object" width="48" src="/avatar/' + userID + '.png" alt="avatar">'+
-                    '</div><div class="media-body word-content pull-right"><p class="bubble-self words col-xs-12">' + words.replace(/\n/g, "<br>") +
+                return wordsToHtml + '<div class="pull-left">' +
+                    '</div><div class="media-body"><p class="words bubble-other">' + words.replace(/\n/g, "<br>") +
                     '</p></div><div class="clearfix"></div>';
-            }
-
+            },
         };
     })();
 
@@ -46,7 +44,7 @@ $(document).ready(function() {
 
     User.prototype.updateUnread = function (msg) {
 
-        var myWords = myLib.getWordsTemplate(msg);
+        var myWords = myLib.getOtherWordsTemplate(msg);
         content.append(myWords).animate({
             scrollTop:content[0].scrollHeight
         }, 500);
@@ -106,7 +104,6 @@ $(document).ready(function() {
         }
         this.intervalHanler = null;
     };
-
 
     (function (){
 
