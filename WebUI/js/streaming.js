@@ -46,7 +46,8 @@ $(document).ready(function() {
 
     User.prototype.updateUnread = function (msg) {
 
-        content.append(msg).animate({
+        var myWords = myLib.getWordsTemplate(msg);
+        content.append(myWords).animate({
             scrollTop:content[0].scrollHeight
         }, 500);
         if (!pageIsFocus) {
@@ -61,10 +62,11 @@ $(document).ready(function() {
     Sender.prototype = new User();
 
     Sender.prototype.show = function () {
-        var myWords = myLib.getWordsTemplate(text.val());
+        var myWords = text.val();
 
-        if (text.val().trim() === "")
+        if (text.val().trim() === "") {
             return false;
+        }
 
         text.val("");
         this.updateUnread(myWords);
@@ -79,7 +81,6 @@ $(document).ready(function() {
 
     Receiver.prototype.show = function (msg) {
         this.updateUnread(msg);
-
     };
     
     Receiver.prototype.start = function () {
@@ -90,7 +91,7 @@ $(document).ready(function() {
                 dataType: "jsonp"
             }).success(function (data) {
                 if (data.msg.length > 0) {
-                    user.show();
+                    user.show(data.msg);
                 }
             }).error(function (data) {
                 console.log(data);
