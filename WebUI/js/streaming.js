@@ -93,8 +93,11 @@ $(document).ready(function() {
     Receiver.prototype.show = function (msg) {
         this.updateUnread(msg);
     };
+
+    Receiver.prototype.isStarted = false;
     
     Receiver.prototype.start = function () {
+        this.isStarted = true;
         this.intervalHanler = setInterval(function () {
             $.ajax({
                 url: CONST.NODE_URL + CONST.RECEIVE_URL,
@@ -112,10 +115,11 @@ $(document).ready(function() {
     };
 
     Receiver.prototype.stop = function () {
-        if (this.intervalHanler) {
+        if (this.isStarted) {
             clearInterval(this.intervalHanler);
         }
         this.intervalHanler = null;
+        this.isStarted = false;
     };
 
     (function (){
@@ -183,7 +187,14 @@ $(document).ready(function() {
                     user.start();
 
                     toggle.on('click', function () {
-                        user.stop();
+                        if (user.isStarted) {
+                            user.stop();
+                            $(this).text("Restart").removeClass('btn-warning').addClass("btn-success");
+                        } else {
+                            user.start();
+                            $(this).text("Stop").addClass('btn-warning').removeClass("btn-success");
+                        }
+
                     });
                 }
             }).error(function (e) {
