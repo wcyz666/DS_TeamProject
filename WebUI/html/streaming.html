@@ -100,6 +100,25 @@
 </nav>
 <br />
 <br /><br />
+<div id="video-panel" class="container hidden">
+    <div class="row">
+        <iframe  id="iframe" src="http://ec2-54-88-212-149.compute-1.amazonaws.com:18888/"
+                style="height:400px;width:600px">
+            <script>
+                window.addEventListener('message', function(event) {
+                    alert('Received message: ' + event.data.message);
+                }, false);
+            </script>
+        </iframe>
+    </div>
+    <div class="row">
+        <button class="btn btn-lg btn-danger" id="reload-iframe-btn">Stop</button>
+        <button class="btn btn-lg btn-primary" id="start-join-btn">Start</button>
+    </div>
+</div>
+<br/>
+
+
 <div class="container">
     <div id="game" class="panel panel-primary">
         <div class="panel-heading">
@@ -126,6 +145,5 @@
 <script src="../js/jquery-1.12.3.min.js"></script>
 <script src="../js/bootstrap.min.js"></script>
 <script src="../js/streaming.js"></script>
-
 </body>
 </html>

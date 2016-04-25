@@ -8,7 +8,8 @@ $(document).ready(function() {
             IS_STREAMER_URL : "/isStreamer/",
             RECEIVE_URL: "/receive/",
             SEND_URL: "/stream/",
-            STOP_URL: "/stop/"
+            STOP_URL: "/stop/",
+            GET_LOCAL_NAME_URL: "/getLocalName/",
         },
         content = $('#chatroom-content'),
         text = $('#chatroom-text'),
@@ -17,6 +18,7 @@ $(document).ready(function() {
         user = null,
         pageIsFocus = true;
 
+    
     var myLib = (function(){
 
         var lastTime = new Date();
@@ -140,6 +142,8 @@ $(document).ready(function() {
                 switch (event.target.id){
                     case "sendVideo-span":
                     case "sendVideo":
+                        $('#video-panel').appendTo(content).removeClass("hidden");
+                        user.send("Video begins");
                         break;
                     case "sendMsg":
                     case "sendMsg-span":
@@ -199,7 +203,28 @@ $(document).ready(function() {
                 }
             }).error(function (e) {
                 console.log(e);
-            })
+            });
+
+            var btn2 = document.getElementById('reload-iframe-btn'),
+                btn3 = document.getElementById('start-join-btn');
+
+            btn2.onclick = function () {
+                var frame = document.getElementById("iframe");
+                frame.contentWindow.postMessage({command: 'stop'}, '*');
+            };
+
+            btn3.onclick = function () {
+                $.ajax({
+                    url: CONST.GET_LOCAL_NAME_URL
+                }).success(function (data) {
+                    console.log(data);
+                    var group = data;
+                    var frame = document.getElementById("iframe");
+                    frame.contentWindow.postMessage({command: 'start', groupid: group}, '*');
+                }).error(function (data) {
+                    console.log(data);
+                })
+            };
         }
 
         return {
