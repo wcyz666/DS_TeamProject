@@ -50,7 +50,7 @@
         height: 0;
         border-style: solid;
         border-width: 20px 20px 0px 0px;
-        border-color: transparent #6f3 transparent transparent;
+        border-color: transparent #4BE219 transparent transparent;
     }
 
     .bubble-other {
@@ -69,10 +69,7 @@
 </style>
 </head>
 <body>
-
-<input id="" value="{{.isStreamer}}"/>
-
-<nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+    <nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
     <div class="container-fluid">
         <!-- Brand and toggle get grouped for better mobile display -->
         <div class="navbar-header">
@@ -98,28 +95,28 @@
         </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
 </nav>
-<br />
-<br /><br />
-<div id="video-panel" class="container hidden">
-    <div class="row">
-        <iframe  id="iframe" src="http://ec2-54-88-212-149.compute-1.amazonaws.com:18888/"
-                style="height:400px;width:600px">
-            <script>
-                window.addEventListener('message', function(event) {
-                    alert('Received message: ' + event.data.message);
-                }, false);
-            </script>
-        </iframe>
+    <br />
+    <br />
+    <br />
+    <div id="video-panel" class="container hidden">
+        <div class="row">
+            <iframe  id="iframe" src="http://ec2-54-88-212-149.compute-1.amazonaws.com:18888/"
+                    style="height:400px;width:600px">
+                <script>
+                    window.addEventListener('message', function(event) {
+                        alert('Received message: ' + event.data.message);
+                    }, false);
+                </script>
+            </iframe>
+        </div>
+        <div class="row" id="video-panel-button">
+            <button class="btn btn-lg btn-danger" id="reload-iframe-btn">Stop</button>
+            <button class="btn btn-lg btn-primary" id="start-join-btn">Start</button>
+        </div>
     </div>
-    <div class="row">
-        <button class="btn btn-lg btn-danger" id="reload-iframe-btn">Stop</button>
-        <button class="btn btn-lg btn-primary" id="start-join-btn">Start</button>
-    </div>
-</div>
-<br/>
+    <br/>
 
-
-<div class="container">
+    <div class="container">
     <div id="game" class="panel panel-primary">
         <div class="panel-heading">
             <h4 class="pull-left">Streaming Area</h4>
@@ -142,8 +139,8 @@
         </div>
     </div>
 </div>
-<script src="../js/jquery-1.12.3.min.js"></script>
-<script src="../js/bootstrap.min.js"></script>
-<script src="../js/streaming.js"></script>
+    <script src="../js/jquery-1.12.3.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/streaming.js"></script>
 </body>
 </html>

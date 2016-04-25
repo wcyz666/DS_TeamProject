@@ -107,7 +107,13 @@ $(document).ready(function() {
                 dataType: "jsonp"
             }).success(function (data) {
                 if (data.msg.length > 0) {
-                    user.show(data.msg);
+                    if (data.msg === "Control Message: Video begins") {
+                        $('#video-panel-button').addClass("hidden");
+                        $('#video-panel').appendTo(content).removeClass("hidden");
+                        $('#start-join-btn').click();
+                    } else {
+                        user.show(data.msg);
+                    }
                 }
             }).error(function (data) {
                 console.log(data);
@@ -143,7 +149,7 @@ $(document).ready(function() {
                     case "sendVideo-span":
                     case "sendVideo":
                         $('#video-panel').appendTo(content).removeClass("hidden");
-                        user.send("Video begins");
+                        user.send("Control Message: Video begins");
                         break;
                     case "sendMsg":
                     case "sendMsg-span":
