@@ -6,7 +6,9 @@ $(document).ready(function() {
     var CONST = {
             NODE_URL : "",
             IS_STREAMER_URL : "/isStreamer/",
-            RECEIVE_URL: "/receive/"
+            RECEIVE_URL: "/receive/",
+            SEND_URL: "/stream/",
+            STOP_URL: "/stop/"
         },
         content = $('#chatroom-content'),
         text = $('#chatroom-text'),
@@ -67,7 +69,18 @@ $(document).ready(function() {
         }
 
         text.val("");
+        this.send(myWords);
         this.updateUnread(myWords);
+    };
+
+    Sender.prototype.send = function (msg) {
+        $.get(CONST.SEND_URL + msg)
+            .success(function () {
+                console.log("Streaming out new message");
+            })
+            .error(function (e) {
+                console.log(e);
+            })
     };
 
     function Receiver(interval) {
@@ -126,10 +139,11 @@ $(document).ready(function() {
                         break;
                     case "sendMsg":
                     case "sendMsg-span":
-
+                        user.show();
                         break;
                 }
             });
+
 
 
             $(window).focus(function(){
@@ -153,10 +167,24 @@ $(document).ready(function() {
                     user = new Sender();
                     $('.panel-footer').removeClass("hidden");
                     text.height($('#sendMsg').height());
+
+                    toggle.on('click', function () {
+                        $.get(CONST.STOP_URL)
+                            .success(function () {
+                                console.log("Streaming Stop");
+                            })
+                            .error(function (e) {
+                                console.log(e);
+                            });
+                    });
+
                 } else {
                     user = new Receiver(1000);
-                    toggle.removeClass('hidden');
                     user.start();
+
+                    toggle.on('click', function () {
+                        user.stop();
+                    });
                 }
             }).error(function (e) {
                 console.log(e);
