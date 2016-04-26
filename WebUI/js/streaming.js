@@ -108,12 +108,7 @@ $(document).ready(function() {
             }).success(function (data) {
                 if (data.msg.length > 0) {
                     if (data.msg === "Control Message: Video begins") {
-                        $('#video-panel-button').addClass("hidden");
                         $('#video-panel').appendTo(content).removeClass("hidden");
-                        setTimeout(
-                            function() {
-                                $('#start-join-btn').click();
-                            }, 2000);
                     } else {
                         user.show(data.msg);
                     }
