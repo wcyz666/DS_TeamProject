@@ -56,6 +56,13 @@ func apiGetPrograms(ctx *web.Context, val string) string{
 	return ctx.Params["callback"] + "(" + string(json) + ")"
 }
 
+func apiGetTitle(ctx *web.Context, val string) string{
+	title := streamer.ProgramList[streamer.CurrentProgram]
+	json, _ := Json.Marshal(map[string]string{"title": title})
+	fmt.Println(ctx.Params["callback"] + "(" + string(json) + ")")
+	return ctx.Params["callback"] + "(" + string(json) + ")"
+}
+
 func apiGetLoad(ctx *web.Context, val string) string{
 	loadList := StartLoadTrack().SuperNodeUsages
 	json, _ := Json.Marshal(loadList)
@@ -98,6 +105,7 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/load/(.*)", apiGetLoad)
 	web.Get("/fakeStream/([0-9]+)", apiFakeStream)
 	web.Get("/getLocalName/", apiGetLocalName)
+	web.Get("/getTitle", apiGetTitle)
 	web.Get("/isStreamer/(.*)", apiIsStreamer)
 
 	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
