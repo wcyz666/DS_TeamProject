@@ -10,6 +10,7 @@ $(document).ready(function() {
             SEND_URL: "/stream/",
             STOP_URL: "/stop/",
             GET_LOCAL_NAME_URL: "/getLocalName/",
+            GET_TITLE_URL: "/getTitle/"
         },
         content = $('#chatroom-content'),
         text = $('#chatroom-text'),
@@ -170,8 +171,20 @@ $(document).ready(function() {
         }
 
         function initElement() {
+            var btn2 = document.getElementById('reload-iframe-btn'),
+                btn3 = document.getElementById('start-join-btn');
+            
             $.ajax({
-                url: CONST.NODE_URL + CONST.IS_STREAMER_URL,
+                url: CONST.GET_TITLE_URL,
+                jsonp: "callback",
+                dataType: "jsonp"
+            }).success(function (data) {
+                var streamTitle = $('#streaming-title');
+                streamTitle.text(streamTitle.text() + " " + data.title)
+            });
+
+            $.ajax({
+                url: CONST.IS_STREAMER_URL,
                 jsonp: "callback",
                 dataType: "jsonp"
             }).success(function (data) {
@@ -209,8 +222,6 @@ $(document).ready(function() {
                 console.log(e);
             });
 
-            var btn2 = document.getElementById('reload-iframe-btn'),
-                btn3 = document.getElementById('start-join-btn');
 
             btn2.onclick = function () {
                 var frame = document.getElementById("iframe");
