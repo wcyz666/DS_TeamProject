@@ -60,7 +60,7 @@ func (dhtName *DHTNode) removeData(key string, data MemberShipInfo) (int) {
 	}
 
 	for index, value = range entry {
-		if data == value {
+		if data.StreamerName == value.StreamerName {
 			isMemberShipDataPresent = true
 			break
 		}

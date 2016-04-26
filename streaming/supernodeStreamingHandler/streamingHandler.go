@@ -172,6 +172,7 @@ func (sHandler *StreamingHandler) RemoveFromDht(msg *MP.Message) {
 	sHandler.dht.Remove(failNode.RootStreamer, DHT.MemberShipInfo{
 		StreamerName: failNode.FailNodeName,
 		StreamerIp: failNode.FailNodeIp,
+		//StreamProgramName:
 	})
 }
 
