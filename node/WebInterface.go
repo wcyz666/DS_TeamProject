@@ -105,7 +105,7 @@ func webInterface(streamer *Streamer.Streamer, nodeContext *NodeContext.NodeCont
 	web.Get("/load/(.*)", apiGetLoad)
 	web.Get("/fakeStream/([0-9]+)", apiFakeStream)
 	web.Get("/getLocalName/", apiGetLocalName)
-	web.Get("/getTitle", apiGetTitle)
+	web.Get("/getTitle/", apiGetTitle)
 	web.Get("/isStreamer/(.*)", apiIsStreamer)
 
 	web.Get("/(.*)",  http.FileServer(http.Dir(".")))
