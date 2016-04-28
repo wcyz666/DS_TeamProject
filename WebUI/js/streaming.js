@@ -174,30 +174,14 @@ $(document).ready(function() {
             var btn2 = document.getElementById('reload-iframe-btn'),
                 btn3 = document.getElementById('start-join-btn');
             
-            var getTitleHandler = setInterval((function () {
-                var titleUpdated = false;
-
-                return function () {
-                    $.ajax({
-                        url: CONST.GET_TITLE_URL,
-                        jsonp: "callback",
-                        dataType: "jsonp"
-                    }).success(function (data) {
-                        if (titleUpdated) {
-                            clearInterval(getTitleHandler);
-                        }
-                        if (data.title.length > 0 && !titleUpdated) {
-                            var streamTitle = $('#streaming-title');
-                            streamTitle.text(streamTitle.text() + " " + data.title);
-                            titleUpdated = true;
-                            clearInterval(getTitleHandler);
-                        }
-                    });
-                };
-            })(), 100);
-
-
-
+            $.ajax({
+                url: CONST.GET_TITLE_URL,
+                jsonp: "callback",
+                dataType: "jsonp"
+            }).success(function (data) {
+                var streamTitle = $('#streaming-title');
+                streamTitle.text(streamTitle.text() + " " + data.title)
+            });
 
             $.ajax({
                 url: CONST.IS_STREAMER_URL,
